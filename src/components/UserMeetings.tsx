@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import MeetingSession from './MeetingSession';
+import { getAccessToken } from '../lib/auth';
 
 export interface Meeting {
   id: number;
@@ -16,15 +18,20 @@ const UserMeetings: React.FC = () => {
   const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const getAuthToken = (): string => {
+    return getAccessToken() || localStorage.getItem('access_token') || '';
+  };
+
   useEffect(() => {
     fetchMeetings();
   }, []);
 
   const fetchMeetings = async (): Promise<void> => {
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/meetings/', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`, 
+          'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json'
         }
       });
@@ -41,10 +48,11 @@ const UserMeetings: React.FC = () => {
 
   const handleCreateMeeting = async (): Promise<void> => {
     try {
+      const token = getAuthToken();
       const res = await fetch('/api/meetings/', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -93,7 +101,12 @@ const UserMeetings: React.FC = () => {
     <div className="min-h-screen bg-gray-50 p-10">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">All Skill Swaps</h1>
+          <div>
+            <Link to="/" className="text-sm text-blue-600 hover:underline mb-1 inline-block">
+              &larr; Back to Dashboard
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-800">All Skill Swaps</h1>
+          </div>
           <button 
             onClick={handleCreateMeeting}
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg"

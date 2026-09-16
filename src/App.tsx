@@ -1,22 +1,33 @@
-import React from 'react';
-import UserMeetings from './components/UserMeetings';
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import UserMeetings from './components/UserMeetings'
+import { isAuthenticated } from './lib/auth'
 
-const App: React.FC = () => {
+function ProtectedHome() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+  return <Home />
+}
+
+function ProtectedMeetings() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />
+  }
+  return <UserMeetings />
+}
+
+export default function App() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
-      {/* Optional: Add a global navigation bar or header here if your team wants one */}
-      <header className="bg-gray-900 border-b border-gray-800 py-4 px-8">
-        <h1 className="text-xl font-bold tracking-wide text-blue-400">
-          SkillSwap Platform
-        </h1>
-      </header>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/meetings" element={<ProtectedMeetings />} />
+      <Route path="/" element={<ProtectedHome />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
 
-      {/* Main App View */}
-      <main>
-        <UserMeetings />
-      </main>
-    </div>
-  );
-};
-
-export default App;

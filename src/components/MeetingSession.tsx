@@ -10,28 +10,19 @@ export interface MeetingSessionProps {
   onLeave: () => void;
 }
 
-const MeetingSession: React.FC<MeetingSessionProps> = ({ 
-  roomUrl, 
-  token, 
-  startTs, 
-  endTs, 
-  onLeave 
-}) => {
+const MeetingSession: React.FC<MeetingSessionProps> = ({ roomUrl, token, startTs, endTs, onLeave }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState<number>(Date.now());
 
-  // Update clock every second
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // Meeting timing rules (can join 5 minutes early)
   const FIVE_MINUTES = 5 * 60 * 1000;
   const canJoin = now >= (startTs - FIVE_MINUTES);
   const isOver = now > endTs;
 
-  // Cleanly disconnect and return to dashboard
   const handleLeave = () => {
     const call = DailyIframe.getCallInstance();
     if (call) {
@@ -41,11 +32,9 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     onLeave();
   };
 
-  // Initialize the Daily.co video frame
   useEffect(() => {
     if (!containerRef.current || !canJoin || isOver) return;
 
-    // Check if an instance already exists (prevents duplicate errors)
     let call = DailyIframe.getCallInstance();
 
     if (!call) {
@@ -62,7 +51,6 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       call.join({ url: roomUrl, token });
     }
 
-    // Listen for when the user clicks the "Leave" button inside Daily
     call.on('left-meeting', handleLeave);
 
     return () => {
@@ -70,7 +58,6 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     };
   }, [canJoin, isOver, roomUrl, token]);
 
-  // Case 1: The meeting has ended
   if (isOver) {
     return (
       <div className="meeting-session-page">
@@ -86,7 +73,6 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     );
   }
 
-  // Case 2: Too early to join (more than 5 minutes before start)
   if (!canJoin) {
     const minutesLeft = Math.max(1, Math.ceil((startTs - FIVE_MINUTES - now) / 60000));
     return (
@@ -106,7 +92,6 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     );
   }
 
-  // Case 3: Active video session
   return (
     <div className="meeting-session-page">
       <div className="session-topbar">

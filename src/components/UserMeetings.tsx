@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import MeetingSession from './MeetingSession';
-import { getAccessToken } from '../lib/auth';
+import { getAccessToken, refreshAccessToken, clearTokens } from '../lib/auth';
 import './Meetings.css';
 
 export interface Meeting {
@@ -16,9 +16,11 @@ export interface Meeting {
 }
 
 const UserMeetings: React.FC = () => {
+  const navigate = useNavigate();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const getAuthToken = (): string => {
     return getAccessToken() || localStorage.getItem('access_token') || '';
@@ -30,19 +32,43 @@ const UserMeetings: React.FC = () => {
 
   const fetchMeetings = async (): Promise<void> => {
     try {
-      const token = getAuthToken();
-      const res = await fetch('/api/meetings/', {
+      let token = getAuthToken();
+      let res = await fetch('/api/meetings/', {
         headers: {
           'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json'
         }
       });
+
+      // If unauthorized, attempt to refresh token and retry
+      if (res.status === 401) {
+        try {
+          token = await refreshAccessToken();
+          res = await fetch('/api/meetings/', {
+            headers: {
+              'Authorization': `Bearer ${token}`, 
+              'Content-Type': 'application/json'
+            }
+          });
+        } catch {
+          clearTokens();
+          navigate('/login');
+          return;
+        }
+      }
+
       if (res.ok) {
         const data: Meeting[] = await res.json();
         setMeetings(data);
+      } else if (res.status === 401) {
+        clearTokens();
+        navigate('/login');
+      } else {
+        setErrorMessage('Failed to load meetings.');
       }
     } catch (err) {
       console.error('Failed to load meetings', err);
+      setErrorMessage('Network error while loading meetings.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +112,24 @@ const UserMeetings: React.FC = () => {
         {loading ? (
           <div className="meetings-empty">
             <p>Loading your scheduled swaps...</p>
+          </div>
+        ) : errorMessage ? (
+          <div className="meetings-empty">
+            <div className="empty-icon">⚠️</div>
+            <h3>Unable to Load Swaps</h3>
+            <p>{errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setLoading(true);
+                setErrorMessage(null);
+                fetchMeetings();
+              }}
+              className="btn-join"
+              style={{ marginTop: '1rem', display: 'inline-block' }}
+            >
+              Retry
+            </button>
           </div>
         ) : meetings.length === 0 ? (
           <div className="meetings-empty">

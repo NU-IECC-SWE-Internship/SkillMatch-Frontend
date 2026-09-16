@@ -11,6 +11,19 @@ export interface MeetingSessionProps {
   onLeave: () => void;
 }
 
+function formatDailyError(msg: string | undefined): string {
+  if (msg === 'account-missing-payment-method') {
+    return 'The Daily.co account has exceeded its free allowance or requires a payment method on file to join rooms. Please add a payment method in dashboard.daily.co or update the DAILY_API_KEY in the backend.';
+  }
+  if (msg === 'meeting-full') {
+    return 'This skill swap room is currently full.';
+  }
+  if (msg === 'not-allowed') {
+    return 'Access to this video room was denied. The session token may be invalid or expired.';
+  }
+  return msg || 'Failed to connect to the video swap room.';
+}
+
 const MeetingSession: React.FC<MeetingSessionProps> = ({ 
   roomUrl, 
   token, 
@@ -96,7 +109,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
 
     frame.on('error', (event?: DailyEventObjectFatalError) => {
       console.error('Daily Call Error:', event);
-      setCallError(event?.errorMsg || 'A connection error occurred with the video room.');
+      setCallError(formatDailyError(event?.errorMsg));
     });
 
     // Only join if not already joined or joining
@@ -104,7 +117,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     if (state !== 'joined-meeting' && state !== 'joining-meeting') {
       frame.join({ url: roomUrl, token: token }).catch((err) => {
         console.error('Failed to join Daily room:', err);
-        setCallError(err?.message || 'Failed to enter the video room. Please check your connection.');
+        setCallError(formatDailyError(err?.errorMsg || err?.message));
       });
     }
 
@@ -123,6 +136,34 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       }, 150);
     };
   }, [canJoin, isOver, roomUrl, token]);
+
+  if (callError) {
+    return (
+      <div className="meeting-session-page">
+        <div className="session-status-card">
+          <div className="session-status-icon">⚠️</div>
+          <h2>Video Room Notice</h2>
+          <p style={{ fontSize: '0.95rem', lineHeight: 1.6 }}>
+            {callError}
+          </p>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={handleLeaveClick} className="btn-schedule">
+              Return to Meetings
+            </button>
+            <a 
+              href="https://dashboard.daily.co/billing" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="btn-secondary"
+              style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            >
+              Daily.co Billing &rarr;
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isOver) {
     return (
@@ -169,12 +210,6 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
           Leave Room
         </button>
       </div>
-
-      {callError && (
-        <div className="modal-error" style={{ maxWidth: '1200px', margin: '0 auto 1rem', width: '100%' }}>
-          {callError}
-        </div>
-      )}
 
       <div className="daily-frame-wrapper">
         <div ref={containerRef} className="daily-frame-container" />

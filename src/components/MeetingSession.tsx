@@ -20,6 +20,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const callFrameRef = useRef<DailyCall | null>(null);
+  const isMountedRef = useRef<boolean>(true);
   const [now, setNow] = useState<number>(Date.now());
   const [callError, setCallError] = useState<string | null>(null);
 
@@ -33,33 +34,64 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
   const canJoin = now >= (startTs - FIVE_MIN_MS);
   const isOver = now > endTs;
 
+  const handleLeaveClick = async () => {
+    isMountedRef.current = false;
+    const frame = DailyIframe.getCallInstance();
+    if (frame) {
+      try {
+        await frame.leave();
+        await frame.destroy();
+      } catch (err) {
+        console.warn('Error leaving/destroying Daily frame:', err);
+      }
+    }
+    callFrameRef.current = null;
+    onLeave();
+  };
+
   useEffect(() => {
+    isMountedRef.current = true;
     if (!canJoin || isOver || !containerRef.current) return;
 
-    // Prevent duplicate frames (handles React 18/19 StrictMode remounts)
-    if (callFrameRef.current) {
-      return;
+    // Check if a Daily instance already exists (e.g. from previous tick or StrictMode mount)
+    let frame: DailyCall | undefined = DailyIframe.getCallInstance();
+
+    if (!frame) {
+      try {
+        frame = DailyIframe.createFrame(containerRef.current, {
+          iframeStyle: { 
+            width: '100%', 
+            height: '100%', 
+            border: 'none',
+            borderRadius: '16px',
+            backgroundColor: '#0f172a' 
+          },
+          showLeaveButton: true,
+          showFullscreenButton: true,
+        });
+      } catch (err: unknown) {
+        console.warn('createFrame warning, checking existing instance:', err);
+        frame = DailyIframe.getCallInstance();
+      }
     }
 
-    // Clean container before mounting
-    containerRef.current.innerHTML = '';
-
-    const frame: DailyCall = DailyIframe.createFrame(containerRef.current, {
-      iframeStyle: { 
-        width: '100%', 
-        height: '100%', 
-        border: 'none',
-        borderRadius: '16px',
-        backgroundColor: '#0f172a' 
-      },
-      showLeaveButton: true,
-      showFullscreenButton: true,
-    });
-
+    if (!frame) return;
     callFrameRef.current = frame;
 
+    // Ensure the iframe element is inside the current DOM container
+    try {
+      // DailyCall runtime object has an iframe() accessor
+      const iframe = (frame as unknown as { iframe?: () => HTMLIFrameElement }).iframe?.();
+      if (iframe && containerRef.current && !containerRef.current.contains(iframe)) {
+        containerRef.current.appendChild(iframe);
+      }
+    } catch (e) {
+      console.warn('Error attaching Daily iframe to container:', e);
+    }
+
+    // Set up event listeners
     frame.on('left-meeting', () => {
-      onLeave();
+      handleLeaveClick();
     });
 
     frame.on('error', (event?: DailyEventObjectFatalError) => {
@@ -67,19 +99,30 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       setCallError(event?.errorMsg || 'A connection error occurred with the video room.');
     });
 
-    frame.join({ url: roomUrl, token: token }).catch((err) => {
-      console.error('Failed to join Daily room:', err);
-      setCallError(err?.message || 'Failed to enter the video room. Please check your connection.');
-    });
+    // Only join if not already joined or joining
+    const state = frame.meetingState();
+    if (state !== 'joined-meeting' && state !== 'joining-meeting') {
+      frame.join({ url: roomUrl, token: token }).catch((err) => {
+        console.error('Failed to join Daily room:', err);
+        setCallError(err?.message || 'Failed to enter the video room. Please check your connection.');
+      });
+    }
 
     return () => {
-      if (callFrameRef.current) {
-        callFrameRef.current.leave().catch(() => {});
-        callFrameRef.current.destroy().catch(() => {});
-        callFrameRef.current = null;
-      }
+      isMountedRef.current = false;
+      // Delay destruction to survive React 18/19 StrictMode double-mount without Duplicate DailyIframe errors
+      setTimeout(() => {
+        if (!isMountedRef.current) {
+          const currentFrame = DailyIframe.getCallInstance();
+          if (currentFrame) {
+            currentFrame.leave().catch(() => {});
+            currentFrame.destroy().catch(() => {});
+            callFrameRef.current = null;
+          }
+        }
+      }, 150);
     };
-  }, [canJoin, isOver, roomUrl, token, onLeave]);
+  }, [canJoin, isOver, roomUrl, token]);
 
   if (isOver) {
     return (
@@ -88,7 +131,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
           <div className="session-status-icon">🏁</div>
           <h2>This session has ended</h2>
           <p>The scheduled time for this skill swap meeting has concluded.</p>
-          <button onClick={onLeave} className="btn-schedule">
+          <button onClick={handleLeaveClick} className="btn-schedule">
             Return to Meetings
           </button>
         </div>
@@ -107,7 +150,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
             The video swap room opens 5 minutes before scheduled start.<br />
             Room unlocks in <span className="countdown-highlight">{minutesLeft} minute{minutesLeft > 1 ? 's' : ''}</span>.
           </p>
-          <button onClick={onLeave} className="btn-secondary">
+          <button onClick={handleLeaveClick} className="btn-secondary">
             &larr; Back to Dashboard
           </button>
         </div>
@@ -122,7 +165,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
           <h1 className="session-title">SkillMatch Video Swap</h1>
           <span className="session-tag">Live Session</span>
         </div>
-        <button onClick={onLeave} className="btn-leave-call">
+        <button onClick={handleLeaveClick} className="btn-leave-call">
           Leave Room
         </button>
       </div>

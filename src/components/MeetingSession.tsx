@@ -73,10 +73,12 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       try {
         frame = DailyIframe.createFrame(containerRef.current, {
           iframeStyle: { 
+            position: 'absolute',
+            top: '0',
+            left: '0',
             width: '100%', 
             height: '100%', 
             border: 'none',
-            borderRadius: '16px',
             backgroundColor: '#0f172a' 
           },
           showLeaveButton: true,
@@ -91,12 +93,22 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
     if (!frame) return;
     callFrameRef.current = frame;
 
-    // Ensure the iframe element is inside the current DOM container
+    // Ensure the iframe element is inside the current DOM container and sized full bleed
     try {
       // DailyCall runtime object has an iframe() accessor
       const iframe = (frame as unknown as { iframe?: () => HTMLIFrameElement }).iframe?.();
-      if (iframe && containerRef.current && !containerRef.current.contains(iframe)) {
-        containerRef.current.appendChild(iframe);
+      if (iframe) {
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = '0';
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.display = 'block';
+
+        if (containerRef.current && !containerRef.current.contains(iframe)) {
+          containerRef.current.appendChild(iframe);
+        }
       }
     } catch (e) {
       console.warn('Error attaching Daily iframe to container:', e);

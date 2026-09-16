@@ -8,6 +8,7 @@ export interface Meeting {
   id: number;
   participant_a_name: string;
   participant_b_name: string;
+  partner_name?: string;
   start_time_ts: number;
   end_time_ts: number;
   room_url: string;
@@ -209,7 +210,7 @@ const UserMeetings: React.FC = () => {
             {meetings.map((meeting) => {
               const status = getMeetingStatus(meeting.start_time_ts, meeting.end_time_ts);
               const startDate = new Date(meeting.start_time_ts);
-              const partnerName = meeting.participant_b_name;
+              const partnerName = meeting.partner_name || meeting.participant_b_name || 'Partner';
 
               return (
                 <div key={meeting.id} className="meeting-card">

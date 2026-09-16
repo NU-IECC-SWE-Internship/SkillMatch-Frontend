@@ -124,6 +124,17 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       setCallError(formatDailyError(event?.errorMsg));
     });
 
+    // Auto-select standard RGB webcam (avoid Windows Hello IR camera which triggers NotReadableError)
+    if (navigator.mediaDevices?.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
+        const videoDevices = devices.filter((d) => d.kind === 'videoinput');
+        const colorCam = videoDevices.find((d) => !/ir|infrared|hello/i.test(d.label));
+        if (colorCam && colorCam.deviceId && (frame as unknown as { setCamera?: (id: string) => Promise<unknown> })?.setCamera) {
+          (frame as unknown as { setCamera: (id: string) => Promise<unknown> }).setCamera(colorCam.deviceId).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     // Only join if not already joined or joining
     const state = frame.meetingState();
     if (state !== 'joined-meeting' && state !== 'joining-meeting') {

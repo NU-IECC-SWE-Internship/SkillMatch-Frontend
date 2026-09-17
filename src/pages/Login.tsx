@@ -20,7 +20,7 @@ export default function Login() {
 
     try {
       await login({ username: username.trim(), password })
-      navigate('/', { replace: true })
+      navigate('/profile', { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {

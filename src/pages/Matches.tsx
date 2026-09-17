@@ -1,53 +1,64 @@
+import { useEffect, useState } from "react";
 import MatchCard from "../components/MatchCard";
+import { getMatches } from "../lib/matchingApi";
+import type { Match } from "../types/match";
 import "./Matches.css";
 
-interface Match {
-  user_id: number;
-  username: string;
-  can_teach_me: string[];
-  i_can_teach_them: string[];
-}
-
 function Matches() {
-  // Temporary data until the backend is ready
-  const matches: Match[] = [
-    {
-      user_id: 1,
-      username: "Sara",
-      can_teach_me: ["React", "Figma"],
-      i_can_teach_them: ["Python", "SQL"],
-    },
-    {
-      user_id: 2,
-      username: "Omar",
-      can_teach_me: ["Java"],
-      i_can_teach_them: ["HTML", "CSS"],
-    },
-  ];
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadMatches() {
+      try {
+        const data = await getMatches();
+        setMatches(data);
+      } catch (error) {
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to load matches"
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMatches();
+  }, []);
+
+  if (loading) {
+    return <p>Loading matches...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
 
   return (
     <main className="matches-page">
       <div className="matches-container">
-
         <div className="matches-header">
           <p className="matches-brand">SkillMatch</p>
-
           <h1>Find Your Matches</h1>
-
           <p>
             People whose skills complement what you want to learn.
           </p>
         </div>
 
         <div className="matches-list">
-          {matches.map((match) => (
-            <MatchCard
-              key={match.user_id}
-              match={match}
-            />
-          ))}
+          {matches.length > 0 ? (
+            matches.map((match) => (
+              <MatchCard
+                key={match.user_id}
+                match={match}
+              />
+            ))
+          ) : (
+            <p>No matches found yet. Add skills you can teach and want to learn to find a match.</p>
+          )}
         </div>
-
       </div>
     </main>
   );

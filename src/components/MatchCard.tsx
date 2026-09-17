@@ -1,11 +1,5 @@
 import { useNavigate } from "react-router-dom";
-
-interface Match {
-  user_id: number;
-  username: string;
-  can_teach_me: string[];
-  i_can_teach_them: string[];
-}
+import type { Match } from "../types/match";
 
 interface MatchCardProps {
   match: Match;
@@ -23,7 +17,7 @@ function MatchCard({ match }: MatchCardProps) {
           <h3>They can teach you</h3>
 
           <div className="skill-list">
-            {match.can_teach_me.map((skill) => (
+            {match.teach_me.map((skill) => (
               <span className="skill-tag" key={skill}>
                 {skill}
               </span>
@@ -35,7 +29,7 @@ function MatchCard({ match }: MatchCardProps) {
           <h3>You can teach them</h3>
 
           <div className="skill-list">
-            {match.i_can_teach_them.map((skill) => (
+            {match.teach_them.map((skill) => (
               <span className="skill-tag" key={skill}>
                 {skill}
               </span>

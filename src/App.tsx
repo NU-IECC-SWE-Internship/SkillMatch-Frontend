@@ -1,6 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
@@ -9,11 +8,11 @@ import { isAuthenticated } from "./lib/auth";
 
 
 function ProtectedHome() {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Home />;
+  return isAuthenticated() ? (
+    <Navigate to="/profile" replace />
+  ) : (
+    <Navigate to="/login" replace />
+  );
 }
 
 

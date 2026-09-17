@@ -1,0 +1,321 @@
+* {
+  box-sizing: border-box;
+}
+
+.onboarding-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+
+  background:
+    radial-gradient(circle at top left, #dbeafe, transparent 35%),
+    radial-gradient(circle at bottom right, #e0e7ff, transparent 35%),
+    #f8fafc;
+}
+
+.onboarding-wrapper {
+  width: 100%;
+  max-width: 760px;
+}
+
+/* SkillMatch header */
+
+.onboarding-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.onboarding-logo {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  color: #1e3a8a;
+  letter-spacing: -1px;
+}
+
+.onboarding-header p {
+  margin-top: 7px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* Progress */
+
+.progress-steps {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.progress-steps::before {
+  content: "";
+  position: absolute;
+  top: 19px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #dbe3ef;
+}
+
+.progress-step {
+  width: 25%;
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  color: #94a3b8;
+  font-size: 13px;
+  gap: 7px;
+}
+
+.progress-circle {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  border: 2px solid #dbe3ef;
+  background: white;
+
+  font-weight: 700;
+}
+
+.progress-step.active {
+  color: #4338ca;
+  font-weight: 600;
+}
+
+.progress-step.active .progress-circle {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+.progress-step.completed {
+  color: #4f46e5;
+}
+
+.progress-step.completed .progress-circle {
+  background: #eef2ff;
+  border-color: #6366f1;
+  color: #4f46e5;
+}
+
+/* Main card */
+
+.onboarding-card {
+  background: white;
+  padding: 42px;
+
+  border-radius: 22px;
+
+  box-shadow:
+    0 18px 45px rgba(15, 23, 42, 0.08);
+
+  border: 1px solid #eef2f7;
+}
+
+.step-label {
+  margin: 0 0 12px;
+  color: #6366f1;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Titles */
+
+.onboarding-card h1 {
+  margin: 0 0 8px;
+
+  font-size: 30px;
+  color: #172554;
+}
+
+.onboarding-card p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+/* Form */
+
+.onboarding-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.onboarding-card textarea,
+.onboarding-card input,
+.onboarding-card select {
+  width: 100%;
+
+  padding: 14px 15px;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 11px;
+
+  font-size: 15px;
+  color: #1e293b;
+
+  outline: none;
+  background: white;
+}
+
+.onboarding-card textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.onboarding-card textarea:focus,
+.onboarding-card input:focus,
+.onboarding-card select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Continue / Finish */
+
+.onboarding-card form > button {
+  align-self: flex-end;
+
+  min-width: 140px;
+  padding: 12px 22px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: #4f46e5;
+  color: white;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.onboarding-card form > button:hover {
+  background: #4338ca;
+}
+
+.onboarding-card form > button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Skills */
+
+.skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.skill-chip {
+  padding: 10px 16px;
+
+  border-radius: 25px;
+  border: 1px solid #dbe3ef;
+
+  background: #f8fafc;
+  color: #334155;
+
+  cursor: pointer;
+}
+
+.skill-chip:hover {
+  background: #eef2ff;
+  border-color: #818cf8;
+}
+
+.skill-chip.selected {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: white;
+}
+
+@media (max-width: 650px) {
+  .onboarding-card {
+    padding: 28px 22px;
+  }
+
+  .onboarding-logo {
+    font-size: 29px;
+  }
+
+  .onboarding-card h1 {
+    font-size: 25px;
+  }
+
+  .progress-step span {
+    font-size: 10px;
+  }
+
+  .onboarding-card form > button {
+    width: 100%;
+  }
+}
+.other-skill-row {
+  display: flex;
+  gap: 10px;
+}
+
+.other-skill-row input {
+  flex: 1;
+}
+
+.add-skill-button {
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-skill-button:hover {
+  background: #e0e7ff;
+}
+.availability-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.availability-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.time-row {
+  display: flex;
+  gap: 15px;
+}
+
+.time-row .availability-field {
+  flex: 1;
+}
+
+.form-error {
+  margin: 0 !important;
+  color: #dc2626 !important;
+  font-size: 14px;
+}
+
+@media (max-width: 600px) {
+  .time-row {
+    flex-direction: column;
+  }
+}

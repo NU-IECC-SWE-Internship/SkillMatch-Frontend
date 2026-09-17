@@ -74,7 +74,6 @@ export async function updateProfile(bio: string) {
 }
 
 
-// ---------------- SKILLS ----------------
 
 export async function getSkills(): Promise<Skill[]> {
   const response = await fetch(
@@ -173,7 +172,6 @@ export async function deleteUserSkill(id: number) {
 }
 
 
-// ---------------- AVAILABILITY ----------------
 
 export async function getAvailability(): Promise<
   AvailabilitySlot[]
@@ -263,4 +261,20 @@ export async function deleteAvailability(id: number) {
   if (!response.ok) {
     throw new Error("Failed to delete availability");
   }
+}
+
+export async function completeOnboarding() {
+  const response = await fetch("http://127.0.0.1:8000/api/profile/", {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify({
+      onboarding_completed: true,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not complete onboarding");
+  }
+
+  return response.json();
 }

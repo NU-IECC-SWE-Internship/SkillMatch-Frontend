@@ -90,7 +90,6 @@ function Profile() {
   }, []);
 
 
-  // ---------------- PROFILE ----------------
 
   const saveProfile = async () => {
     try {
@@ -360,7 +359,7 @@ function Profile() {
         <header className="profile-header">
           <div>
             <p className="small-title">
-              SKILLSWAP
+              SKILLMATCH
             </p>
 
             <h1>My Profile</h1>

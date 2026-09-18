@@ -1,6 +1,6 @@
 import { getAccessToken } from "../lib/auth";
-
-const API_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
+const API_URL = `${API_BASE_URL}/api`;
 
 
 export interface Skill {
@@ -264,7 +264,7 @@ export async function deleteAvailability(id: number) {
 }
 
 export async function completeOnboarding() {
-  const response = await fetch("http://127.0.0.1:8000/api/profile/", {
+  const response = await fetch(`${API_URL}/profile/`, {
     method: "PATCH",
     headers: getAuthHeaders(),
     body: JSON.stringify({

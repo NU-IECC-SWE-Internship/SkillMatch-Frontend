@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/api'
 import { login } from '../lib/auth'
 import './Login.css'
-
+import { getProfile } from '../api/profileApi'
 export default function Login() {
   const navigate = useNavigate()
   const [username, setUsername] = useState('')
@@ -19,14 +19,20 @@ export default function Login() {
     setLoading(true)
 
     try {
-      await login({ username: username.trim(), password })
-      navigate('/', { replace: true })
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
+  await login({ username: username.trim(), password })
+
+  const profile = await getProfile()
+
+  if (profile.onboarding_completed) {
+    navigate('/dashboard', { replace: true })
+  } else {
+    navigate('/onboarding', { replace: true })
   }
+} catch (err) {
+  setError(getErrorMessage(err))
+} finally {
+  setLoading(false)
+}}
 
   return (
     <main className="login-page">

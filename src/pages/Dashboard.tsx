@@ -105,13 +105,6 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-
-        {/* DEV / TESTING ONLY — remove later */}
-        <div className="token-test-box">
-          <button type="button" onClick={killWholeSession}>
-            Kill Whole Session (Clear token testing only)
-          </button>
-        </div>
       </section>
     </main>
   );

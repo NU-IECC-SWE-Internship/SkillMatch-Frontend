@@ -244,3 +244,55 @@
     font-size: 26px;
   }
 }
+
+/* DEV token test box — remove later */
+.token-test-box {
+  margin-top: 1.5rem;
+  max-width: 520px;
+  padding: 1rem 1.15rem;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.token-test-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.token-test-status {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.token-test-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.token-test-actions button {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.token-test-actions button:hover {
+  background: #e2e8f0;
+}
+
+.token-test-msg {
+  margin: 0.75rem 0 0;
+  font-size: 0.9rem;
+  color: #1d4ed8;
+}

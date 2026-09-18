@@ -1,4 +1,19 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') || ''
+import {
+  forceLogout,
+  getAccessToken,
+  refreshAccessToken,
+} from './auth'
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
+  'http://127.0.0.1:8000'
+
+// These routes must NOT send a Bearer token / try auto-refresh.
+const NO_AUTH = new Set([
+  '/api/auth/login/',
+  '/api/auth/register/',
+  '/api/auth/refresh/',
+])
 
 export class ApiError extends Error {
   status: number
@@ -15,49 +30,83 @@ export class ApiError extends Error {
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   token?: string | null
+  skipAuth?: boolean
+}
+
+async function readJson(response: Response): Promise<unknown> {
+  const text = await response.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return text
+  }
+}
+
+function messageFromBody(data: unknown, status: number): string {
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'detail' in data &&
+    typeof (data as { detail: unknown }).detail === 'string'
+  ) {
+    return (data as { detail: string }).detail
+  }
+  return `Request failed (${status})`
 }
 
 export async function apiRequest<T>(
   path: string,
-  { body, token, headers, ...init }: RequestOptions = {},
+  options: RequestOptions = {},
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      Accept: 'application/json',
-      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  const { body, token, headers, skipAuth, ...init } = options
+  const noAuth = skipAuth || NO_AUTH.has(path)
 
-  const text = await response.text()
-  let data: unknown = null
-  if (text) {
-    try {
-      data = JSON.parse(text)
-    } catch {
-      data = text
+  async function send(access: string | null) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        Accept: 'application/json',
+        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(access ? { Authorization: `Bearer ${access}` } : {}),
+        ...headers,
+      },
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+
+    return {
+      response,
+      data: await readJson(response),
     }
   }
 
-  if (!response.ok) {
-    const message =
-      typeof data === 'object' &&
-      data !== null &&
-      'detail' in data &&
-      typeof (data as { detail: unknown }).detail === 'string'
-        ? (data as { detail: string }).detail
-        : `Request failed (${response.status})`
+  // 1) First try with current access token (unless this is login/register/refresh)
+  let access: string | null = null
+  if (!noAuth) {
+    access = token !== undefined ? token : getAccessToken()
+  }
 
-    throw new ApiError(message, response.status, data)
+  let { response, data } = await send(access)
+
+  // 2) If Django says unauthorized → try refresh, then retry once
+  if (response.status === 401 && !noAuth) {
+    try {
+      const newAccess = await refreshAccessToken()
+      ;({ response, data } = await send(newAccess))
+    } catch {
+      forceLogout()
+      throw new ApiError('Session expired. Please sign in again.', 401, data)
+    }
+  }
+
+  // 3) Still not OK → throw
+  if (!response.ok) {
+    throw new ApiError(messageFromBody(data, response.status), response.status, data)
   }
 
   return data as T
 }
 
-/** Turn any thrown error into a short message for the UI. */
 export function getErrorMessage(error: unknown): string {
   if (error instanceof TypeError) {
     return 'Cannot reach the server. Is the Django API running?'
@@ -68,6 +117,9 @@ export function getErrorMessage(error: unknown): string {
   }
 
   if (error.status === 401) {
+    if (error.message.toLowerCase().includes('session expired')) {
+      return error.message
+    }
     return 'Incorrect username or password.'
   }
 

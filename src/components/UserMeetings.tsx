@@ -6,13 +6,20 @@ import './Meetings.css';
 
 export interface Meeting {
   id: number;
+  participant_a_id: number;
+  participant_b_id: number;
   participant_a_name: string;
   participant_b_name: string;
   partner_name?: string;
+  is_requester?: boolean;
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  start_time: string;
+  end_time: string;
   start_time_ts: number;
   end_time_ts: number;
   room_url: string;
   my_token: string | null;
+  created_at?: string;
 }
 
 const UserMeetings: React.FC = () => {
@@ -33,7 +40,7 @@ const UserMeetings: React.FC = () => {
   const fetchMeetings = async (): Promise<void> => {
     try {
       let token = getAuthToken();
-      let res = await fetch('/api/meetings/', {
+      let res = await fetch('/api/meetings/?status=accepted', {
         headers: {
           'Authorization': `Bearer ${token}`, 
           'Content-Type': 'application/json'
@@ -44,7 +51,7 @@ const UserMeetings: React.FC = () => {
       if (res.status === 401) {
         try {
           token = await refreshAccessToken();
-          res = await fetch('/api/meetings/', {
+          res = await fetch('/api/meetings/?status=accepted', {
             headers: {
               'Authorization': `Bearer ${token}`, 
               'Content-Type': 'application/json'
@@ -59,7 +66,11 @@ const UserMeetings: React.FC = () => {
 
       if (res.ok) {
         const data: Meeting[] = await res.json();
-        setMeetings(data);
+        // Display only approved/accepted meetings
+        const approvedMeetings = Array.isArray(data)
+          ? data.filter((m) => m.status === 'accepted')
+          : [];
+        setMeetings(approvedMeetings);
       } else if (res.status === 401) {
         clearTokens();
         navigate('/login');
@@ -82,7 +93,7 @@ const UserMeetings: React.FC = () => {
     return 'upcoming';
   };
 
-  if (activeMeeting && activeMeeting.my_token) {
+  if (activeMeeting && activeMeeting.room_url && activeMeeting.my_token) {
     return (
       <MeetingSession 
         roomUrl={activeMeeting.room_url}
@@ -103,15 +114,15 @@ const UserMeetings: React.FC = () => {
             <Link to="/" className="meetings-nav-link">
               &larr; Back to Dashboard
             </Link>
-            <h1 className="meetings-title">Skill Swap Sessions</h1>
-            <p className="meetings-subtitle">Your scheduled 1-on-1 video exchange sessions.</p>
+            <h1 className="meetings-title">Approved Skill Swap Sessions</h1>
+            <p className="meetings-subtitle">Your confirmed and accepted 1-on-1 video exchange sessions.</p>
           </div>
         </div>
 
         {/* Meeting List */}
         {loading ? (
           <div className="meetings-empty">
-            <p>Loading your scheduled swaps...</p>
+            <p>Loading your approved swaps...</p>
           </div>
         ) : errorMessage ? (
           <div className="meetings-empty">
@@ -134,8 +145,8 @@ const UserMeetings: React.FC = () => {
         ) : meetings.length === 0 ? (
           <div className="meetings-empty">
             <div className="empty-icon">🤝</div>
-            <h3>No Scheduled Swaps Found</h3>
-            <p>You have no scheduled skill swap meetings at this time. Once a swap is arranged, it will appear here.</p>
+            <h3>No Approved Swaps Found</h3>
+            <p>You have no confirmed skill swap meetings at this time. Once a swap request is accepted, it will appear here ready to join.</p>
           </div>
         ) : (
           <div className="meetings-list">

@@ -1,17 +1,24 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), basicSsl()],
   server: {
-    port: 5173, // Your React dev server port (or 3000 if you changed it)
+    port: 5173,
+    host: true, // Listen on all network interfaces (0.0.0.0)
+    allowedHosts: true, // Allow any incoming host / IP without host check blocking
     proxy: {
-      // Any fetch request starting with '/api' will be redirected to Django
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
       },
     },
+  },
+  preview: {
+    port: 5173,
+    host: true,
+    allowedHosts: true,
   },
 });

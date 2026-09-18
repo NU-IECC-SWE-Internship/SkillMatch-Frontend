@@ -32,23 +32,36 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({ roomUrl, token, startTs
     onLeave();
   };
 
+  const [callError, setCallError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!containerRef.current || !canJoin || isOver) return;
 
     let call = DailyIframe.getCallInstance();
 
     if (!call) {
-      call = DailyIframe.createFrame(containerRef.current, {
-        showLeaveButton: true,
-        showFullscreenButton: true,
-        iframeStyle: {
-          width: '100%',
-          height: '100%',
-          border: 'none',
-        },
-      });
+      try {
+        call = DailyIframe.createFrame(containerRef.current, {
+          showLeaveButton: true,
+          showFullscreenButton: true,
+          iframeStyle: {
+            width: '100%',
+            height: '100%',
+            border: 'none',
+          },
+        });
 
-      call.join({ url: roomUrl, token });
+        call.join({ url: roomUrl, token });
+      } catch (err: unknown) {
+        console.error('Daily initialization error:', err);
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes('WebRTC') || !window.isSecureContext) {
+          setCallError('WebRTC is suppressed by your browser because this page is served over plain HTTP. WebRTC and camera access require a secure connection (HTTPS or localhost).');
+        } else {
+          setCallError(msg);
+        }
+        return;
+      }
     }
 
     call.on('left-meeting', handleLeave);
@@ -57,6 +70,36 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({ roomUrl, token, startTs
       call?.off('left-meeting', handleLeave);
     };
   }, [canJoin, isOver, roomUrl, token]);
+
+  if (callError) {
+    return (
+      <div className="meeting-session-page">
+        <div className="session-status-card">
+          <div className="session-status-icon">⚠️</div>
+          <h2>Video Setup Required</h2>
+          <p>{callError}</p>
+          <button onClick={handleLeave} className="btn-schedule">
+            Return to Meetings
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!roomUrl || !token) {
+    return (
+      <div className="meeting-session-page">
+        <div className="session-status-card">
+          <div className="session-status-icon">⚠️</div>
+          <h2>Meeting Credentials Missing</h2>
+          <p>This meeting does not have active video room credentials. Please ensure the meeting has been accepted.</p>
+          <button onClick={onLeave} className="btn-schedule">
+            Return to Meetings
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isOver) {
     return (

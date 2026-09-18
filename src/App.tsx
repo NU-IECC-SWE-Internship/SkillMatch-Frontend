@@ -1,20 +1,18 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from 'react-router-dom';
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import Onboarding from "./pages/Onboarding";
-import Dashboard from "./pages/Dashboard";
-import UserMeetings from "./components/UserMeetings";
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
+import Onboarding from './pages/Onboarding';
+import Dashboard from './pages/Dashboard';
+import Meetings from './pages/Meetings';
 
-import { isAuthenticated } from "./lib/auth";
+import { isAuthenticated } from './lib/auth';
 
 function ProtectedProfile() {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-
   return <Profile />;
 }
 
@@ -22,7 +20,6 @@ function ProtectedOnboarding() {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-
   return <Onboarding />;
 }
 
@@ -30,7 +27,6 @@ function ProtectedDashboard() {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-
   return <Dashboard />;
 }
 
@@ -38,16 +34,7 @@ function ProtectedMeetings() {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-
-  return <UserMeetings />;
-}
-
-function ProtectedHome() {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Home />;
+  return <Meetings />;
 }
 
 function RootRedirect() {
@@ -65,12 +52,10 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<RootRedirect />} />
       <Route path="/dashboard" element={<ProtectedDashboard />} />
-      <Route path="/onboarding" element={<ProtectedOnboarding />} />
-      <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/meetings" element={<ProtectedMeetings />} />
-      <Route path="/home" element={<ProtectedHome />} />
+      <Route path="/profile" element={<ProtectedProfile />} />
+      <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
-

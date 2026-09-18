@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
+import { Link } from "react-router-dom";
 
 import {
   getProfile,
@@ -355,6 +356,14 @@ function Profile() {
     <main className="profile-page">
 
       <div className="profile-container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <Link to="/dashboard" style={{ textDecoration: 'none', color: '#4f46e5', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            &larr; Back to Dashboard
+          </Link>
+          <Link to="/meetings" style={{ textDecoration: 'none', color: '#2563eb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            🎥 Meetings &rarr;
+          </Link>
+        </div>
 
         <header className="profile-header">
           <div>

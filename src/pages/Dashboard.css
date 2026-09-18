@@ -1,40 +1,66 @@
 .dashboard-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, #dbeafe, transparent 35%),
-    radial-gradient(circle at bottom right, #e0e7ff, transparent 35%),
+    radial-gradient(circle at top left, #dbeafe, transparent 40%),
+    radial-gradient(circle at bottom right, #e0e7ff, transparent 40%),
     #f8fafc;
+  color: #0f172a;
+  font-family: inherit;
 }
 
 .dashboard-navbar {
   height: 75px;
   padding: 0 7%;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.dashboard-brand {
+  cursor: pointer;
 }
 
 .dashboard-navbar h2 {
   margin: 0;
   color: #1e3a8a;
-  font-size: 25px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 .dashboard-actions {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
 }
 
 .dashboard-actions button {
   padding: 10px 18px;
-  border-radius: 9px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-secondary-button {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.nav-secondary-button:hover {
+  background: #e2e8f0;
+  color: #0f172a;
 }
 
 .profile-nav-button {
@@ -45,71 +71,176 @@
 
 .profile-nav-button:hover {
   background: #eef2ff;
+  border-color: #818cf8;
 }
 
 .logout-button {
-  background: #ef4444;
-  color: white;
-  border: none;
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .logout-button:hover {
-  background: #dc2626;
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
 }
 
 .dashboard-content {
-  max-width: 1000px;
+  max-width: 1080px;
   margin: auto;
-  padding: 80px 25px;
+  padding: 60px 24px 100px;
 }
 
-.welcome-card {
-  padding: 50px;
-
+.welcome-banner {
   background: white;
-  border-radius: 22px;
-
-  border: 1px solid #eef2f7;
-
-  box-shadow:
-    0 18px 45px rgba(15, 23, 42, 0.08);
+  border-radius: 20px;
+  padding: 40px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+  margin-bottom: 36px;
 }
 
 .dashboard-label {
   margin: 0 0 10px;
-  color: #6366f1;
+  color: #4f46e5;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
 }
 
-.welcome-card h1 {
-  margin: 0 0 12px;
-  font-size: 36px;
-  color: #172554;
+.welcome-banner h1 {
+  margin: 0 0 14px;
+  font-size: 34px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.5px;
 }
 
-.welcome-card > p {
-  max-width: 550px;
+.welcome-description {
+  margin: 0;
+  max-width: 680px;
   color: #64748b;
+  font-size: 16px;
   line-height: 1.6;
 }
 
-.open-profile-button {
-  margin-top: 20px;
-  padding: 12px 22px;
+/* Feature Cards Grid */
+.dashboard-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+}
 
-  border: none;
+.dashboard-feature-card {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.feature-card-icon {
+  font-size: 36px;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
+
+.feature-card-body {
+  flex-grow: 1;
+  margin-bottom: 24px;
+}
+
+.feature-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #6366f1;
+  background: #eef2ff;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.dashboard-feature-card h3 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.dashboard-feature-card p {
+  margin: 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.feature-action-button {
+  padding: 12px 20px;
   border-radius: 10px;
-
-  background: #4f46e5;
-  color: white;
-
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  width: 100%;
+  text-align: center;
 }
 
-.open-profile-button:hover {
+.feature-action-button.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.feature-action-button.primary:hover {
+  background: #1d4ed8;
+}
+
+.feature-action-button.secondary {
+  background: #4f46e5;
+  color: white;
+}
+
+.feature-action-button.secondary:hover {
   background: #4338ca;
+}
+
+@media (max-width: 640px) {
+  .dashboard-navbar {
+    padding: 0 16px;
+    height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .welcome-banner {
+    padding: 24px;
+  }
+
+  .welcome-banner h1 {
+    font-size: 26px;
+  }
 }

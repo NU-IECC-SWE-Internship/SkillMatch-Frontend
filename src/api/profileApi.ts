@@ -1,7 +1,4 @@
-import { getAccessToken } from "../lib/auth";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "";
-const API_URL = `${API_BASE_URL}/api`;
-
+import { apiRequest } from '../lib/api';
 
 export interface Skill {
   id: number;
@@ -12,7 +9,7 @@ export interface UserSkill {
   id: number;
   skill: number;
   skill_name: string;
-  skill_type: "teach" | "learn";
+  skill_type: 'teach' | 'learn';
 }
 
 export interface AvailabilitySlot {
@@ -22,259 +19,116 @@ export interface AvailabilitySlot {
   end_time: string;
 }
 
-
-// ---------------- AUTH HEADERS ----------------
-
-function getAuthHeaders() {
-  const token = getAccessToken();
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
+export interface UserProfile {
+  id: number;
+  bio: string;
+  user?: unknown;
+  onboarding_completed?: boolean;
 }
-
 
 // ---------------- PROFILE ----------------
 
-export async function getProfile() {
-  const response = await fetch(
-    `${API_URL}/profile/`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to load profile");
-  }
-
-  return response.json();
+export async function getProfile(): Promise<UserProfile> {
+  return apiRequest<UserProfile>('/api/profile/');
 }
-
 
 export async function updateProfile(bio: string) {
-  const response = await fetch(
-    `${API_URL}/profile/`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-
-      body: JSON.stringify({
-        bio,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to update profile");
-  }
-
-  return response.json();
+  return apiRequest<{ id: number; bio: string }>('/api/profile/', {
+    method: 'PATCH',
+    body: { bio },
+  });
 }
 
-
+// ---------------- SKILLS ----------------
 
 export async function getSkills(): Promise<Skill[]> {
-  const response = await fetch(
-    `${API_URL}/skills/`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to load skills");
-  }
-
-  return response.json();
+  const data = await apiRequest<Skill[]>('/api/skills/');
+  return Array.isArray(data) ? data : [];
 }
 
-
-export async function createSkill(
-  name: string
-): Promise<Skill> {
-
-  const response = await fetch(
-    `${API_URL}/skills/`,
-    {
-      method: "POST",
-      headers: getAuthHeaders(),
-
-      body: JSON.stringify({
-        name,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to create skill");
-  }
-
-  return response.json();
+export async function createSkill(name: string): Promise<Skill> {
+  return apiRequest<Skill>('/api/skills/', {
+    method: 'POST',
+    body: { name },
+  });
 }
-
 
 export async function getMySkills(): Promise<UserSkill[]> {
-  const response = await fetch(
-    `${API_URL}/my-skills/`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to load user skills");
-  }
-
-  return response.json();
+  const data = await apiRequest<UserSkill[]>('/api/my-skills/');
+  return Array.isArray(data) ? data : [];
 }
-
 
 export async function addUserSkill(
   skill: number,
-  skillType: "teach" | "learn"
+  skillType: 'teach' | 'learn',
 ): Promise<UserSkill> {
-
-  const response = await fetch(
-    `${API_URL}/my-skills/`,
-    {
-      method: "POST",
-      headers: getAuthHeaders(),
-
-      body: JSON.stringify({
-        skill,
-        skill_type: skillType,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to add user skill");
-  }
-
-  return response.json();
+  return apiRequest<UserSkill>('/api/my-skills/', {
+    method: 'POST',
+    body: {
+      skill,
+      skill_type: skillType,
+    },
+  });
 }
 
-
-export async function deleteUserSkill(id: number) {
-  const response = await fetch(
-    `${API_URL}/my-skills/${id}/`,
-    {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to delete user skill");
-  }
+export async function deleteUserSkill(id: number): Promise<void> {
+  await apiRequest<void>(`/api/my-skills/${id}/`, {
+    method: 'DELETE',
+  });
 }
 
+// ---------------- AVAILABILITY ----------------
 
-
-export async function getAvailability(): Promise<
-  AvailabilitySlot[]
-> {
-
-  const response = await fetch(
-    `${API_URL}/availability/`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to load availability");
-  }
-
-  return response.json();
+export async function getAvailability(): Promise<AvailabilitySlot[]> {
+  const data = await apiRequest<AvailabilitySlot[]>('/api/availability/');
+  return Array.isArray(data) ? data : [];
 }
 
-
-export async function addAvailability(
+export async function createAvailability(
   day: string,
   startTime: string,
-  endTime: string
+  endTime: string,
 ): Promise<AvailabilitySlot> {
-
-  const response = await fetch(
-    `${API_URL}/availability/`,
-    {
-      method: "POST",
-      headers: getAuthHeaders(),
-
-      body: JSON.stringify({
-        day,
-        start_time: startTime,
-        end_time: endTime,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to add availability");
-  }
-
-  return response.json();
+  return apiRequest<AvailabilitySlot>('/api/availability/', {
+    method: 'POST',
+    body: {
+      day,
+      start_time: startTime,
+      end_time: endTime,
+    },
+  });
 }
+
+export const addAvailability = createAvailability;
 
 
 export async function updateAvailability(
   id: number,
   day: string,
   startTime: string,
-  endTime: string
+  endTime: string,
 ): Promise<AvailabilitySlot> {
-
-  const response = await fetch(
-    `${API_URL}/availability/${id}/`,
-    {
-      method: "PATCH",
-      headers: getAuthHeaders(),
-
-      body: JSON.stringify({
-        day,
-        start_time: startTime,
-        end_time: endTime,
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to update availability");
-  }
-
-  return response.json();
+  return apiRequest<AvailabilitySlot>(`/api/availability/${id}/`, {
+    method: 'PUT',
+    body: {
+      day,
+      start_time: startTime,
+      end_time: endTime,
+    },
+  });
 }
 
-
-export async function deleteAvailability(id: number) {
-  const response = await fetch(
-    `${API_URL}/availability/${id}/`,
-    {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to delete availability");
-  }
+export async function deleteAvailability(id: number): Promise<void> {
+  await apiRequest<void>(`/api/availability/${id}/`, {
+    method: 'DELETE',
+  });
 }
 
 export async function completeOnboarding() {
-  const response = await fetch(`${API_URL}/profile/`, {
-    method: "PATCH",
-    headers: getAuthHeaders(),
-    body: JSON.stringify({
+  return apiRequest('/api/profile/', {
+    method: 'PATCH',
+    body: {
       onboarding_completed: true,
-    }),
+    },
   });
-
-  if (!response.ok) {
-    throw new Error("Could not complete onboarding");
-  }
-
-  return response.json();
 }

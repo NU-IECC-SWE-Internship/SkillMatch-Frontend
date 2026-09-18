@@ -1,89 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import MeetingSession from './MeetingSession';
-import { getAccessToken, refreshAccessToken, clearTokens } from '../lib/auth';
-import './Meetings.css';
+import { Link } from 'react-router-dom';
+import MeetingSession from '../components/meetings/MeetingSession';
+import { getMeetings, type Meeting } from '../api/meetingsApi';
+import '../components/meetings/Meetings.css';
 
-export interface Meeting {
-  id: number;
-  participant_a_id: number;
-  participant_b_id: number;
-  participant_a_name: string;
-  participant_b_name: string;
-  partner_name?: string;
-  is_requester?: boolean;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  start_time: string;
-  end_time: string;
-  start_time_ts: number;
-  end_time_ts: number;
-  room_url: string;
-  my_token: string | null;
-  created_at?: string;
-}
-
-const UserMeetings: React.FC = () => {
-  const navigate = useNavigate();
+const Meetings: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const getAuthToken = (): string => {
-    return getAccessToken() || localStorage.getItem('access_token') || '';
-  };
-
-  useEffect(() => {
-    fetchMeetings();
-  }, []);
-
-  const fetchMeetings = async (): Promise<void> => {
+  const fetchAcceptedMeetings = async (): Promise<void> => {
     try {
-      let token = getAuthToken();
-      let res = await fetch('/api/meetings/?status=accepted', {
-        headers: {
-          'Authorization': `Bearer ${token}`, 
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // If unauthorized, attempt to refresh token and retry
-      if (res.status === 401) {
-        try {
-          token = await refreshAccessToken();
-          res = await fetch('/api/meetings/?status=accepted', {
-            headers: {
-              'Authorization': `Bearer ${token}`, 
-              'Content-Type': 'application/json'
-            }
-          });
-        } catch {
-          clearTokens();
-          navigate('/login');
-          return;
-        }
-      }
-
-      if (res.ok) {
-        const data: Meeting[] = await res.json();
-        // Display only approved/accepted meetings
-        const approvedMeetings = Array.isArray(data)
-          ? data.filter((m) => m.status === 'accepted')
-          : [];
-        setMeetings(approvedMeetings);
-      } else if (res.status === 401) {
-        clearTokens();
-        navigate('/login');
-      } else {
-        setErrorMessage('Failed to load meetings.');
-      }
-    } catch (err) {
-      console.error('Failed to load meetings', err);
-      setErrorMessage('Network error while loading meetings.');
+      setLoading(true);
+      setErrorMessage(null);
+      const data = await getMeetings('accepted');
+      setMeetings(data);
+    } catch (err: unknown) {
+      console.error('Failed to load meetings:', err);
+      setErrorMessage(
+        err instanceof Error ? err.message : 'Network error while loading meetings.'
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchAcceptedMeetings();
+  }, []);
 
   const getMeetingStatus = (startTs: number, endTs: number): 'live' | 'upcoming' | 'ended' => {
     const now = Date.now();
@@ -95,12 +40,12 @@ const UserMeetings: React.FC = () => {
 
   if (activeMeeting && activeMeeting.room_url && activeMeeting.my_token) {
     return (
-      <MeetingSession 
+      <MeetingSession
         roomUrl={activeMeeting.room_url}
         token={activeMeeting.my_token}
         startTs={activeMeeting.start_time_ts}
         endTs={activeMeeting.end_time_ts}
-        onLeave={() => setActiveMeeting(null)} 
+        onLeave={() => setActiveMeeting(null)}
       />
     );
   }
@@ -111,11 +56,16 @@ const UserMeetings: React.FC = () => {
         {/* Navigation & Header */}
         <div className="meetings-topbar">
           <div>
-            <Link to="/" className="meetings-nav-link">
+            <Link to="/dashboard" className="meetings-nav-link">
               &larr; Back to Dashboard
             </Link>
             <h1 className="meetings-title">Approved Skill Swap Sessions</h1>
             <p className="meetings-subtitle">Your confirmed and accepted 1-on-1 video exchange sessions.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Link to="/profile" className="meetings-nav-link" style={{ alignSelf: 'center' }}>
+              My Profile &rarr;
+            </Link>
           </div>
         </div>
 
@@ -131,11 +81,7 @@ const UserMeetings: React.FC = () => {
             <p>{errorMessage}</p>
             <button
               type="button"
-              onClick={() => {
-                setLoading(true);
-                setErrorMessage(null);
-                fetchMeetings();
-              }}
+              onClick={fetchAcceptedMeetings}
               className="btn-join"
               style={{ marginTop: '1rem', display: 'inline-block' }}
             >
@@ -146,7 +92,14 @@ const UserMeetings: React.FC = () => {
           <div className="meetings-empty">
             <div className="empty-icon">🤝</div>
             <h3>No Approved Swaps Found</h3>
-            <p>You have no confirmed skill swap meetings at this time. Once a swap request is accepted, it will appear here ready to join.</p>
+            <p>
+              You have no confirmed skill swap meetings at this time. Once a swap request is accepted, it will appear here ready to join.
+            </p>
+            <div style={{ marginTop: '1.25rem' }}>
+              <Link to="/dashboard" className="meetings-nav-link">
+                &larr; Return to Dashboard
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="meetings-list">
@@ -191,7 +144,7 @@ const UserMeetings: React.FC = () => {
                     )}
 
                     {status === 'live' ? (
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setActiveMeeting(meeting)}
                         className="btn-join"
@@ -199,7 +152,7 @@ const UserMeetings: React.FC = () => {
                         Join Room &rarr;
                       </button>
                     ) : status === 'upcoming' ? (
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setActiveMeeting(meeting)}
                         className="btn-join"
@@ -208,7 +161,7 @@ const UserMeetings: React.FC = () => {
                         Enter Early &rarr;
                       </button>
                     ) : (
-                      <button 
+                      <button
                         type="button"
                         disabled
                         className="btn-join disabled"
@@ -227,4 +180,4 @@ const UserMeetings: React.FC = () => {
   );
 };
 
-export default UserMeetings;
+export default Meetings;

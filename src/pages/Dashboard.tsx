@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { logout } from "../lib/auth";
+import { clearTokens, logout } from "../lib/auth";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -7,6 +7,12 @@ export default function Dashboard() {
 
   function handleLogout() {
     logout();
+    navigate("/login", { replace: true });
+  }
+
+  // DEV TEST: clear both tokens → login
+  function killWholeSession() {
+    clearTokens();
     navigate("/login", { replace: true });
   }
 
@@ -48,6 +54,13 @@ export default function Dashboard() {
             onClick={() => navigate("/profile")}
           >
             View My Profile
+          </button>
+        </div>
+
+        {/* DEV / TESTING ONLY — remove later */}
+        <div className="token-test-box">
+          <button type="button" onClick={killWholeSession}>
+            Kill Whole Session (Clear token testing only)
           </button>
         </div>
       </section>

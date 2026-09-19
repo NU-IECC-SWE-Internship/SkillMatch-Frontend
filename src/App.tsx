@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
+import MeetingRoom from './pages/MeetingRoom';
 import Requests from "./pages/Requests";
 import { isAuthenticated } from './lib/auth'
 

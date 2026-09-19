@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import MatchCard from "../components/MatchCard";
-import { getMatches } from "../lib/matchingApi";
+import { Link } from "react-router-dom";
+import MatchCard from "../components/Matching/MatchCard";
+import { getMatches } from "../api/matchingApi";
 import type { Match } from "../types/match";
 import "./Matches.css";
 
@@ -39,12 +40,21 @@ function Matches() {
   return (
     <main className="matches-page">
       <div className="matches-container">
-        <div className="matches-header">
-          <p className="matches-brand">SkillMatch</p>
-          <h1>Find Your Matches</h1>
-          <p>
-            People whose skills complement what you want to learn.
-          </p>
+        <div className="matches-topbar">
+          <div>
+            <Link to="/dashboard" className="matches-nav-link">
+              &larr; Back to Dashboard
+            </Link>
+            <h1 className="matches-title">Find Your Matches</h1>
+            <p className="matches-subtitle">
+              People whose skills complement what you want to learn.
+            </p>
+          </div>
+          <div className="matches-topbar-actions">
+            <Link to="/profile" className="matches-nav-link">
+              My Profile &rarr;
+            </Link>
+          </div>
         </div>
 
         <div className="matches-list">

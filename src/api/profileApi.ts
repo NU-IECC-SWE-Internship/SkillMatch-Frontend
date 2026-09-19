@@ -1,219 +1,130 @@
-const API_URL = "http://127.0.0.1:8000/api";
+import { apiRequest } from '../lib/api'
+
+export interface Profile {
+  id: number
+  user: number
+  bio: string
+  onboarding_completed?: boolean
+}
 
 export interface Skill {
-  id: number;
-  name: string;
+  id: number
+  name: string
 }
 
 export interface UserSkill {
-  id: number;
-  skill: number;
-  skill_name: string;
-  skill_type: "teach" | "learn";
+  id: number
+  skill: number
+  skill_name: string
+  skill_type: 'teach' | 'learn'
 }
 
 export interface AvailabilitySlot {
-  id: number;
-  day: string;
-  start_time: string;
-  end_time: string;
+  id: number
+  day: string
+  start_time: string
+  end_time: string
 }
-
 
 // ---------------- PROFILE ----------------
 
 export async function getProfile() {
-  const response = await fetch(`${API_URL}/profile/`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load profile");
-  }
-
-  return response.json();
+  return apiRequest<Profile>('/api/profile/')
 }
-
 
 export async function updateProfile(bio: string) {
-  const response = await fetch(`${API_URL}/profile/`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      bio,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to update profile");
-  }
-
-  return response.json();
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: { bio },
+  })
 }
-
-
-// ---------------- SKILLS ----------------
 
 export async function getSkills(): Promise<Skill[]> {
-  const response = await fetch(`${API_URL}/skills/`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load skills");
-  }
-
-  return response.json();
+  return apiRequest<Skill[]>('/api/skills/')
 }
-
 
 export async function createSkill(name: string): Promise<Skill> {
-  const response = await fetch(`${API_URL}/skills/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      name,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to create skill");
-  }
-
-  return response.json();
+  return apiRequest<Skill>('/api/skills/', {
+    method: 'POST',
+    body: { name },
+  })
 }
-
 
 export async function getMySkills(): Promise<UserSkill[]> {
-  const response = await fetch(`${API_URL}/my-skills/`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load user skills");
-  }
-
-  return response.json();
+  return apiRequest<UserSkill[]>('/api/my-skills/')
 }
-
 
 export async function addUserSkill(
   skill: number,
-  skillType: "teach" | "learn"
+  skillType: 'teach' | 'learn',
 ): Promise<UserSkill> {
-  const response = await fetch(`${API_URL}/my-skills/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
+  return apiRequest<UserSkill>('/api/my-skills/', {
+    method: 'POST',
+    body: {
       skill,
       skill_type: skillType,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to add user skill");
-  }
-
-  return response.json();
+    },
+  })
 }
-
 
 export async function deleteUserSkill(id: number) {
-  const response = await fetch(`${API_URL}/my-skills/${id}/`, {
-    method: "DELETE",
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to delete user skill");
-  }
+  return apiRequest(`/api/my-skills/${id}/`, {
+    method: 'DELETE',
+  })
 }
-
-
-// ---------------- AVAILABILITY ----------------
 
 export async function getAvailability(): Promise<AvailabilitySlot[]> {
-  const response = await fetch(`${API_URL}/availability/`, {
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to load availability");
-  }
-
-  return response.json();
+  return apiRequest<AvailabilitySlot[]>('/api/availability/')
 }
 
+export async function getUserAvailability(
+  userId: number,
+): Promise<AvailabilitySlot[]> {
+  return apiRequest<AvailabilitySlot[]>(`/api/users/${userId}/availability/`)
+}
 
 export async function addAvailability(
   day: string,
   startTime: string,
-  endTime: string
+  endTime: string,
 ): Promise<AvailabilitySlot> {
-  const response = await fetch(`${API_URL}/availability/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
+  return apiRequest<AvailabilitySlot>('/api/availability/', {
+    method: 'POST',
+    body: {
       day,
       start_time: startTime,
       end_time: endTime,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to add availability");
-  }
-
-  return response.json();
+    },
+  })
 }
-
 
 export async function updateAvailability(
   id: number,
   day: string,
   startTime: string,
-  endTime: string
+  endTime: string,
 ): Promise<AvailabilitySlot> {
-  const response = await fetch(`${API_URL}/availability/${id}/`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
+  return apiRequest<AvailabilitySlot>(`/api/availability/${id}/`, {
+    method: 'PATCH',
+    body: {
       day,
       start_time: startTime,
       end_time: endTime,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to update availability");
-  }
-
-  return response.json();
+    },
+  })
 }
 
-
 export async function deleteAvailability(id: number) {
-  const response = await fetch(`${API_URL}/availability/${id}/`, {
-    method: "DELETE",
-    credentials: "include",
-  });
+  return apiRequest(`/api/availability/${id}/`, {
+    method: 'DELETE',
+  })
+}
 
-  if (!response.ok) {
-    throw new Error("Failed to delete availability");
-  }
+export async function completeOnboarding() {
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: {
+      onboarding_completed: true,
+    },
+  })
 }

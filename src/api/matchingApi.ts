@@ -1,5 +1,5 @@
-import { apiRequest } from "./api";
-import { getAccessToken } from "./auth";
+import { apiRequest } from "../lib/api";
+import { getAccessToken } from "../lib/auth";
 import type { Match } from "../types/match";
 
 

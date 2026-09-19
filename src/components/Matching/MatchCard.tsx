@@ -1,0 +1,77 @@
+import { useNavigate } from "react-router-dom";
+import type { Match } from "../../types/match";
+
+interface MatchCardProps {
+  match: Match;
+}
+
+function MatchCard({ match }: MatchCardProps) {
+  const navigate = useNavigate();
+
+  const handleRequest = () => {
+    navigate(`/matches/${match.user_id}/request`, {
+      state: { match },
+    });
+  };
+
+  const initial = match.username ? match.username.charAt(0).toUpperCase() : "?";
+
+  return (
+    <div className="match-card">
+      <div className="match-header">
+        <div className="match-avatar-info">
+          <div className="avatar-placeholder">{initial}</div>
+          <h2 className="partner-name">{match.username}</h2>
+        </div>
+      </div>
+
+      <div className="swap-grid">
+        <div className="swap-box learn-box">
+          <div className="swap-box-header">
+            <div>
+              <span className="swap-box-title">You Learn</span>
+              <span className="swap-box-subtitle">from {match.username}</span>
+            </div>
+          </div>
+
+          <div className="skills-badge-list">
+            {match.teach_me.map((skill) => (
+              <span className="skill-pill pill-learn" key={skill}>
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="swap-divider">
+          <span>⇄</span>
+        </div>
+
+        <div className="swap-box teach-box">
+          <div className="swap-box-header">
+            <div>
+              <span className="swap-box-title">You Teach</span>
+              <span className="swap-box-subtitle">to {match.username}</span>
+            </div>
+          </div>
+
+          <div className="skills-badge-list">
+            {match.teach_them.map((skill) => (
+              <span className="skill-pill pill-teach" key={skill}>
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="match-card-footer">
+        <button className="match-button" onClick={handleRequest}>
+          Request Skill Swap &rarr;
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default MatchCard;

@@ -1,14 +1,28 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
+import { Navigate, Route, Routes } from 'react-router-dom'
+// import Home from './pages/Home'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Matches from "./pages/Matches";
+import SendRequest from "./pages/SendRequest";
+import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
-import MeetingRoom from './pages/MeetingRoom';
+import Requests from "./pages/Requests";
+import { isAuthenticated } from './lib/auth'
 
-import { isAuthenticated } from './lib/auth';
+
+
+// function ProtectedHome() {
+//   if (!isAuthenticated()) {
+//     return <Navigate to="/login" replace />;
+//   }
+
+//   return <Home />;
+// }
+
+
+
 
 function ProtectedProfile() {
   if (!isAuthenticated()) {
@@ -65,6 +79,9 @@ export default function App() {
       <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/matches" element={<Matches />} />
+      <Route path="/matches/:userId/request" element={<SendRequest />} />
+      <Route path="/requests" element={<Requests />} />
     </Routes>
   );
 }

@@ -2,101 +2,67 @@ import { useNavigate } from "react-router-dom";
 import { logout } from "../lib/auth";
 import "./Dashboard.css";
 
-
 export default function Dashboard() {
   const navigate = useNavigate();
 
   function handleLogout() {
     logout();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   }
 
   return (
     <main className="dashboard-page">
       <header className="dashboard-navbar">
-        <div className="dashboard-brand" onClick={() => navigate('/dashboard')}>
+        <div className="dashboard-brand" onClick={() => navigate("/dashboard")}>
           <h2>SkillMatch</h2>
         </div>
 
-        <nav className="dashboard-actions">
-          <button
-            className="nav-secondary-button"
-            onClick={() => navigate('/meetings')}
-          >
-            🎥 Meetings
+        <div className="dashboard-user-menu">
+          <button className="profile-chip" onClick={() => navigate("/requests")}>
+            Requests
           </button>
-
-          <button
-            className="profile-nav-button"
-            onClick={() => navigate('/profile')}
-          >
+          <button className="profile-chip" onClick={() => navigate("/profile")}>
             👤 Profile
           </button>
-
-          <button
-            className="logout-button"
-            onClick={handleLogout}
-          >
+          <button className="logout-button" onClick={handleLogout}>
             Logout
           </button>
-        </nav>
+        </div>
       </header>
 
       <section className="dashboard-content">
         <div className="welcome-banner">
-          <p className="dashboard-label">WELCOME TO SKILLMATCH</p>
-          <h1>Learn, Teach, and Swap Skills</h1>
+          <h1>Welcome back!</h1>
           <p className="welcome-description">
-            Your collaborative hub for peer-to-peer learning. Connect directly with other members,
-            teach what you know, and master new skills through live 1-on-1 video swap sessions.
+            Ready to exchange skills today? Here is an overview of your activity.
           </p>
         </div>
 
         <div className="dashboard-cards-grid">
-          {/* Card 1: Video Meetings */}
-          <div className="dashboard-feature-card" onClick={() => navigate('/meetings')}>
-            <div className="feature-card-icon">🤝</div>
-            <div className="feature-card-body">
-              <span className="feature-tag">LIVE SESSIONS</span>
-              <h3>Video Swap Meetings</h3>
-              <p>
-                View all your confirmed skill exchange sessions, check partner information,
-                and jump straight into live video rooms.
-              </p>
+          {/* Action Hub 1: Matches */}
+          <div className="dashboard-feature-card" onClick={() => navigate("/matches")}>
+            <div className="feature-card-header">
+              <span className="feature-card-icon">✨</span>
+              <span className="feature-tag">EXPLORE</span>
             </div>
-            <button
-              type="button"
-              className="feature-action-button primary"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/meetings');
-              }}
-            >
-              Go to Meetings &rarr;
-            </button>
+            <div className="feature-card-body">
+              <h3>Find Skill Partners</h3>
+              <p>Discover community members who match what you want to learn or teach.</p>
+            </div>
+            <span className="feature-action-link">Browse matches &rarr;</span>
           </div>
 
-          {/* Card 2: Profile & Skills */}
-          <div className="dashboard-feature-card" onClick={() => navigate('/profile')}>
-            <div className="feature-card-icon">🎯</div>
-            <div className="feature-card-body">
-              <span className="feature-tag">CUSTOMIZE</span>
-              <h3>Profile, Skills & Schedule</h3>
-              <p>
-                Manage the skills you want to learn or teach, write your bio,
-                and configure your weekly availability schedule.
-              </p>
+          {/* Action Hub 2: Active Meetings */}
+          <div className="dashboard-feature-card" onClick={() => navigate("/meetings")}>
+            <div className="feature-card-header">
+              <span className="feature-card-icon">🎥</span>
+              <span className="feature-tag">SCHEDULE</span>
             </div>
-            <button
-              type="button"
-              className="feature-action-button secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/profile');
-              }}
-            >
-              Manage Profile &rarr;
-            </button>
+            <div className="feature-card-body">
+              <h3>Upcoming Sessions</h3>
+              <p>Check pending requests, upcoming swaps, and join active call rooms.</p>
+            </div>
+            <span className="feature-action-link">View schedule &rarr;</span>
           </div>
         </div>
       </section>

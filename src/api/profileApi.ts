@@ -77,6 +77,12 @@ export async function getAvailability(): Promise<AvailabilitySlot[]> {
   return apiRequest<AvailabilitySlot[]>('/api/availability/')
 }
 
+export async function getUserAvailability(
+  userId: number,
+): Promise<AvailabilitySlot[]> {
+  return apiRequest<AvailabilitySlot[]>(`/api/users/${userId}/availability/`)
+}
+
 export async function addAvailability(
   day: string,
   startTime: string,

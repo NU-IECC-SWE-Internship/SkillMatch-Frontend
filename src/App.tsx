@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
+import Requests from "./pages/Requests";
 import { isAuthenticated } from './lib/auth'
 
 
@@ -72,6 +73,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:userId/request" element={<SendRequest />} />
+      <Route path="/requests" element={<Requests />} />
     </Routes>
   );
 }

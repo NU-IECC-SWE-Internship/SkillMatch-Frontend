@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getUserAvailability, type AvailabilitySlot } from "../api/profileApi";
-import { getMatches } from "../api/matchingApi";
-import type { Match } from "../types/match";
+import {  getMatches,  getSkillsList,  createMatchRequest } from "../api/matchingApi";
+import { getErrorMessage } from "../lib/api";
+import type { Match, SkillItem } from "../types/match";
 import "./SendRequest.css";
 
 function SendRequest() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const matchFromState = (location.state as { match?: Match } | null)?.match;
 
@@ -14,49 +16,50 @@ function SendRequest() {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
   const [match, setMatch] = useState<Match | null>(matchFromState ?? null);
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
+  const [skillsCatalog, setSkillsCatalog] = useState<SkillItem[]>([]);
+
   const [loading, setLoading] = useState(!matchFromState);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // 1. Fetch match and skills list concurrently
   useEffect(() => {
-    if (matchFromState) {
-      setMatch(matchFromState);
-      setLoading(false);
-      return;
-    }
-
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
     let isMounted = true;
 
-    async function loadMatch() {
+    async function initialize() {
       try {
-        const matches = await getMatches();
-        const selectedMatch = matches.find(
-          (item) => item.user_id === Number(userId)
-        );
+        const [skillsData, matchesData] = await Promise.all([
+          getSkillsList(),
+          matchFromState ? Promise.resolve([]) : getMatches(),
+        ]);
 
-        if (isMounted) {
+        if (!isMounted) return;
+
+        setSkillsCatalog(skillsData);
+
+        if (!matchFromState && userId) {
+          const selectedMatch = matchesData.find(
+            (item) => item.user_id === Number(userId)
+          );
           setMatch(selectedMatch ?? null);
-          setLoading(false);
         }
       } catch (error) {
-        console.error("Failed to load match details:", error);
+        console.error("Failed to load initial data:", error);
+      } finally {
         if (isMounted) {
-          setMatch(null);
           setLoading(false);
         }
       }
     }
 
-    loadMatch();
+    initialize();
 
     return () => {
       isMounted = false;
     };
   }, [matchFromState, userId]);
 
+  // 2. Fetch partner's availability slots
   useEffect(() => {
     if (match === null) {
       setAvailableSlots([]);
@@ -102,7 +105,10 @@ function SendRequest() {
     return `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}`;
   };
 
-  const handleSendRequest = () => {
+  // 3. Connect to Django backend API
+  const handleSendRequest = async () => {
+    setErrorMessage(null);
+
     if (!match) {
       alert("Unable to load the selected user details.");
       return;
@@ -118,11 +124,34 @@ function SendRequest() {
       return;
     }
 
-    console.log("Sending request to user:", match.user_id);
-    console.log("Skill:", selectedSkill);
-    console.log("Selected slot:", selectedSlot);
+    // Match selected string to skill database ID
+    const skillObj = skillsCatalog.find(
+      (s) => s.name.trim().toLowerCase() === selectedSkill.trim().toLowerCase()
+    );
 
-    alert("Match request sent successfully!");
+    if (!skillObj) {
+      alert(`Skill "${selectedSkill}" could not be found in the database.`);
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await createMatchRequest({
+        receiver: match.user_id,
+        skill: skillObj.id,
+        selected_slot: selectedSlot,
+      });
+
+      alert("Match request sent successfully!");
+      navigate("/matches");
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setErrorMessage(message);
+      alert(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -178,6 +207,12 @@ function SendRequest() {
             </div>
           </div>
         </header>
+
+        {errorMessage && (
+          <div className="error-banner" role="alert" style={{ marginBottom: "20px" }}>
+            ⚠️ {errorMessage}
+          </div>
+        )}
 
         {/* Swap Overview / Exchange Map */}
         <section className="swap-overview-section">
@@ -272,10 +307,10 @@ function SendRequest() {
           <button
             type="button"
             className="send-request-button"
-            disabled={!selectedSkill || !selectedSlot}
+            disabled={!selectedSkill || !selectedSlot || submitting}
             onClick={handleSendRequest}
           >
-            Confirm &amp; Send Request &rarr;
+            {submitting ? "Sending..." : "Confirm & Send Request →"}
           </button>
         </div>
       </div>

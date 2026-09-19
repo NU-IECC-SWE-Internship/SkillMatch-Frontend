@@ -18,6 +18,9 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-user-menu">
+          <button className="profile-chip" onClick={() => navigate("/requests")}>
+            Requests
+          </button>
           <button className="profile-chip" onClick={() => navigate("/profile")}>
             👤 Profile
           </button>

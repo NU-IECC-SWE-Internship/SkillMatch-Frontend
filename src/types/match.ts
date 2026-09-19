@@ -4,3 +4,8 @@ export interface Match {
   teach_me: string[];
   teach_them: string[];
 }
+
+export interface SkillItem {
+  id: number;
+  name: string;
+}

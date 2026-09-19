@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { clearTokens, logout } from "../lib/auth";
+import { logout } from "../lib/auth";
 import "./Dashboard.css";
 
 
@@ -9,12 +9,6 @@ export default function Dashboard() {
   function handleLogout() {
     logout();
     navigate('/login', { replace: true });
-  }
-
-  // DEV TEST: clear both tokens → login
-  function killWholeSession() {
-    clearTokens();
-    navigate("/login", { replace: true });
   }
 
   return (

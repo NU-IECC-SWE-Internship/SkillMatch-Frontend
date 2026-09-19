@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import MeetingSession from '../components/meetings/MeetingSession';
 import { getMeetings, type Meeting } from '../api/meetingsApi';
 import '../components/meetings/Meetings.css';
 
 const Meetings: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -37,18 +35,6 @@ const Meetings: React.FC = () => {
     if (now >= startTs - FIVE_MIN_MS) return 'live';
     return 'upcoming';
   };
-
-  if (activeMeeting && activeMeeting.room_url && activeMeeting.my_token) {
-    return (
-      <MeetingSession
-        roomUrl={activeMeeting.room_url}
-        token={activeMeeting.my_token}
-        startTs={activeMeeting.start_time_ts}
-        endTs={activeMeeting.end_time_ts}
-        onLeave={() => setActiveMeeting(null)}
-      />
-    );
-  }
 
   return (
     <div className="meetings-page">
@@ -144,22 +130,22 @@ const Meetings: React.FC = () => {
                     )}
 
                     {status === 'live' ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveMeeting(meeting)}
+                      <Link
+                        to={`/meetings/${meeting.id}/room`}
+                        state={{ meeting }}
                         className="btn-join"
                       >
                         Join Room &rarr;
-                      </button>
+                      </Link>
                     ) : status === 'upcoming' ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveMeeting(meeting)}
+                      <Link
+                        to={`/meetings/${meeting.id}/room`}
+                        state={{ meeting }}
                         className="btn-join"
                         style={{ background: 'var(--blue-500)' }}
                       >
                         Enter Early &rarr;
-                      </button>
+                      </Link>
                     ) : (
                       <button
                         type="button"

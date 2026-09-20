@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
 
 interface PastRequestCardProps {
@@ -35,12 +36,17 @@ export default function PastRequestCard({
         </div>
       </div>
 
-      <div className="status-badge-container">
+      <div className="status-badge-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span
           className={`status-tag status-${request.status.toLowerCase()}`}
         >
           {request.status}
         </span>
+        {request.status === "ACCEPTED" && (
+          <Link to="/meetings" className="view-meeting-link" style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
+            View Meeting &rarr;
+          </Link>
+        )}
       </div>
 
       {request.status === "REJECTED" &&

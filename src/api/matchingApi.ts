@@ -68,11 +68,13 @@ export async function getIncomingRequests(): Promise<IncomingRequestItem[]> {
 export async function respondToMatchRequest(
   requestId: number,
   action: "accept" | "reject",
-  rejectionReason?: string
+  rejectionReason?: string,
+  timezone?: string
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
   rejection_reason?: string;
+  meeting_id?: number;
 }> {
   const token = getAccessToken();
 
@@ -84,7 +86,7 @@ export async function respondToMatchRequest(
         action,
         ...(action === "reject"
           ? { rejection_reason: rejectionReason }
-          : {}),
+          : { timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }),
       },
       token,
     }

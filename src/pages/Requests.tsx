@@ -5,7 +5,6 @@ import {
   respondToMatchRequest,
   type IncomingRequestItem,
 } from "../api/matchingApi";
-import { createMeeting } from "../api/meetingsApi";
 import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
@@ -47,12 +46,18 @@ export default function Requests() {
         id: requestId,
         action,
       });
+      setErrorMessage(null);
+      setSuccessMessage(null);
 
       await respondToMatchRequest(
         requestId,
         action,
         rejectionReason
       );
+
+      if (action === "accept") {
+        setSuccessMessage("Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab.");
+      }
 
       setRequests((prev) =>
         prev.map((req) =>

@@ -39,7 +39,8 @@ export default function IncomingRequests() {
       setSuccessMessage(null);
 
       if (action === "accept") {
-        await createMeeting({ request_id: requestId });
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        await createMeeting({ request_id: requestId, timezone: userTimezone });
         setSuccessMessage("Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab.");
       } else {
         await respondToMatchRequest(requestId, "reject");

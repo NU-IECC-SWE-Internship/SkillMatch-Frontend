@@ -27,6 +27,7 @@ export interface Meeting {
 
 export interface CreateMeetingPayload {
   request_id: number;
+  timezone?: string;
 }
 
 const API_BASE_URL =

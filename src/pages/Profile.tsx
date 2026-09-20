@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import {
   getProfile,
   updateProfile,
+  updateMaxSessionDuration,
   getSkills,
   createSkill,
   getMySkills,
@@ -37,22 +38,69 @@ const defaultSkills = [
 ];
 
 
+const sessionDurationOptions = [
+  { value: 15, label: "15 minutes" },
+  { value: 30, label: "30 minutes" },
+  { value: 45, label: "45 minutes" },
+
+  { value: 60, label: "1 hour" },
+  { value: 75, label: "1 hour 15 minutes" },
+  { value: 90, label: "1 hour 30 minutes" },
+  { value: 105, label: "1 hour 45 minutes" },
+
+  { value: 120, label: "2 hours" },
+  { value: 135, label: "2 hours 15 minutes" },
+  { value: 150, label: "2 hours 30 minutes" },
+  { value: 165, label: "2 hours 45 minutes" },
+
+  { value: 180, label: "3 hours" },
+  { value: 195, label: "3 hours 15 minutes" },
+  { value: 210, label: "3 hours 30 minutes" },
+  { value: 225, label: "3 hours 45 minutes" },
+
+  { value: 240, label: "4 hours" },
+];
+
+
 function Profile() {
-  // PROFILE
+  // ---------------- PROFILE ----------------
+
+  const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
-  const [profileSaving, setProfileSaving] = useState(false);
+
+  const [profileSaving, setProfileSaving] =
+    useState(false);
+
   const [message, setMessage] = useState("");
 
-  // SKILLS
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [mySkills, setMySkills] = useState<UserSkill[]>([]);
+  const [
+    maxSessionDuration,
+    setMaxSessionDuration,
+  ] = useState(120);
 
-  const [otherTeach, setOtherTeach] = useState("");
-  const [otherLearn, setOtherLearn] = useState("");
 
-  // AVAILABILITY
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  // ---------------- SKILLS ----------------
+
+  const [skills, setSkills] =
+    useState<Skill[]>([]);
+
+  const [mySkills, setMySkills] =
+    useState<UserSkill[]>([]);
+
+  const [otherTeach, setOtherTeach] =
+    useState("");
+
+  const [otherLearn, setOtherLearn] =
+    useState("");
+
+
+  // ---------------- AVAILABILITY ----------------
+
+  const [slots, setSlots] =
+    useState<AvailabilitySlot[]>([]);
+
+  const [editingId, setEditingId] =
+    useState<number | null>(null);
 
   const [slotForm, setSlotForm] = useState({
     day: "monday",
@@ -78,31 +126,59 @@ function Profile() {
           getAvailability(),
         ]);
 
-        setBio(profileData.bio || "");
+        setUsername(
+          profileData.username || ""
+        );
+
+        setBio(
+          profileData.bio || ""
+        );
+
+        setMaxSessionDuration(
+          profileData.max_session_duration_minutes || 120
+        );
+
         setSkills(skillsData);
+
         setMySkills(mySkillsData);
+
         setSlots(availabilityData);
+
       } catch (error) {
         console.error(error);
       }
     }
 
     loadData();
+
   }, []);
 
 
+  // ---------------- SAVE PROFILE ----------------
 
   const saveProfile = async () => {
     try {
       setProfileSaving(true);
       setMessage("");
 
-      await updateProfile(bio);
+      await Promise.all([
+        updateProfile(bio),
+        updateMaxSessionDuration(
+          maxSessionDuration
+        ),
+      ]);
 
-      setMessage("Profile saved successfully.");
+      setMessage(
+        "Profile saved successfully."
+      );
+
     } catch (error) {
       console.error(error);
-      setMessage("Could not save profile.");
+
+      setMessage(
+        "Could not save profile."
+      );
+
     } finally {
       setProfileSaving(false);
     }
@@ -125,7 +201,8 @@ function Profile() {
       return existingSkill;
     }
 
-    const newSkill = await createSkill(skillName);
+    const newSkill =
+      await createSkill(skillName);
 
     setSkills((current) => [
       ...current,
@@ -140,6 +217,7 @@ function Profile() {
     skillName: string,
     type: "teach" | "learn"
   ) => {
+
     return mySkills.some(
       (item) =>
         item.skill_name.toLowerCase() ===
@@ -153,41 +231,55 @@ function Profile() {
     skillName: string,
     type: "teach" | "learn"
   ) => {
+
     try {
-      const existingUserSkill = mySkills.find(
-        (item) =>
-          item.skill_name.toLowerCase() ===
-            skillName.toLowerCase() &&
-          item.skill_type === type
-      );
+      const existingUserSkill =
+        mySkills.find(
+          (item) =>
+            item.skill_name.toLowerCase() ===
+              skillName.toLowerCase() &&
+            item.skill_type === type
+        );
+
 
       // DELETE
+
       if (existingUserSkill) {
-        await deleteUserSkill(existingUserSkill.id);
+
+        await deleteUserSkill(
+          existingUserSkill.id
+        );
 
         setMySkills((current) =>
           current.filter(
             (item) =>
-              item.id !== existingUserSkill.id
+              item.id !==
+              existingUserSkill.id
           )
         );
 
         return;
       }
 
-      // ADD
-      const skill =
-        await findOrCreateSkill(skillName);
 
-      const newUserSkill = await addUserSkill(
-        skill.id,
-        type
-      );
+      // ADD
+
+      const skill =
+        await findOrCreateSkill(
+          skillName
+        );
+
+      const newUserSkill =
+        await addUserSkill(
+          skill.id,
+          type
+        );
 
       setMySkills((current) => [
         ...current,
         newUserSkill,
       ]);
+
     } catch (error) {
       console.error(error);
     }
@@ -197,14 +289,19 @@ function Profile() {
   const addOtherSkill = async (
     type: "teach" | "learn"
   ) => {
+
     const value =
       type === "teach"
         ? otherTeach.trim()
         : otherLearn.trim();
 
-    if (!value) return;
+    if (!value) {
+      return;
+    }
+
 
     if (hasSkill(value, type)) {
+
       if (type === "teach") {
         setOtherTeach("");
       } else {
@@ -214,7 +311,12 @@ function Profile() {
       return;
     }
 
-    await toggleSkill(value, type);
+
+    await toggleSkill(
+      value,
+      type
+    );
+
 
     if (type === "teach") {
       setOtherTeach("");
@@ -224,13 +326,18 @@ function Profile() {
   };
 
 
-  const teachSkills = mySkills.filter(
-    (skill) => skill.skill_type === "teach"
-  );
+  const teachSkills =
+    mySkills.filter(
+      (skill) =>
+        skill.skill_type === "teach"
+    );
 
-  const learnSkills = mySkills.filter(
-    (skill) => skill.skill_type === "learn"
-  );
+
+  const learnSkills =
+    mySkills.filter(
+      (skill) =>
+        skill.skill_type === "learn"
+    );
 
 
   // ---------------- AVAILABILITY ----------------
@@ -238,30 +345,42 @@ function Profile() {
   const handleSlotSubmit = async (
     e: FormEvent
   ) => {
+
     e.preventDefault();
+
 
     if (
       !slotForm.start_time ||
       !slotForm.end_time
     ) {
+
       alert(
         "Please enter the start and end time."
       );
+
       return;
     }
 
+
     if (
-      slotForm.start_time >= slotForm.end_time
+      slotForm.start_time >=
+      slotForm.end_time
     ) {
+
       alert(
         "End time must be after start time."
       );
+
       return;
     }
 
+
     try {
+
       // EDIT
+
       if (editingId !== null) {
+
         const updatedSlot =
           await updateAvailability(
             editingId,
@@ -281,8 +400,11 @@ function Profile() {
         setEditingId(null);
       }
 
+
       // ADD
+
       else {
+
         const newSlot =
           await addAvailability(
             slotForm.day,
@@ -296,11 +418,14 @@ function Profile() {
         ]);
       }
 
+
       setSlotForm({
         day: "monday",
         start_time: "",
         end_time: "",
       });
+
+
     } catch (error) {
       console.error(error);
     }
@@ -310,6 +435,7 @@ function Profile() {
   const startEditingSlot = (
     slot: AvailabilitySlot
   ) => {
+
     setEditingId(slot.id);
 
     setSlotForm({
@@ -320,19 +446,27 @@ function Profile() {
   };
 
 
-  const removeSlot = async (id: number) => {
+  const removeSlot = async (
+    id: number
+  ) => {
+
     try {
+
       await deleteAvailability(id);
 
       setSlots((current) =>
         current.filter(
-          (slot) => slot.id !== id
+          (slot) =>
+            slot.id !== id
         )
       );
+
 
       if (editingId === id) {
         cancelEdit();
       }
+
+
     } catch (error) {
       console.error(error);
     }
@@ -340,6 +474,7 @@ function Profile() {
 
 
   const cancelEdit = () => {
+
     setEditingId(null);
 
     setSlotForm({
@@ -356,28 +491,66 @@ function Profile() {
     <main className="profile-page">
 
       <div className="profile-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-          <Link to="/dashboard" style={{ textDecoration: 'none', color: '#4f46e5', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            &larr; Back to Dashboard
+
+
+        {/* TOP LINKS */}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "24px",
+          }}
+        >
+
+          <Link
+            to="/dashboard"
+            style={{
+              textDecoration: "none",
+              color: "#4f46e5",
+              fontWeight: 600,
+            }}
+          >
+            ← Back to Dashboard
           </Link>
-          <Link to="/meetings" style={{ textDecoration: 'none', color: '#2563eb', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            🎥 Meetings &rarr;
+
+
+          <Link
+            to="/meetings"
+            style={{
+              textDecoration: "none",
+              color: "#2563eb",
+              fontWeight: 600,
+            }}
+          >
+            🎥 Meetings →
           </Link>
+
         </div>
 
+
+        {/* HEADER */}
+
         <header className="profile-header">
+
           <div>
+
             <p className="small-title">
               SKILLMATCH
             </p>
 
-            <h1>My Profile</h1>
+            <h1>
+              {username || "Profile"}
+            </h1>
 
             <p>
               Manage your skills and
               availability.
             </p>
+
           </div>
+
         </header>
 
 
@@ -386,13 +559,18 @@ function Profile() {
         <section className="profile-card">
 
           <div className="section-heading">
-            <h2>About Me</h2>
+
+            <h2>
+              About Me
+            </h2>
 
             <p>
-              Write a short introduction about
-              yourself.
+              Write a short introduction
+              about yourself.
             </p>
+
           </div>
+
 
           <textarea
             className="bio-input"
@@ -403,23 +581,6 @@ function Profile() {
             placeholder="Tell others about yourself..."
           />
 
-          <button
-            type="button"
-            className="primary-button"
-            onClick={saveProfile}
-            disabled={profileSaving}
-          >
-            {profileSaving
-              ? "Saving..."
-              : "Save Profile"}
-          </button>
-
-          {message && (
-            <p className="profile-message">
-              {message}
-            </p>
-          )}
-
         </section>
 
 
@@ -428,41 +589,55 @@ function Profile() {
         <section className="profile-card">
 
           <div className="section-heading">
-            <h2>Skills I Can Teach</h2>
+
+            <h2>
+              Skills I Can Teach
+            </h2>
 
             <p>
               Choose the skills you can teach.
             </p>
+
           </div>
+
 
           <div className="skills-grid">
 
-            {defaultSkills.map((skill) => (
+            {defaultSkills.map(
+              (skill) => (
 
-              <button
-                key={skill}
-                type="button"
-                className={
-                  hasSkill(skill, "teach")
-                    ? "skill-chip selected"
-                    : "skill-chip"
-                }
-                onClick={() =>
-                  toggleSkill(
+                <button
+                  key={skill}
+                  type="button"
+                  className={
+                    hasSkill(
+                      skill,
+                      "teach"
+                    )
+                      ? "skill-chip selected"
+                      : "skill-chip"
+                  }
+                  onClick={() =>
+                    toggleSkill(
+                      skill,
+                      "teach"
+                    )
+                  }
+                >
+
+                  {hasSkill(
                     skill,
                     "teach"
                   )
-                }
-              >
-                {hasSkill(skill, "teach")
-                  ? "✓ "
-                  : ""}
+                    ? "✓ "
+                    : ""}
 
-                {skill}
+                  {skill}
 
-              </button>
+                </button>
 
-            ))}
+              )
+            )}
 
           </div>
 
@@ -480,6 +655,7 @@ function Profile() {
               }
             />
 
+
             <button
               type="button"
               onClick={() =>
@@ -496,34 +672,39 @@ function Profile() {
 
             <div className="selected-area">
 
-              <p>Selected:</p>
+              <p>
+                Selected:
+              </p>
+
 
               <div className="selected-list">
 
-                {teachSkills.map((skill) => (
+                {teachSkills.map(
+                  (skill) => (
 
-                  <span
-                    key={skill.id}
-                    className="selected-tag"
-                  >
-
-                    {skill.skill_name}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleSkill(
-                          skill.skill_name,
-                          "teach"
-                        )
-                      }
+                    <span
+                      key={skill.id}
+                      className="selected-tag"
                     >
-                      ×
-                    </button>
 
-                  </span>
+                      {skill.skill_name}
 
-                ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleSkill(
+                            skill.skill_name,
+                            "teach"
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+
+                    </span>
+
+                  )
+                )}
 
               </div>
 
@@ -545,8 +726,8 @@ function Profile() {
             </h2>
 
             <p>
-              Choose the skills you want to
-              learn.
+              Choose the skills you want
+              to learn.
             </p>
 
           </div>
@@ -554,33 +735,41 @@ function Profile() {
 
           <div className="skills-grid">
 
-            {defaultSkills.map((skill) => (
+            {defaultSkills.map(
+              (skill) => (
 
-              <button
-                key={skill}
-                type="button"
-                className={
-                  hasSkill(skill, "learn")
-                    ? "skill-chip selected"
-                    : "skill-chip"
-                }
-                onClick={() =>
-                  toggleSkill(
+                <button
+                  key={skill}
+                  type="button"
+                  className={
+                    hasSkill(
+                      skill,
+                      "learn"
+                    )
+                      ? "skill-chip selected"
+                      : "skill-chip"
+                  }
+                  onClick={() =>
+                    toggleSkill(
+                      skill,
+                      "learn"
+                    )
+                  }
+                >
+
+                  {hasSkill(
                     skill,
                     "learn"
                   )
-                }
-              >
+                    ? "✓ "
+                    : ""}
 
-                {hasSkill(skill, "learn")
-                  ? "✓ "
-                  : ""}
+                  {skill}
 
-                {skill}
+                </button>
 
-              </button>
-
-            ))}
+              )
+            )}
 
           </div>
 
@@ -598,6 +787,7 @@ function Profile() {
               }
             />
 
+
             <button
               type="button"
               onClick={() =>
@@ -614,34 +804,39 @@ function Profile() {
 
             <div className="selected-area">
 
-              <p>Selected:</p>
+              <p>
+                Selected:
+              </p>
+
 
               <div className="selected-list">
 
-                {learnSkills.map((skill) => (
+                {learnSkills.map(
+                  (skill) => (
 
-                  <span
-                    key={skill.id}
-                    className="selected-tag"
-                  >
-
-                    {skill.skill_name}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        toggleSkill(
-                          skill.skill_name,
-                          "learn"
-                        )
-                      }
+                    <span
+                      key={skill.id}
+                      className="selected-tag"
                     >
-                      ×
-                    </button>
 
-                  </span>
+                      {skill.skill_name}
 
-                ))}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleSkill(
+                            skill.skill_name,
+                            "learn"
+                          )
+                        }
+                      >
+                        ×
+                      </button>
+
+                    </span>
+
+                  )
+                )}
 
               </div>
 
@@ -658,15 +853,71 @@ function Profile() {
 
           <div className="section-heading">
 
-            <h2>Available Slots</h2>
+            <h2>
+              Available Slots
+            </h2>
 
             <p>
-              Add the time slots when you are
-              available.
+              Add the time slots when
+              you are available.
             </p>
 
           </div>
 
+
+          {/* MAX SESSION */}
+
+          <div className="session-duration-box">
+
+            <div>
+
+              <h3>
+                Maximum Session Duration
+              </h3>
+
+              <p>
+                Sessions can be shorter,
+                but cannot be longer than
+                this duration.
+              </p>
+
+            </div>
+
+
+            <div className="session-duration-control">
+
+              <select
+                value={maxSessionDuration}
+                onChange={(e) =>
+                  setMaxSessionDuration(
+                    Number(
+                      e.target.value
+                    )
+                  )
+                }
+              >
+
+                {sessionDurationOptions.map(
+                  (option) => (
+
+                    <option
+                      key={option.value}
+                      value={option.value}
+                    >
+                      {option.label}
+                    </option>
+
+                  )
+                )}
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+          {/* AVAILABILITY FORM */}
 
           <form
             className="availability-form"
@@ -675,7 +926,9 @@ function Profile() {
 
             <div className="form-group">
 
-              <label>Day</label>
+              <label>
+                Day
+              </label>
 
               <select
                 value={slotForm.day}
@@ -722,7 +975,9 @@ function Profile() {
 
             <div className="form-group">
 
-              <label>Start Time</label>
+              <label>
+                Start Time
+              </label>
 
               <input
                 type="time"
@@ -743,7 +998,9 @@ function Profile() {
 
             <div className="form-group">
 
-              <label>End Time</label>
+              <label>
+                End Time
+              </label>
 
               <input
                 type="time"
@@ -793,6 +1050,8 @@ function Profile() {
           </form>
 
 
+          {/* SAVED SLOTS */}
+
           <div className="slots-list">
 
             {slots.length === 0 ? (
@@ -813,14 +1072,17 @@ function Profile() {
                   <div>
 
                     <strong>
+
                       {slot.day
                         .charAt(0)
                         .toUpperCase() +
                         slot.day.slice(1)}
+
                     </strong>
 
                     <span>
-                      {slot.start_time} -{" "}
+                      {slot.start_time}
+                      {" - "}
                       {slot.end_time}
                     </span>
 
@@ -841,11 +1103,14 @@ function Profile() {
                       Edit
                     </button>
 
+
                     <button
                       type="button"
                       className="delete-button"
                       onClick={() =>
-                        removeSlot(slot.id)
+                        removeSlot(
+                          slot.id
+                        )
                       }
                     >
                       Delete
@@ -863,10 +1128,39 @@ function Profile() {
 
         </section>
 
+
+        {/* SAVE PROFILE AT BOTTOM */}
+
+        <div className="profile-save-footer">
+
+          {message && (
+            <p className="profile-message">
+              {message}
+            </p>
+          )}
+
+
+          <button
+            type="button"
+            className="primary-button save-profile-button"
+            onClick={saveProfile}
+            disabled={profileSaving}
+          >
+
+            {profileSaving
+              ? "Saving..."
+              : "Save Profile"}
+
+          </button>
+
+        </div>
+
+
       </div>
 
     </main>
   );
 }
+
 
 export default Profile;

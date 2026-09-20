@@ -5,11 +5,26 @@ import {
 } from "../lib/auth";
 
 
+export type MeetingStatus =
+  | "SCHEDULED"
+  | "COMPLETED"
+  | "MISSED"
+  | "CANCELLED";
+
+
 export interface Meeting {
   id: number;
 
-  participant_a_id: number;
-  participant_b_id: number;
+  request_id?: number;
+
+  sender_id?: number;
+  receiver_id?: number;
+
+  sender_username?: string;
+  receiver_username?: string;
+
+  participant_a_id?: number;
+  participant_b_id?: number;
 
   participant_a_name: string;
   participant_b_name: string;
@@ -18,11 +33,9 @@ export interface Meeting {
 
   is_requester?: boolean;
 
-  status:
-    | "pending"
-    | "accepted"
-    | "rejected"
-    | "cancelled";
+  skill_name?: string;
+
+  status: MeetingStatus | string;
 
   start_time: string;
   end_time: string;
@@ -31,6 +44,7 @@ export interface Meeting {
   end_time_ts: number;
 
   room_url: string;
+  room_name?: string;
 
   my_token: string | null;
 
@@ -38,17 +52,34 @@ export interface Meeting {
 }
 
 
+export interface CreateMeetingPayload {
+  request_id: number;
+  timezone?: string;
+}
+
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
+  "http://127.0.0.1:8000";
+
+
+// ---------------- FETCH HELPER ----------------
 
 async function meetingFetch(
   url: string,
   init: RequestInit = {}
 ): Promise<Response> {
+  const fullUrl =
+    url.startsWith("http")
+      ? url
+      : `${API_BASE_URL}${url}`;
 
-  let token = getAccessToken();
+  let token =
+    getAccessToken();
 
 
   let response = await fetch(
-    url,
+    fullUrl,
     {
       ...init,
 
@@ -69,16 +100,14 @@ async function meetingFetch(
   );
 
 
+  // Access token expired
   if (response.status === 401) {
-
     try {
-
       token =
         await refreshAccessToken();
 
-
       response = await fetch(
-        url,
+        fullUrl,
         {
           ...init,
 
@@ -99,7 +128,6 @@ async function meetingFetch(
       );
 
     } catch {
-
       clearTokens();
     }
   }
@@ -109,16 +137,14 @@ async function meetingFetch(
 }
 
 
+// ---------------- GET MEETINGS ----------------
 
 export async function getMeetings(
-  status: string = "accepted"
+  status: string = "SCHEDULED"
 ): Promise<Meeting[]> {
-
   const query =
     status
-      ? `?status=${encodeURIComponent(
-          status
-        )}`
+      ? `?status=${encodeURIComponent(status)}`
       : "";
 
 
@@ -129,7 +155,6 @@ export async function getMeetings(
 
 
   if (!response.ok) {
-
     throw new Error(
       `Failed to load meetings (${response.status})`
     );
@@ -146,11 +171,11 @@ export async function getMeetings(
 }
 
 
+// ---------------- MEETING DETAIL ----------------
 
 export async function getMeetingDetail(
   id: number
 ): Promise<Meeting> {
-
   const response =
     await meetingFetch(
       `/api/meetings/${id}/`
@@ -158,7 +183,6 @@ export async function getMeetingDetail(
 
 
   if (!response.ok) {
-
     throw new Error(
       `Failed to load meeting (${response.status})`
     );
@@ -169,24 +193,34 @@ export async function getMeetingDetail(
 }
 
 
+// ---------------- CREATE MEETING ----------------
 
-export async function acceptMeeting(
-  id: number
+export async function createMeeting(
+  payload: CreateMeetingPayload
 ): Promise<Meeting> {
-
   const response =
     await meetingFetch(
-      `/api/meetings/${id}/accept/`,
+      "/api/meetings/",
       {
         method: "POST",
+
+        body: JSON.stringify(
+          payload
+        ),
       }
     );
 
 
   if (!response.ok) {
+    const errorData =
+      await response
+        .json()
+        .catch(() => ({}));
+
 
     throw new Error(
-      `Failed to accept meeting (${response.status})`
+      errorData.error ||
+        `Failed to create meeting (${response.status})`
     );
   }
 
@@ -195,53 +229,40 @@ export async function acceptMeeting(
 }
 
 
-
-export async function rejectMeeting(
-  id: number
-): Promise<Meeting> {
-
-  const response =
-    await meetingFetch(
-      `/api/meetings/${id}/reject/`,
-      {
-        method: "POST",
-      }
-    );
-
-
-  if (!response.ok) {
-
-    throw new Error(
-      `Failed to reject meeting (${response.status})`
-    );
-  }
-
-
-  return response.json();
-}
-
-
+// ---------------- CANCEL MEETING ----------------
 
 export async function cancelMeeting(
   id: number
-): Promise<Meeting> {
-
+): Promise<{
+  message: string;
+}> {
   const response =
     await meetingFetch(
-      `/api/meetings/${id}/cancel/`,
+      `/api/meetings/${id}/`,
       {
-        method: "POST",
+        method: "DELETE",
       }
     );
 
 
   if (!response.ok) {
+    const errorData =
+      await response
+        .json()
+        .catch(() => ({}));
+
 
     throw new Error(
-      `Failed to cancel meeting (${response.status})`
+      errorData.error ||
+        `Failed to cancel meeting (${response.status})`
     );
   }
 
 
-  return response.json();
+  return response
+    .json()
+    .catch(() => ({
+      message:
+        "Meeting cancelled successfully.",
+    }));
 }

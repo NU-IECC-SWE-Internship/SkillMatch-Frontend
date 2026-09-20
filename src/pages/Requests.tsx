@@ -6,14 +6,19 @@ import {
   type IncomingRequestItem,
 } from "../api/matchingApi";
 import { getErrorMessage } from "../lib/api";
+import RequestCard from "../components/Matching/RequestCard";
+import PastRequestCard from "../components/Matching/PastRequestCard";
 import "./Requests.css";
 
-export default function IncomingRequests() {
+export default function Requests() {
   const [requests, setRequests] = useState<IncomingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processingId, setProcessingId] = useState<number | null>(null);
+  const [processingAction, setProcessingAction] = useState<{
+    id: number;
+    action: "accept" | "reject";
+  } | null>(null);  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
+const [successMessage] = useState<string | null>(null);
   const loadRequests = async () => {
     try {
       setLoading(true);
@@ -30,23 +35,44 @@ export default function IncomingRequests() {
     loadRequests();
   }, []);
 
-  const handleAction = async (requestId: number, action: "accept" | "reject") => {
+  const handleAction = async (
+    requestId: number,
+    action: "accept" | "reject",
+    rejectionReason?: string
+  ) => {
     try {
-      setProcessingId(requestId);
-      await respondToMatchRequest(requestId, action);
-      
-      // Update local state to reflect accepted/rejected status immediately
+      setProcessingAction({
+        id: requestId,
+        action,
+      });
+
+      await respondToMatchRequest(
+        requestId,
+        action,
+        rejectionReason
+      );
+
       setRequests((prev) =>
         prev.map((req) =>
           req.id === requestId
-            ? { ...req, status: action === "accept" ? "ACCEPTED" : "REJECTED" }
+            ? {
+                ...req,
+                status:
+                  action === "accept"
+                    ? "ACCEPTED"
+                    : "REJECTED",
+                rejection_reason:
+                  action === "reject"
+                    ? rejectionReason || null
+                    : null,
+              }
             : req
         )
       );
     } catch (err) {
-      alert(getErrorMessage(err));
+      setErrorMessage(getErrorMessage(err));
     } finally {
-      setProcessingId(null);
+      setProcessingAction(null);
     }
   };
 
@@ -61,10 +87,13 @@ export default function IncomingRequests() {
   };
 
   const formatSlot = (request: IncomingRequestItem) => {
+    if (!request.selected_slot_day) return `Slot #${request.selected_slot}`;
     const day =
       request.selected_slot_day.charAt(0).toUpperCase() +
       request.selected_slot_day.slice(1);
-    return `${day}, ${formatTime(request.selected_slot_start_time)} – ${formatTime(request.selected_slot_end_time)}`;
+    return `${day}, ${formatTime(request.selected_slot_start_time)} – ${formatTime(
+      request.selected_slot_end_time
+    )}`;
   };
 
   return (
@@ -88,6 +117,15 @@ export default function IncomingRequests() {
           </div>
         )}
 
+        {successMessage && (
+          <div className="success-banner" role="status">
+            <span>✅ {successMessage}</span>
+            <Link to="/meetings" className="view-meeting-link">
+              Go to Meetings &rarr;
+            </Link>
+          </div>
+        )}
+
         {loading ? (
           <div className="requests-empty">
             <p>Loading incoming requests...</p>
@@ -102,7 +140,7 @@ export default function IncomingRequests() {
           </div>
         ) : (
           <>
-            {/* Pending Requests Section */}
+            {/* Pending Requests */}
             <section className="requests-group">
               <h2 className="group-title">
                 Needs Your Response ({pendingRequests.length})
@@ -113,79 +151,30 @@ export default function IncomingRequests() {
               ) : (
                 <div className="requests-grid">
                   {pendingRequests.map((req) => (
-                    <div key={req.id} className="incoming-card">
-                      <div className="incoming-card-top">
-                        <div className="sender-avatar">
-                          {req.sender_username.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="sender-name">{req.sender_username}</h3>
-                          <span className="request-tag">Wants to learn from you</span>
-                        </div>
-                      </div>
-
-                      <div className="swap-details">
-                        <div className="detail-item">
-                          <span className="detail-label">Requested Skill</span>
-                          <span className="skill-pill pill-learn">
-                            {req.skill_name || `Skill #${req.skill}`}
-                          </span>
-                        </div>
-                        <div className="detail-item">
-                          <span className="detail-label">Preferred Time Slot</span>
-                          <span className="slot-pill">{formatSlot(req)}</span>
-                        </div>
-                      </div>
-
-                      <div className="incoming-card-actions">
-                        <button
-                          type="button"
-                          className="accept-btn"
-                          disabled={processingId === req.id}
-                          onClick={() => handleAction(req.id, "accept")}
-                        >
-                          {processingId === req.id ? "Accepting..." : "Accept Swap"}
-                        </button>
-                        <button
-                          type="button"
-                          className="decline-btn"
-                          disabled={processingId === req.id}
-                          onClick={() => handleAction(req.id, "reject")}
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </div>
+                    <RequestCard
+                      key={req.id}
+                      request={req}
+                      isProcessing={processingAction?.id === req.id}
+                      processingAction={
+                        processingAction?.id === req.id
+                          ? processingAction.action
+                          : null
+                      }
+                      onAction={handleAction}
+                      formatSlot={formatSlot}
+                    />
                   ))}
                 </div>
               )}
             </section>
 
-            {/* Completed/History Section */}
+            {/* Past Requests */}
             {pastRequests.length > 0 && (
               <section className="requests-group past-group">
                 <h2 className="group-title">Previous Requests</h2>
                 <div className="requests-grid">
                   {pastRequests.map((req) => (
-                    <div key={req.id} className="incoming-card past-card">
-                      <div className="incoming-card-top">
-                        <div className="sender-avatar muted">
-                          {req.sender_username.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h3 className="sender-name">{req.sender_username}</h3>
-                          <span className="skill-pill pill-learn">
-                            {req.skill_name || `Skill #${req.skill}`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="status-badge-container">
-                        <span className={`status-tag status-${req.status.toLowerCase()}`}>
-                          {req.status}
-                        </span>
-                      </div>
-                    </div>
+                    <PastRequestCard key={req.id} request={req} />
                   ))}
                 </div>
               </section>

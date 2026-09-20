@@ -11,6 +11,7 @@ import Meetings from './pages/Meetings';
 import MeetingRoom from './pages/MeetingRoom';
 import Requests from "./pages/Requests";
 import { isAuthenticated } from './lib/auth'
+import MyRequests from "./pages/MyRequests";
 
 
 
@@ -83,6 +84,7 @@ export default function App() {
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:userId/request" element={<SendRequest />} />
       <Route path="/requests" element={<Requests />} />
+      <Route path="/my-requests" element={<MyRequests />} />
     </Routes>
   );
 }

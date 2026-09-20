@@ -17,11 +17,15 @@ export type MatchRequestStatus =
   | "REJECTED";
 
 
+// ---------------- CREATE REQUEST ----------------
 
 export interface CreateMatchRequestPayload {
   receiver: number;
   skill: number;
   selected_slot: number;
+
+  requested_start_time: string;
+  requested_end_time: string;
 }
 
 
@@ -46,7 +50,12 @@ export interface MatchRequest {
   selected_slot_start_time: string;
   selected_slot_end_time: string;
 
+  requested_start_time?: string;
+  requested_end_time?: string;
+
   status: MatchRequestStatus;
+
+  rejection_reason: string | null;
 }
 
 
@@ -57,10 +66,10 @@ export type IncomingRequestItem =
   MatchRequest;
 
 
+// ---------------- SESSION SETTINGS ----------------
 
 export interface UserSessionSettings {
   user: number;
-
   username: string;
 
   max_session_duration_minutes: number;
@@ -69,10 +78,9 @@ export interface UserSessionSettings {
 }
 
 
+// ---------------- MATCHES ----------------
 
-export async function getMatches(): Promise<
-  Match[]
-> {
+export async function getMatches(): Promise<Match[]> {
   const token = getAccessToken();
 
   return apiRequest<Match[]>(
@@ -85,10 +93,9 @@ export async function getMatches(): Promise<
 }
 
 
+// ---------------- SKILLS ----------------
 
-export async function getSkillsList(): Promise<
-  SkillItem[]
-> {
+export async function getSkillsList(): Promise<SkillItem[]> {
   const token = getAccessToken();
 
   return apiRequest<SkillItem[]>(
@@ -101,11 +108,11 @@ export async function getSkillsList(): Promise<
 }
 
 
+// ---------------- CREATE REQUEST ----------------
 
 export async function createMatchRequest(
   payload: CreateMatchRequestPayload
 ): Promise<MatchRequestResponse> {
-
   const token = getAccessToken();
 
   return apiRequest<MatchRequestResponse>(
@@ -119,6 +126,7 @@ export async function createMatchRequest(
 }
 
 
+// ---------------- INCOMING REQUESTS ----------------
 
 export async function getIncomingRequests(): Promise<
   IncomingRequestItem[]
@@ -135,20 +143,40 @@ export async function getIncomingRequests(): Promise<
 }
 
 
+// ---------------- SENT REQUESTS ----------------
+
+export async function getSentRequests(): Promise<
+  MatchRequest[]
+> {
+  const token = getAccessToken();
+
+  return apiRequest<MatchRequest[]>(
+    "/api/requests/sent/",
+    {
+      method: "GET",
+      token,
+    }
+  );
+}
+
+
+// ---------------- RESPOND ----------------
 
 export async function respondToMatchRequest(
   requestId: number,
-  action: "accept" | "reject"
+  action: "accept" | "reject",
+  rejectionReason?: string
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
+  rejection_reason?: string | null;
 }> {
-
   const token = getAccessToken();
 
   return apiRequest<{
     message: string;
     status: MatchRequestStatus;
+    rejection_reason?: string | null;
   }>(
     `/api/requests/${requestId}/respond/`,
     {
@@ -156,6 +184,13 @@ export async function respondToMatchRequest(
 
       body: {
         action,
+
+        ...(action === "reject"
+          ? {
+              rejection_reason:
+                rejectionReason || "",
+            }
+          : {}),
       },
 
       token,
@@ -164,11 +199,11 @@ export async function respondToMatchRequest(
 }
 
 
+// ---------------- USER SESSION SETTINGS ----------------
 
 export async function getUserSessionSettings(
   userId: number
 ): Promise<UserSessionSettings> {
-
   const token = getAccessToken();
 
   return apiRequest<UserSessionSettings>(
@@ -178,12 +213,4 @@ export async function getUserSessionSettings(
       token,
     }
   );
-}
-export interface CreateMatchRequestPayload {
-  receiver: number;
-  skill: number;
-  selected_slot: number;
-
-  requested_start_time: string;
-  requested_end_time: string;
 }

@@ -8,6 +8,7 @@ import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
+import MeetingRoom from './pages/MeetingRoom';
 import Requests from "./pages/Requests";
 import { isAuthenticated } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
@@ -53,6 +54,13 @@ function ProtectedMeetings() {
   return <Meetings />;
 }
 
+function ProtectedMeetingRoom() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <MeetingRoom />;
+}
+
 function RootRedirect() {
   return isAuthenticated() ? (
     <Navigate to="/dashboard" replace />
@@ -69,6 +77,7 @@ export default function App() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/dashboard" element={<ProtectedDashboard />} />
       <Route path="/meetings" element={<ProtectedMeetings />} />
+      <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="*" element={<Navigate to="/" replace />} />

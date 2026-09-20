@@ -68,6 +68,10 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({ roomUrl, token, startTs
 
     return () => {
       call?.off('left-meeting', handleLeave);
+      if (call) {
+        call.leave().catch(() => { });
+        call.destroy().catch(() => { });
+      }
     };
   }, [canJoin, isOver, roomUrl, token]);
 

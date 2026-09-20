@@ -13,6 +13,12 @@ export type LoginCredentials = {
   password: string
 }
 
+export type RegisterCredentials = {
+  username: string
+  email: string
+  password: string
+}
+
 // JWT = three parts: header.payload.signature
 // We only read "exp" from the middle part to know if time ran out.
 function isExpired(token: string): boolean {
@@ -66,6 +72,18 @@ export function forceLogout(): void {
 
 export async function login(credentials: LoginCredentials): Promise<AuthTokens> {
   const tokens = await apiRequest<AuthTokens>('/api/auth/login/', {
+    method: 'POST',
+    body: credentials,
+    skipAuth: true,
+  })
+  saveTokens(tokens)
+  return tokens
+}
+
+export async function register(
+  credentials: RegisterCredentials,
+): Promise<AuthTokens> {
+  const tokens = await apiRequest<AuthTokens>('/api/auth/register/', {
     method: 'POST',
     body: credentials,
     skipAuth: true,

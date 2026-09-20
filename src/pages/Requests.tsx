@@ -5,6 +5,7 @@ import {
   respondToMatchRequest,
   type IncomingRequestItem,
 } from "../api/matchingApi";
+import { createMeeting } from "../api/meetingsApi";
 import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
@@ -18,6 +19,7 @@ export default function Requests() {
     action: "accept" | "reject";
   } | null>(null);  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadRequests = async () => {
     try {
@@ -70,7 +72,7 @@ export default function Requests() {
         )
       );
     } catch (err) {
-      alert(getErrorMessage(err));
+      setErrorMessage(getErrorMessage(err));
     } finally {
       setProcessingAction(null);
     }
@@ -113,7 +115,16 @@ export default function Requests() {
 
         {errorMessage && (
           <div className="error-banner" role="alert">
-            ⚠️ {errorMessage}
+            {errorMessage}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="success-banner" role="status">
+            <span>✅ {successMessage}</span>
+            <Link to="/meetings" className="view-meeting-link">
+              Go to Meetings &rarr;
+            </Link>
           </div>
         )}
 
@@ -123,7 +134,6 @@ export default function Requests() {
           </div>
         ) : requests.length === 0 ? (
           <div className="requests-empty">
-            <span className="empty-icon">📬</span>
             <h3>No requests yet</h3>
             <p>When another user requests a skill swap with you, it will appear here.</p>
             <Link to="/matches" className="browse-matches-btn">

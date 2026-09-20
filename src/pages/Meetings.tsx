@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import MeetingSession from '../components/meetings/MeetingSession';
-import { getMeetings, type Meeting } from '../api/meetingsApi';
+import { getMeetings, cancelMeeting, type Meeting } from '../api/meetingsApi';
 import '../components/meetings/Meetings.css';
 
 const Meetings: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
-  const [activeMeeting, setActiveMeeting] = useState<Meeting | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  const fetchAcceptedMeetings = async (): Promise<void> => {
+  const fetchScheduledMeetings = async (): Promise<void> => {
     try {
       setLoading(true);
       setErrorMessage(null);
-      const data = await getMeetings('accepted');
+      const data = await getMeetings('SCHEDULED');
       setMeetings(data);
     } catch (err: unknown) {
       console.error('Failed to load meetings:', err);
@@ -27,8 +26,23 @@ const Meetings: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAcceptedMeetings();
+    fetchScheduledMeetings();
   }, []);
+
+  const handleCancelMeeting = async (meetingId: number) => {
+    if (!window.confirm('Are you sure you want to cancel this scheduled meeting session?')) {
+      return;
+    }
+    try {
+      setCancellingId(meetingId);
+      await cancelMeeting(meetingId);
+      setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Failed to cancel meeting.');
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const getMeetingStatus = (startTs: number, endTs: number): 'live' | 'upcoming' | 'ended' => {
     const now = Date.now();
@@ -37,18 +51,6 @@ const Meetings: React.FC = () => {
     if (now >= startTs - FIVE_MIN_MS) return 'live';
     return 'upcoming';
   };
-
-  if (activeMeeting && activeMeeting.room_url && activeMeeting.my_token) {
-    return (
-      <MeetingSession
-        roomUrl={activeMeeting.room_url}
-        token={activeMeeting.my_token}
-        startTs={activeMeeting.start_time_ts}
-        endTs={activeMeeting.end_time_ts}
-        onLeave={() => setActiveMeeting(null)}
-      />
-    );
-  }
 
   return (
     <div className="meetings-page">
@@ -60,7 +62,7 @@ const Meetings: React.FC = () => {
               &larr; Back to Dashboard
             </Link>
             <h1 className="meetings-title">Approved Skill Swap Sessions</h1>
-            <p className="meetings-subtitle">Your confirmed and accepted 1-on-1 video exchange sessions.</p>
+            <p className="meetings-subtitle">Your confirmed and scheduled 1-on-1 video exchange sessions.</p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <Link to="/profile" className="meetings-nav-link" style={{ alignSelf: 'center' }}>
@@ -81,7 +83,7 @@ const Meetings: React.FC = () => {
             <p>{errorMessage}</p>
             <button
               type="button"
-              onClick={fetchAcceptedMeetings}
+              onClick={fetchScheduledMeetings}
               className="btn-join"
               style={{ marginTop: '1rem', display: 'inline-block' }}
             >
@@ -119,6 +121,22 @@ const Meetings: React.FC = () => {
                         <span>{meeting.participant_a_name}</span>
                         <span className="swap-indicator">↔</span>
                         <span>{meeting.participant_b_name}</span>
+                        {meeting.skill_name && (
+                          <span
+                            style={{
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              background: '#eff6ff',
+                              color: '#2563eb',
+                              border: '1px solid #bfdbfe',
+                              marginLeft: '0.25rem',
+                            }}
+                          >
+                            🎯 {meeting.skill_name}
+                          </span>
+                        )}
                       </h3>
                       <div className="meeting-meta">
                         <span>
@@ -133,41 +151,57 @@ const Meetings: React.FC = () => {
                   </div>
 
                   <div className="meeting-card-actions">
-                    {status === 'live' && (
-                      <span className="badge badge-live">Live Now</span>
-                    )}
-                    {status === 'upcoming' && (
-                      <span className="badge badge-upcoming">Upcoming</span>
-                    )}
-                    {status === 'ended' && (
-                      <span className="badge badge-past">Ended</span>
-                    )}
-
-                    {status === 'live' ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveMeeting(meeting)}
-                        className="btn-join"
-                      >
-                        Join Room &rarr;
-                      </button>
-                    ) : status === 'upcoming' ? (
-                      <button
-                        type="button"
-                        onClick={() => setActiveMeeting(meeting)}
-                        className="btn-join"
-                        style={{ background: 'var(--blue-500)' }}
-                      >
-                        Enter Early &rarr;
-                      </button>
+                    {meeting.status === 'CANCELLED' ? (
+                      <span className="badge badge-cancelled">Cancelled</span>
                     ) : (
-                      <button
-                        type="button"
-                        disabled
-                        className="btn-join disabled"
-                      >
-                        Completed
-                      </button>
+                      <>
+                        {status === 'live' && (
+                          <span className="badge badge-live">Live Now</span>
+                        )}
+                        {status === 'upcoming' && (
+                          <span className="badge badge-upcoming">Upcoming</span>
+                        )}
+                        {status === 'ended' && (
+                          <span className="badge badge-past">Ended</span>
+                        )}
+
+                        {status === 'live' ? (
+                          <Link
+                            to={`/meetings/${meeting.id}/room`}
+                            state={{ meeting }}
+                            className="btn-join"
+                          >
+                            Join Room &rarr;
+                          </Link>
+                        ) : status === 'upcoming' ? (
+                          <>
+                            <Link
+                              to={`/meetings/${meeting.id}/room`}
+                              state={{ meeting }}
+                              className="btn-join"
+                              style={{ background: 'var(--blue-500)' }}
+                            >
+                              Enter Early &rarr;
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => handleCancelMeeting(meeting.id)}
+                              disabled={cancellingId === meeting.id}
+                              className="btn-cancel-action"
+                            >
+                              {cancellingId === meeting.id ? 'Cancelling...' : 'Cancel'}
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="btn-join disabled"
+                          >
+                            Completed
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

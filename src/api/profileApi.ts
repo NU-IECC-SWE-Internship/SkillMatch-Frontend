@@ -1,16 +1,21 @@
 import { apiRequest } from '../lib/api'
 
+
 export interface Profile {
   id: number
   user: number
+   username: string
   bio: string
   onboarding_completed: boolean
+  max_session_duration_minutes: number
 }
+
 
 export interface Skill {
   id: number
   name: string
 }
+
 
 export interface UserSkill {
   id: number
@@ -19,6 +24,7 @@ export interface UserSkill {
   skill_type: 'teach' | 'learn'
 }
 
+
 export interface AvailabilitySlot {
   id: number
   day: string
@@ -26,11 +32,13 @@ export interface AvailabilitySlot {
   end_time: string
 }
 
+
 // ---------------- PROFILE ----------------
 
 export async function getProfile() {
   return apiRequest<Profile>('/api/profile/')
 }
+
 
 export async function updateProfile(bio: string) {
   return apiRequest<Profile>('/api/profile/', {
@@ -39,20 +47,50 @@ export async function updateProfile(bio: string) {
   })
 }
 
+
+export async function updateMaxSessionDuration(
+  duration: number,
+) {
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: {
+      max_session_duration_minutes: duration,
+    },
+  })
+}
+
+
+export async function completeOnboarding() {
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: {
+      onboarding_completed: true,
+    },
+  })
+}
+
+
+// ---------------- SKILLS ----------------
+
 export async function getSkills(): Promise<Skill[]> {
   return apiRequest<Skill[]>('/api/skills/')
 }
 
-export async function createSkill(name: string): Promise<Skill> {
+
+export async function createSkill(
+  name: string,
+): Promise<Skill> {
   return apiRequest<Skill>('/api/skills/', {
     method: 'POST',
     body: { name },
   })
 }
 
+
 export async function getMySkills(): Promise<UserSkill[]> {
   return apiRequest<UserSkill[]>('/api/my-skills/')
 }
+
 
 export async function addUserSkill(
   skill: number,
@@ -67,36 +105,52 @@ export async function addUserSkill(
   })
 }
 
+
 export async function deleteUserSkill(id: number) {
   return apiRequest(`/api/my-skills/${id}/`, {
     method: 'DELETE',
   })
 }
 
-export async function getAvailability(): Promise<AvailabilitySlot[]> {
-  return apiRequest<AvailabilitySlot[]>('/api/availability/')
+
+// ---------------- AVAILABILITY ----------------
+
+export async function getAvailability(): Promise<
+  AvailabilitySlot[]
+> {
+  return apiRequest<AvailabilitySlot[]>(
+    '/api/availability/',
+  )
 }
+
 
 export async function getUserAvailability(
   userId: number,
 ): Promise<AvailabilitySlot[]> {
-  return apiRequest<AvailabilitySlot[]>(`/api/users/${userId}/availability/`)
+  return apiRequest<AvailabilitySlot[]>(
+    `/api/users/${userId}/availability/`,
+  )
 }
+
 
 export async function addAvailability(
   day: string,
   startTime: string,
   endTime: string,
 ): Promise<AvailabilitySlot> {
-  return apiRequest<AvailabilitySlot>('/api/availability/', {
-    method: 'POST',
-    body: {
-      day,
-      start_time: startTime,
-      end_time: endTime,
+  return apiRequest<AvailabilitySlot>(
+    '/api/availability/',
+    {
+      method: 'POST',
+      body: {
+        day,
+        start_time: startTime,
+        end_time: endTime,
+      },
     },
-  })
+  )
 }
+
 
 export async function updateAvailability(
   id: number,
@@ -104,27 +158,22 @@ export async function updateAvailability(
   startTime: string,
   endTime: string,
 ): Promise<AvailabilitySlot> {
-  return apiRequest<AvailabilitySlot>(`/api/availability/${id}/`, {
-    method: 'PATCH',
-    body: {
-      day,
-      start_time: startTime,
-      end_time: endTime,
+  return apiRequest<AvailabilitySlot>(
+    `/api/availability/${id}/`,
+    {
+      method: 'PATCH',
+      body: {
+        day,
+        start_time: startTime,
+        end_time: endTime,
+      },
     },
-  })
+  )
 }
+
 
 export async function deleteAvailability(id: number) {
   return apiRequest(`/api/availability/${id}/`, {
     method: 'DELETE',
-  })
-}
-
-export async function completeOnboarding() {
-  return apiRequest<Profile>('/api/profile/', {
-    method: 'PATCH',
-    body: {
-      onboarding_completed: true,
-    },
   })
 }

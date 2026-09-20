@@ -1,13 +1,18 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 
-import { addAvailability } from "../../api/profileApi";
+import {
+  addAvailability,
+  updateMaxSessionDuration,
+} from "../../api/profileApi";
 
 interface Props {
   onFinish: () => Promise<void>;
 }
 
 export default function AvailabilityStep({ onFinish }: Props) {
+  const [maxDuration, setMaxDuration] = useState(120);
+
   const [day, setDay] = useState("monday");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -32,7 +37,14 @@ export default function AvailabilityStep({ onFinish }: Props) {
     setError("");
 
     try {
-      await addAvailability(day, startTime, endTime);
+      await updateMaxSessionDuration(maxDuration);
+
+      await addAvailability(
+        day,
+        startTime,
+        endTime
+      );
+
       await onFinish();
     } catch {
       setError("Could not finish onboarding.");
@@ -50,12 +62,35 @@ export default function AvailabilityStep({ onFinish }: Props) {
       </p>
 
       <form onSubmit={handleSubmit}>
+
+        <div className="availability-field">
+          <label>Maximum session duration</label>
+
+          <select
+            value={maxDuration}
+            onChange={(event) =>
+              setMaxDuration(Number(event.target.value))
+            }
+          >
+            <option value={30}>30 minutes</option>
+            <option value={60}>1 hour</option>
+            <option value={90}>1.5 hours</option>
+            <option value={120}>2 hours</option>
+          </select>
+
+          <small>
+            Sessions can be shorter, but cannot exceed this time.
+          </small>
+        </div>
+
         <div className="availability-field">
           <label>Day</label>
 
           <select
             value={day}
-            onChange={(event) => setDay(event.target.value)}
+            onChange={(event) =>
+              setDay(event.target.value)
+            }
           >
             <option value="monday">Monday</option>
             <option value="tuesday">Tuesday</option>
@@ -68,13 +103,16 @@ export default function AvailabilityStep({ onFinish }: Props) {
         </div>
 
         <div className="time-row">
+
           <div className="availability-field">
             <label>Start time</label>
 
             <input
               type="time"
               value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
+              onChange={(event) =>
+                setStartTime(event.target.value)
+              }
             />
           </div>
 
@@ -84,16 +122,27 @@ export default function AvailabilityStep({ onFinish }: Props) {
             <input
               type="time"
               value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
+              onChange={(event) =>
+                setEndTime(event.target.value)
+              }
             />
           </div>
+
         </div>
 
-        {error && <p className="form-error">{error}</p>}
+        {error && (
+          <p className="form-error">
+            {error}
+          </p>
+        )}
 
-        <button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+        >
           {loading ? "Saving..." : "Finish"}
         </button>
+
       </form>
     </div>
   );

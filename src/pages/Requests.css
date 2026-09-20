@@ -1,10 +1,11 @@
 .requests-page {
-  min-height: 100vh;
+  min-height: 100svh;
   background:
-    radial-gradient(circle at top left, #dbeafe, transparent 40%),
-    radial-gradient(circle at bottom right, #e0e7ff, transparent 40%),
-    #f8fafc;
-  color: #0f172a;
+    radial-gradient(circle at 12% 18%, rgba(125, 191, 255, 0.35), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(186, 224, 255, 0.4), transparent 38%),
+    linear-gradient(160deg, #f7fbff 0%, #eef6ff 48%, #ffffff 100%);
+  color: var(--text);
+  font-family: var(--sans);
   padding: 40px 16px 80px;
   display: flex;
   justify-content: center;
@@ -23,23 +24,24 @@
 }
 
 .requests-nav-link {
-  color: #475569;
+  color: var(--blue-700);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 0.92rem;
   font-weight: 600;
   transition: color 0.15s ease;
 }
 
 .requests-nav-link:hover {
-  color: #0f172a;
+  color: var(--blue-800);
   text-decoration: underline;
 }
 
 .requests-brand {
-  font-size: 16px;
-  font-weight: 800;
-  color: #1e3a8a;
-  letter-spacing: -0.5px;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--blue-700);
+  letter-spacing: -0.04em;
 }
 
 .requests-header {
@@ -47,16 +49,18 @@
 }
 
 .requests-header h1 {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0f172a;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--text-h);
+  letter-spacing: -0.035em;
   margin: 0 0 8px;
 }
 
 .requests-header p {
-  color: #64748b;
+  color: var(--text);
   margin: 0;
-  font-size: 15px;
+  font-size: 1.02rem;
 }
 
 .requests-group {
@@ -64,17 +68,17 @@
 }
 
 .group-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #334155;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--text-h);
+  letter-spacing: -0.02em;
   margin-bottom: 16px;
 }
 
 .no-pending-text {
-  color: #64748b;
-  font-size: 14px;
+  color: var(--text);
+  font-size: 0.95rem;
 }
 
 .requests-grid {
@@ -84,11 +88,11 @@
 }
 
 .incoming-card {
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 1.2rem;
+  border: 1px solid rgba(147, 197, 253, 0.45);
   padding: 20px 24px;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.06);
 }
 
 .incoming-card-top {
@@ -103,12 +107,13 @@
   height: 44px;
   border-radius: 50%;
   background: #dbeafe;
-  color: #1d4ed8;
+  color: var(--blue-700);
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 1.1rem;
+  font-family: var(--display);
 }
 
 .sender-avatar.muted {
@@ -118,22 +123,25 @@
 
 .sender-name {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
 }
 
 .request-tag {
-  font-size: 12px;
-  color: #64748b;
+  font-size: 0.85rem;
+  color: var(--text);
 }
 
 .swap-details {
   display: flex;
   gap: 20px;
-  background: #f8fafc;
+  background: #f8fbff;
   padding: 12px 16px;
-  border-radius: 10px;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(191, 219, 254, 0.7);
   margin-bottom: 18px;
   flex-wrap: wrap;
 }
@@ -145,17 +153,32 @@
 }
 
 .detail-label {
-  font-size: 11px;
+  font-size: 0.7rem;
   text-transform: uppercase;
   font-weight: 700;
-  color: #64748b;
-  letter-spacing: 0.5px;
+  color: var(--text);
+  letter-spacing: 0.06em;
+}
+
+.skill-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.pill-learn {
+  background: #eff6ff;
+  color: var(--blue-700);
+  border: 1px solid #dbeafe;
 }
 
 .slot-pill {
-  font-size: 13px;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: #334155;
+  color: var(--text-h);
 }
 
 .incoming-card-actions {
@@ -164,19 +187,20 @@
 }
 
 .accept-btn {
-  background: #16a34a;
+  background: var(--blue-600);
   color: #ffffff;
   border: none;
   padding: 8px 18px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
   font-weight: 600;
+  font-family: var(--sans);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .accept-btn:hover:not(:disabled) {
-  background: #15803d;
+  background: var(--blue-700);
 }
 
 .decline-btn {
@@ -184,9 +208,10 @@
   color: #dc2626;
   border: 1px solid #fecaca;
   padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
   font-weight: 600;
+  font-family: var(--sans);
   cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -202,12 +227,18 @@
   opacity: 0.85;
 }
 
+.status-badge-container {
+  display: flex;
+  align-items: center;
+}
+
 .status-tag {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 6px;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .status-accepted {
@@ -221,27 +252,39 @@
 }
 
 .requests-empty {
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px dashed rgba(147, 197, 253, 0.7);
+  border-radius: 1.2rem;
   padding: 48px 24px;
   text-align: center;
-  color: #64748b;
+  color: var(--text);
 }
 
 .empty-icon {
-  font-size: 36px;
-  display: block;
-  margin-bottom: 12px;
+  display: none;
 }
 
 .browse-matches-btn {
   display: inline-block;
   margin-top: 16px;
-  background: #2563eb;
+  background: var(--blue-600);
   color: #ffffff;
   text-decoration: none;
   padding: 10px 20px;
-  border-radius: 10px;
+  border-radius: 0.85rem;
   font-weight: 600;
+}
+
+.browse-matches-btn:hover {
+  background: var(--blue-700);
+}
+
+.error-banner {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(254, 242, 242, 0.95);
+  color: #b91c1c;
+  font-size: 0.92rem;
 }

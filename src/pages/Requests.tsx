@@ -84,7 +84,7 @@ export default function IncomingRequests() {
 
         {errorMessage && (
           <div className="error-banner" role="alert">
-            ⚠️ {errorMessage}
+            {errorMessage}
           </div>
         )}
 
@@ -94,7 +94,6 @@ export default function IncomingRequests() {
           </div>
         ) : requests.length === 0 ? (
           <div className="requests-empty">
-            <span className="empty-icon">📬</span>
             <h3>No requests yet</h3>
             <p>When another user requests a skill swap with you, it will appear here.</p>
             <Link to="/matches" className="browse-matches-btn">

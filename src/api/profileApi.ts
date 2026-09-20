@@ -4,7 +4,7 @@ export interface Profile {
   id: number
   user: number
   bio: string
-  onboarding_completed?: boolean
+  onboarding_completed: boolean
 }
 
 export interface Skill {

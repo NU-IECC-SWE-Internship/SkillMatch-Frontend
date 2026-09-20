@@ -22,7 +22,7 @@ export default function Dashboard() {
             Requests
           </button>
           <button className="profile-chip" onClick={() => navigate("/profile")}>
-            👤 Profile
+            Profile
           </button>
           <button className="logout-button" onClick={handleLogout}>
             Logout
@@ -42,7 +42,7 @@ export default function Dashboard() {
           {/* Action Hub 1: Matches */}
           <div className="dashboard-feature-card" onClick={() => navigate("/matches")}>
             <div className="feature-card-header">
-              <span className="feature-card-icon">✨</span>
+              <span className="feature-card-icon">Match</span>
               <span className="feature-tag">EXPLORE</span>
             </div>
             <div className="feature-card-body">
@@ -55,7 +55,7 @@ export default function Dashboard() {
           {/* Action Hub 2: Active Meetings */}
           <div className="dashboard-feature-card" onClick={() => navigate("/meetings")}>
             <div className="feature-card-header">
-              <span className="feature-card-icon">🎥</span>
+              <span className="feature-card-icon">Live</span>
               <span className="feature-tag">SCHEDULE</span>
             </div>
             <div className="feature-card-body">

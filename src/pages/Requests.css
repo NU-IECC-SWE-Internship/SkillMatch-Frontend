@@ -245,3 +245,127 @@
   border-radius: 10px;
   font-weight: 600;
 }
+
+.reject-form {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.reject-form-header {
+  margin-bottom: 16px;
+}
+
+.reject-form-header h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.reject-form-header p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.reject-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.reject-form-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.reject-form-field textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px 13px;
+  box-sizing: border-box;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+
+  background: #ffffff;
+  color: #1e293b;
+
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+
+  resize: vertical;
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.reject-form-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+.reject-form-field textarea:focus {
+  border-color: #64748b;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.12);
+}
+
+.reject-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.cancel-reject-btn,
+.confirm-reject-btn {
+  border: none;
+  border-radius: 9px;
+  padding: 9px 15px;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.15s ease;
+}
+
+.cancel-reject-btn {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.cancel-reject-btn:hover:not(:disabled) {
+  background: #cbd5e1;
+}
+
+.confirm-reject-btn {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.confirm-reject-btn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.cancel-reject-btn:active:not(:disabled),
+.confirm-reject-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.cancel-reject-btn:disabled,
+.confirm-reject-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

@@ -23,6 +23,7 @@ export interface MatchRequest {
   selected_slot_start_time: string;
   selected_slot_end_time: string;
   status: MatchRequestStatus;
+  rejection_reason: string | null;
 }
 
 export type MatchRequestResponse = MatchRequest;
@@ -66,15 +67,35 @@ export async function getIncomingRequests(): Promise<IncomingRequestItem[]> {
 
 export async function respondToMatchRequest(
   requestId: number,
-  action: "accept" | "reject"
-): Promise<{ message: string; status: MatchRequestStatus }> {
+  action: "accept" | "reject",
+  rejectionReason?: string
+): Promise<{
+  message: string;
+  status: MatchRequestStatus;
+  rejection_reason?: string;
+}> {
   const token = getAccessToken();
-  return apiRequest<{ message: string; status: MatchRequestStatus }>(
+
+  return apiRequest(
     `/api/requests/${requestId}/respond/`,
     {
       method: "POST",
-      body: { action },
+      body: {
+        action,
+        ...(action === "reject"
+          ? { rejection_reason: rejectionReason }
+          : {}),
+      },
       token,
     }
   );
+}
+
+export async function getSentRequests(): Promise<MatchRequest[]> {
+  const token = getAccessToken();
+
+  return apiRequest<MatchRequest[]>("/api/requests/sent/", {
+    method: "GET",
+    token,
+  });
 }

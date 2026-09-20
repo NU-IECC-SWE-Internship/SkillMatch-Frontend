@@ -205,6 +205,29 @@
   border: 1px solid #e2e8f0;
 }
 
+.badge-cancelled {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn-cancel-action {
+  padding: 0.55rem 1rem;
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel-action:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
 .btn-join {
   padding: 0.65rem 1.4rem;
   background: linear-gradient(135deg, var(--blue-600), var(--blue-700));

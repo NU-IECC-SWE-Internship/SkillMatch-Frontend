@@ -5,6 +5,7 @@ import {
   respondToMatchRequest,
   type IncomingRequestItem,
 } from "../api/matchingApi";
+import { createMeeting } from "../api/meetingsApi";
 import { getErrorMessage } from "../lib/api";
 import "./Requests.css";
 
@@ -13,6 +14,7 @@ export default function IncomingRequests() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const loadRequests = async () => {
     try {
@@ -33,8 +35,16 @@ export default function IncomingRequests() {
   const handleAction = async (requestId: number, action: "accept" | "reject") => {
     try {
       setProcessingId(requestId);
-      await respondToMatchRequest(requestId, action);
-      
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      if (action === "accept") {
+        await createMeeting({ request_id: requestId });
+        setSuccessMessage("Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab.");
+      } else {
+        await respondToMatchRequest(requestId, "reject");
+      }
+
       // Update local state to reflect accepted/rejected status immediately
       setRequests((prev) =>
         prev.map((req) =>
@@ -44,7 +54,7 @@ export default function IncomingRequests() {
         )
       );
     } catch (err) {
-      alert(getErrorMessage(err));
+      setErrorMessage(getErrorMessage(err));
     } finally {
       setProcessingId(null);
     }
@@ -85,6 +95,15 @@ export default function IncomingRequests() {
         {errorMessage && (
           <div className="error-banner" role="alert">
             {errorMessage}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="success-banner" role="status">
+            <span>✅ {successMessage}</span>
+            <Link to="/meetings" className="view-meeting-link">
+              Go to Meetings &rarr;
+            </Link>
           </div>
         )}
 
@@ -144,7 +163,7 @@ export default function IncomingRequests() {
                           disabled={processingId === req.id}
                           onClick={() => handleAction(req.id, "accept")}
                         >
-                          {processingId === req.id ? "Accepting..." : "Accept Swap"}
+                          {processingId === req.id ? "Creating Room..." : "Accept Swap"}
                         </button>
                         <button
                           type="button"
@@ -180,10 +199,15 @@ export default function IncomingRequests() {
                         </div>
                       </div>
 
-                      <div className="status-badge-container">
+                      <div className="status-badge-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span className={`status-tag status-${req.status.toLowerCase()}`}>
                           {req.status}
                         </span>
+                        {req.status === "ACCEPTED" && (
+                          <Link to="/meetings" className="view-meeting-link">
+                            View Meeting &rarr;
+                          </Link>
+                        )}
                       </div>
                     </div>
                   ))}

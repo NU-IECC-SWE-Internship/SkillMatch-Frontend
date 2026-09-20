@@ -84,13 +84,28 @@ const MeetingRoom: React.FC = () => {
     );
   }
 
+  if (meeting.status === 'CANCELLED') {
+    return (
+      <div className="meeting-session-page">
+        <div className="session-status-card">
+          <div className="session-status-icon">🚫</div>
+          <h2>Meeting Cancelled</h2>
+          <p>This meeting session has been cancelled and can no longer be joined.</p>
+          <button onClick={() => navigate('/meetings')} className="btn-schedule">
+            Return to Meetings
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!meeting.room_url || !meeting.my_token) {
     return (
       <div className="meeting-session-page">
         <div className="session-status-card">
           <div className="session-status-icon">⚠️</div>
           <h2>Meeting Credentials Missing</h2>
-          <p>This meeting does not have active video room credentials. Please ensure the meeting has been accepted.</p>
+          <p>This meeting does not have active video room credentials. Please ensure the meeting is scheduled and valid.</p>
           <button onClick={() => navigate('/meetings')} className="btn-schedule">
             Return to Meetings
           </button>

@@ -9,3 +9,14 @@ export interface SkillItem {
   id: number;
   name: string;
 }
+
+export interface Teacher {
+  user_id: number;
+  username: string;
+  skills: SkillItem[];
+}
+
+export interface TeachersResponse {
+  learning_skills: SkillItem[];
+  teachers: Teacher[];
+}

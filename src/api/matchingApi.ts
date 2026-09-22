@@ -1,6 +1,6 @@
 import { apiRequest } from "../lib/api";
 import { getAccessToken } from "../lib/auth";
-import type { Match, SkillItem } from "../types/match";
+import type { Match, SkillItem, TeachersResponse } from "../types/match";
 
 export type MatchRequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
 
@@ -111,6 +111,21 @@ export async function getSentRequests(): Promise<MatchRequest[]> {
   const token = getAccessToken();
 
   return apiRequest<MatchRequest[]>("/api/requests/sent/", {
+    method: "GET",
+    token,
+  });
+}
+
+export async function getTeachers(
+  skillId?: number
+): Promise<TeachersResponse> {
+  const token = getAccessToken();
+
+  const url = skillId
+    ? `/api/teachers/?skill=${skillId}`
+    : "/api/teachers/";
+
+  return apiRequest<TeachersResponse>(url, {
     method: "GET",
     token,
   });

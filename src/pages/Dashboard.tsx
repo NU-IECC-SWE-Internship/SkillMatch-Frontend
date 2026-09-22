@@ -55,6 +55,18 @@ export default function Dashboard() {
             <span className="feature-action-link">Browse matches &rarr;</span>
           </div>
 
+          <div className="dashboard-feature-card" onClick={() => navigate("/skillbrowse")}>
+            <div className="feature-card-header">
+              <span className="feature-card-icon">Skill</span>
+              <span className="feature-tag">FILTER</span>
+            </div>
+            <div className="feature-card-body">
+              <h3>Browse by Learning Skill</h3>
+              <p>See all people who can teach the skills you want to learn, filtered by your chosen skill.</p>
+            </div>
+            <span className="feature-action-link">Browse teachers &rarr;</span>
+          </div>
+
           {/* Action Hub 2: Active Meetings */}
           <div className="dashboard-feature-card" onClick={() => navigate("/meetings")}>
             <div className="feature-card-header">

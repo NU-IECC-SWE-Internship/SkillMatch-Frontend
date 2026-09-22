@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getUserAvailability, type AvailabilitySlot } from "../api/profileApi";
 import {  getMatches,  getSkillsList,  createMatchRequest } from "../api/matchingApi";
 import { getErrorMessage } from "../lib/api";
+import StatusModal from "../components/ui/StatusModal";
 import type { Match, SkillItem } from "../types/match";
 import "./SendRequest.css";
 
@@ -20,7 +21,11 @@ function SendRequest() {
 
   const [loading, setLoading] = useState(!matchFromState);
   const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [statusModal, setStatusModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   // 1. Fetch match and skills list concurrently
   useEffect(() => {
@@ -107,20 +112,32 @@ function SendRequest() {
 
   // 3. Connect to Django backend API
   const handleSendRequest = async () => {
-    setErrorMessage(null);
+    setStatusModal(null);
 
     if (!match) {
-      alert("Unable to load the selected user details.");
+      setStatusModal({
+        title: "Unable to send request",
+        message: "Unable to load the selected user details.",
+        type: "error",
+      });
       return;
     }
 
     if (selectedSkill === null) {
-      alert("Please select a skill you want to learn.");
+      setStatusModal({
+        title: "Choose a skill",
+        message: "Please select a skill you want to learn.",
+        type: "error",
+      });
       return;
     }
 
     if (selectedSlot === null) {
-      alert("Please select a convenient meeting time slot.");
+      setStatusModal({
+        title: "Choose a time slot",
+        message: "Please select a convenient meeting time slot.",
+        type: "error",
+      });
       return;
     }
 
@@ -130,7 +147,11 @@ function SendRequest() {
     );
 
     if (!skillObj) {
-      alert(`Skill "${selectedSkill}" could not be found in the database.`);
+      setStatusModal({
+        title: "Skill not found",
+        message: `Skill "${selectedSkill}" could not be found in the database.`,
+        type: "error",
+      });
       return;
     }
 
@@ -143,12 +164,22 @@ function SendRequest() {
         selected_slot: selectedSlot,
       });
 
-      alert("Match request sent successfully!");
-      navigate("/matches");
+      navigate("/matches", {
+        state: {
+          statusModal: {
+            title: "Request sent",
+            message: "Your skill swap request was sent successfully.",
+            type: "success",
+          },
+        },
+      });
     } catch (error) {
       const message = getErrorMessage(error);
-      setErrorMessage(message);
-      alert(message);
+      setStatusModal({
+        title: "Request failed",
+        message,
+        type: "error",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -188,9 +219,18 @@ function SendRequest() {
   const initial = match.username ? match.username.charAt(0).toUpperCase() : "?";
 
   return (
-    <main className="send-request-page">
-      <div className="send-request-panel">
-        <div className="send-request-nav">
+    <>
+      <StatusModal
+        isOpen={Boolean(statusModal)}
+        title={statusModal?.title ?? ""}
+        message={statusModal?.message ?? ""}
+        type={statusModal?.type ?? "success"}
+        onClose={() => setStatusModal(null)}
+      />
+
+      <main className="send-request-page">
+        <div className="send-request-panel">
+          <div className="send-request-nav">
           <Link to="/matches" className="send-request-back-btn">
             &larr; Back to Matches
           </Link>
@@ -207,12 +247,6 @@ function SendRequest() {
             </div>
           </div>
         </header>
-
-        {errorMessage && (
-          <div className="error-banner" role="alert" style={{ marginBottom: "20px" }}>
-            ⚠️ {errorMessage}
-          </div>
-        )}
 
         {/* Swap Overview / Exchange Map */}
         <section className="swap-overview-section">
@@ -313,8 +347,9 @@ function SendRequest() {
             {submitting ? "Sending..." : "Confirm & Send Request →"}
           </button>
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
 

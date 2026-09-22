@@ -18,10 +18,13 @@ export interface MatchRequest {
   receiver_username: string;
   skill: number;
   skill_name: string;
+  sender_teach_skills: SkillItem[];
   selected_slot: number;
   selected_slot_day: string;
   selected_slot_start_time: string;
   selected_slot_end_time: string;
+  receiver_skill: number | null;
+  receiver_skill_name: string | null;
   status: MatchRequestStatus;
   rejection_reason: string | null;
 }
@@ -69,11 +72,14 @@ export async function respondToMatchRequest(
   requestId: number,
   action: "accept" | "reject",
   rejectionReason?: string,
-  timezone?: string
+  timezone?: string,
+  receiverSkill?: number
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
   rejection_reason?: string;
+  receiver_skill?: number;
+  receiver_skill_name?: string;
   meeting_id?: number;
 }> {
   const token = getAccessToken();
@@ -84,9 +90,17 @@ export async function respondToMatchRequest(
       method: "POST",
       body: {
         action,
+
         ...(action === "reject"
-          ? { rejection_reason: rejectionReason }
-          : { timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }),
+          ? {
+              rejection_reason: rejectionReason,
+            }
+          : {
+              receiver_skill: receiverSkill,
+              timezone:
+                timezone ||
+                Intl.DateTimeFormat().resolvedOptions().timeZone,
+            }),
       },
       token,
     }

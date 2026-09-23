@@ -1,50 +1,238 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { getUserAvailability, type AvailabilitySlot } from "../api/profileApi";
-import {  getMatches,  getSkillsList,  createMatchRequest } from "../api/matchingApi";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+
+import {
+  getMatches,
+  getSkillsList,
+  createMatchRequest,
+  getUserSessionSettings,
+} from "../api/matchingApi";
+
+import type {
+  UserSessionSettings,
+} from "../api/matchingApi";
+
 import { getErrorMessage } from "../lib/api";
-import type { Match, SkillItem } from "../types/match";
+
+import type {
+  Match,
+  SkillItem,
+} from "../types/match";
+
+
+
 import "./SendRequest.css";
+
+
+function timeToMinutes(value: string) {
+  const [hours, minutes] =
+    value.split(":").map(Number);
+
+  return hours * 60 + minutes;
+}
+
+
+function minutesToTime(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, "0")}:${String(
+    minutes
+  ).padStart(2, "0")}`;
+}
+
+
+function formatTime(value: string) {
+  const [hoursText, minutesText] =
+    value.split(":");
+
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+
+  const suffix =
+    hours >= 12 ? "PM" : "AM";
+
+  const displayHours =
+    ((hours + 11) % 12) + 1;
+
+  return `${displayHours}:${String(minutes).padStart(
+    2,
+    "0"
+  )} ${suffix}`;
+}
+
+
+function formatDuration(minutes: number) {
+  if (minutes < 60) {
+    return `${minutes} minutes`;
+  }
+
+  const hours =
+    Math.floor(minutes / 60);
+
+  const remainingMinutes =
+    minutes % 60;
+
+  if (remainingMinutes === 0) {
+    return hours === 1
+      ? "1 hour"
+      : `${hours} hours`;
+  }
+
+  return `${hours}h ${remainingMinutes}m`;
+}
+
+
+function formatDayLabel(day: string) {
+  return (
+    day.charAt(0).toUpperCase() +
+    day.slice(1)
+  );
+}
+
 
 function SendRequest() {
   const { userId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const matchFromState = (location.state as { match?: Match } | null)?.match;
 
-  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [match, setMatch] = useState<Match | null>(matchFromState ?? null);
-  const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
-  const [skillsCatalog, setSkillsCatalog] = useState<SkillItem[]>([]);
+  const navigate =
+    useNavigate();
 
-  const [loading, setLoading] = useState(!matchFromState);
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const location =
+    useLocation();
 
-  // 1. Fetch match and skills list concurrently
+  const matchFromState =
+    (
+      location.state as {
+        match?: Match;
+      } | null
+    )?.match;
+
+
+  // ---------------- MATCH ----------------
+
+  const [match, setMatch] =
+    useState<Match | null>(
+      matchFromState ?? null
+    );
+
+  const [
+    skillsCatalog,
+    setSkillsCatalog,
+  ] = useState<SkillItem[]>([]);
+
+
+  // ---------------- SESSION SETTINGS ----------------
+
+  const [
+    sessionSettings,
+    setSessionSettings,
+  ] =
+    useState<UserSessionSettings | null>(
+      null
+    );
+
+
+  // ---------------- SELECTION ----------------
+
+  const [
+    selectedSkill,
+    setSelectedSkill,
+  ] =
+    useState<string | null>(null);
+
+  const [
+    selectedSlot,
+    setSelectedSlot,
+  ] =
+    useState<number | null>(null);
+
+  const [
+    selectedStartTime,
+    setSelectedStartTime,
+  ] =
+    useState<string>("");
+
+  const [
+    selectedDuration,
+    setSelectedDuration,
+  ] =
+    useState<number | null>(null);
+
+
+  // ---------------- PAGE STATE ----------------
+
+  const [loading, setLoading] =
+    useState(!matchFromState);
+
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
+
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] =
+    useState<string | null>(null);
+
+
+  // ---------------- LOAD MATCH ----------------
+
   useEffect(() => {
     let isMounted = true;
 
     async function initialize() {
       try {
-        const [skillsData, matchesData] = await Promise.all([
+        const [
+          skillsData,
+          matchesData,
+        ] = await Promise.all([
           getSkillsList(),
-          matchFromState ? Promise.resolve([]) : getMatches(),
+
+          matchFromState
+            ? Promise.resolve([])
+            : getMatches(),
         ]);
 
-        if (!isMounted) return;
-
-        setSkillsCatalog(skillsData);
-
-        if (!matchFromState && userId) {
-          const selectedMatch = matchesData.find(
-            (item) => item.user_id === Number(userId)
-          );
-          setMatch(selectedMatch ?? null);
+        if (!isMounted) {
+          return;
         }
+
+        setSkillsCatalog(
+          skillsData
+        );
+
+        if (
+          !matchFromState &&
+          userId
+        ) {
+          const selectedMatch =
+            matchesData.find(
+              (item) =>
+                item.user_id ===
+                Number(userId)
+            );
+
+          setMatch(
+            selectedMatch ?? null
+          );
+        }
+
       } catch (error) {
-        console.error("Failed to load initial data:", error);
+        console.error(
+          "Failed to load initial data:",
+          error
+        );
+
+        setErrorMessage(
+          getErrorMessage(error)
+        );
+
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -57,265 +245,943 @@ function SendRequest() {
     return () => {
       isMounted = false;
     };
-  }, [matchFromState, userId]);
 
-  // 2. Fetch partner's availability slots
+  }, [
+    matchFromState,
+    userId,
+  ]);
+
+
+  // ---------------- LOAD AVAILABILITY ----------------
+
   useEffect(() => {
-    if (match === null) {
-      setAvailableSlots([]);
+    if (!match) {
+      setSessionSettings(null);
       return;
     }
 
-    const currentMatch = match;
     let isMounted = true;
 
-    async function loadAvailability() {
+    async function loadSettings() {
       try {
-        const slots = await getUserAvailability(currentMatch.user_id);
+        const data =
+          await getUserSessionSettings(
+            match!.user_id
+          );
+
         if (isMounted) {
-          setAvailableSlots(slots);
+          setSessionSettings(data);
         }
+
       } catch (error) {
-        console.error("Failed to load user availability:", error);
+        console.error(
+          "Failed to load session settings:",
+          error
+        );
+
         if (isMounted) {
-          setAvailableSlots([]);
+          setSessionSettings(null);
         }
       }
     }
 
-    loadAvailability();
+    loadSettings();
 
     return () => {
       isMounted = false;
     };
+
   }, [match]);
 
-  const formatDayLabel = (day: string) =>
-    day.charAt(0).toUpperCase() + day.slice(1);
 
-  const formatTimeRange = (slot: AvailabilitySlot) => {
-    const formatTime = (value: string) => {
-      const [hours, minutes] = value.split(":");
-      const parsedHours = Number(hours);
-      const suffix = parsedHours >= 12 ? "PM" : "AM";
-      const normalizedHours = ((parsedHours + 11) % 12) + 1;
-      return `${normalizedHours}:${minutes} ${suffix}`;
+  // ---------------- AVAILABLE SLOTS ----------------
+
+  const availableSlots =
+    sessionSettings?.availability ?? [];
+
+
+  const selectedSlotObject =
+    useMemo(() => {
+
+      return (
+        availableSlots.find(
+          (slot) =>
+            slot.id === selectedSlot
+        ) ?? null
+      );
+
+    }, [
+      availableSlots,
+      selectedSlot,
+    ]);
+
+
+  // ---------------- START TIME OPTIONS ----------------
+
+  const startTimeOptions =
+    useMemo(() => {
+
+      if (!selectedSlotObject) {
+        return [];
+      }
+
+      const slotStart =
+        timeToMinutes(
+          selectedSlotObject.start_time
+        );
+
+      const slotEnd =
+        timeToMinutes(
+          selectedSlotObject.end_time
+        );
+
+      // If availability starts at 2:22,
+      // first session time becomes 2:30.
+      const firstStart =
+        Math.ceil(
+          slotStart / 15
+        ) * 15;
+
+      const options: string[] =
+        [];
+
+      for (
+        let current =
+          firstStart;
+
+        current + 15 <= slotEnd;
+
+        current += 15
+      ) {
+        options.push(
+          minutesToTime(current)
+        );
+      }
+
+      return options;
+
+    }, [selectedSlotObject]);
+
+
+  // ---------------- DURATION OPTIONS ----------------
+
+  const durationOptions =
+    useMemo(() => {
+
+      if (
+        !selectedSlotObject ||
+        !selectedStartTime ||
+        !sessionSettings
+      ) {
+        return [];
+      }
+
+      const start =
+        timeToMinutes(
+          selectedStartTime
+        );
+
+      const slotEnd =
+        timeToMinutes(
+          selectedSlotObject.end_time
+        );
+
+      const remainingMinutes =
+        slotEnd - start;
+
+      const maximumDuration =
+        Math.min(
+          remainingMinutes,
+          sessionSettings
+            .max_session_duration_minutes
+        );
+
+      const options: number[] =
+        [];
+
+      for (
+        let duration = 15;
+        duration <= maximumDuration;
+        duration += 15
+      ) {
+        options.push(duration);
+      }
+
+      return options;
+
+    }, [
+      selectedSlotObject,
+      selectedStartTime,
+      sessionSettings,
+    ]);
+
+
+  // ---------------- END TIME ----------------
+
+  const requestedEndTime =
+    useMemo(() => {
+
+      if (
+        !selectedStartTime ||
+        selectedDuration === null
+      ) {
+        return null;
+      }
+
+      return minutesToTime(
+        timeToMinutes(
+          selectedStartTime
+        ) + selectedDuration
+      );
+
+    }, [
+      selectedStartTime,
+      selectedDuration,
+    ]);
+
+
+  // ---------------- HANDLERS ----------------
+
+  const handleSlotChange = (
+    slotId: number
+  ) => {
+    setSelectedSlot(slotId);
+
+    setSelectedStartTime("");
+
+    setSelectedDuration(null);
+  };
+
+
+  const handleStartTimeChange = (
+    time: string
+  ) => {
+    setSelectedStartTime(time);
+
+    setSelectedDuration(null);
+  };
+
+
+  // ---------------- SEND ----------------
+
+  const handleSendRequest =
+    async () => {
+
+      setErrorMessage(null);
+
+      if (!match) {
+        return;
+      }
+
+      if (!selectedSkill) {
+        alert(
+          "Please select a skill."
+        );
+        return;
+      }
+
+      if (!selectedSlot) {
+        alert(
+          "Please choose availability."
+        );
+        return;
+      }
+
+      if (!selectedStartTime) {
+        alert(
+          "Please choose a start time."
+        );
+        return;
+      }
+
+      if (
+        selectedDuration === null
+      ) {
+        alert(
+          "Please choose a duration."
+        );
+        return;
+      }
+
+      if (!requestedEndTime) {
+        return;
+      }
+
+      const skillObj =
+        skillsCatalog.find(
+          (skill) =>
+            skill.name
+              .trim()
+              .toLowerCase() ===
+            selectedSkill
+              .trim()
+              .toLowerCase()
+        );
+
+      if (!skillObj) {
+        alert(
+          "The selected skill could not be found."
+        );
+        return;
+      }
+
+      try {
+        setSubmitting(true);
+
+        await createMatchRequest({
+          receiver:
+            match.user_id,
+
+          skill:
+            skillObj.id,
+
+          selected_slot:
+            selectedSlot,
+
+          requested_start_time:
+            selectedStartTime,
+
+          requested_end_time:
+            requestedEndTime,
+        });
+
+        alert(
+          "Match request sent successfully!"
+        );
+
+        navigate("/matches");
+
+      } catch (error) {
+
+        const message =
+          getErrorMessage(error);
+
+        setErrorMessage(message);
+
+      } finally {
+        setSubmitting(false);
+      }
     };
 
-    return `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}`;
-  };
 
-  // 3. Connect to Django backend API
-  const handleSendRequest = async () => {
-    setErrorMessage(null);
-
-    if (!match) {
-      alert("Unable to load the selected user details.");
-      return;
-    }
-
-    if (selectedSkill === null) {
-      alert("Please select a skill you want to learn.");
-      return;
-    }
-
-    if (selectedSlot === null) {
-      alert("Please select a convenient meeting time slot.");
-      return;
-    }
-
-    // Match selected string to skill database ID
-    const skillObj = skillsCatalog.find(
-      (s) => s.name.trim().toLowerCase() === selectedSkill.trim().toLowerCase()
-    );
-
-    if (!skillObj) {
-      alert(`Skill "${selectedSkill}" could not be found in the database.`);
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-
-      await createMatchRequest({
-        receiver: match.user_id,
-        skill: skillObj.id,
-        selected_slot: selectedSlot,
-      });
-
-      alert("Match request sent successfully!");
-      navigate("/matches");
-    } catch (error) {
-      const message = getErrorMessage(error);
-      setErrorMessage(message);
-      alert(message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // ---------------- LOADING ----------------
 
   if (loading) {
     return (
       <main className="send-request-page">
+
         <div className="send-request-panel">
-          <Link to="/matches" className="send-request-back-btn">
-            &larr; Back to Matches
-          </Link>
-          <div className="empty-state">
-            <h2>Loading match details...</h2>
+
+          <div className="loading-card">
+            Loading session details...
           </div>
+
         </div>
+
       </main>
     );
   }
+
 
   if (!match) {
     return (
       <main className="send-request-page">
+
         <div className="send-request-panel">
-          <Link to="/matches" className="send-request-back-btn">
-            &larr; Back to Matches
+
+          <Link
+            to="/matches"
+            className="send-request-back-btn"
+          >
+            ← Back to Matches
           </Link>
-          <div className="empty-state">
-            <h2>Match not found</h2>
-            <p>We could not load this user’s profile details.</p>
+
+          <div className="loading-card">
+
+            <h2>
+              Match not found
+            </h2>
+
+            <p>
+              This profile could not
+              be loaded.
+            </p>
+
           </div>
+
         </div>
+
       </main>
     );
   }
 
-  const initial = match.username ? match.username.charAt(0).toUpperCase() : "?";
+
+  const initial =
+    match.username
+      ? match.username
+          .charAt(0)
+          .toUpperCase()
+      : "?";
+
 
   return (
     <main className="send-request-page">
+
       <div className="send-request-panel">
+
+
+        {/* NAV */}
+
         <div className="send-request-nav">
-          <Link to="/matches" className="send-request-back-btn">
-            &larr; Back to Matches
+
+          <Link
+            to="/matches"
+            className="send-request-back-btn"
+          >
+            ← Back to Matches
           </Link>
-          <span className="send-request-brand">SkillMatch</span>
+
+          <span className="send-request-brand">
+            SkillMatch
+          </span>
+
         </div>
 
-        {/* Partner Header */}
+
+        {/* HEADER */}
+
         <header className="send-request-header">
-          <div className="partner-profile-lockup">
-            <div className="partner-avatar">{initial}</div>
-            <div>
-              <span className="step-tag">PROPOSE A SESSION</span>
-              <h1 className="request-title">Skill Swap with {match.username}</h1>
-            </div>
+
+          <div className="partner-avatar">
+            {initial}
           </div>
+
+          <div>
+
+            <span className="header-eyebrow">
+              SESSION REQUEST
+            </span>
+
+            <h1>
+              Learn with{" "}
+              {match.username}
+            </h1>
+
+            <p>
+              Select a skill and build
+              a session that works for
+              both of you.
+            </p>
+
+          </div>
+
         </header>
 
+
         {errorMessage && (
-          <div className="error-banner" role="alert" style={{ marginBottom: "20px" }}>
-            ⚠️ {errorMessage}
+          <div className="error-banner">
+            {errorMessage}
           </div>
         )}
 
-        {/* Swap Overview / Exchange Map */}
-        <section className="swap-overview-section">
-          <div className="swap-grid">
-            {/* Learn column */}
-            <div className="swap-box learn-box">
-              <div className="swap-box-header">
-                <span className="swap-direction-icon">📥</span>
-                <div>
-                  <span className="swap-box-title">Step 1: Select Skill to Learn</span>
-                  <span className="swap-box-subtitle">What {match.username} will teach you</span>
-                </div>
-              </div>
+
+        {/* SKILL AREA */}
+
+        <section className="request-section">
+
+          <div className="section-heading">
+
+            <span className="step-number">
+              01
+            </span>
+
+            <div>
+
+              <h2>
+                Choose your skill
+              </h2>
+
+              <p>
+                What would you like{" "}
+                {match.username} to
+                teach you?
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="skill-exchange-grid">
+
+            <div className="learn-card">
+
+              <span className="mini-label">
+                YOU WANT TO LEARN
+              </span>
 
               <div className="skill-selector-list">
-                {match.teach_me.map((skill) => (
-                  <button
-                    type="button"
-                    key={skill}
-                    className={`skill-choice-pill ${
-                      selectedSkill === skill ? "selected" : ""
-                    }`}
-                    onClick={() => setSelectedSkill(skill)}
-                  >
-                    <span className="radio-indicator"></span>
-                    <span className="skill-text">{skill}</span>
-                  </button>
-                ))}
+
+                {match.teach_me.map(
+                  (skill) => (
+
+                    <button
+                      type="button"
+                      key={skill}
+                      className={
+                        selectedSkill ===
+                        skill
+                          ? "skill-choice selected"
+                          : "skill-choice"
+                      }
+                      onClick={() =>
+                        setSelectedSkill(
+                          skill
+                        )
+                      }
+                    >
+
+                      <span
+                        className="skill-radio"
+                      />
+
+                      {skill}
+
+                    </button>
+
+                  )
+                )}
+
               </div>
+
             </div>
 
-            <div className="swap-divider">
-              <span>⇄</span>
+
+            <div className="swap-arrow">
+              ⇄
             </div>
 
-            {/* Teach column */}
-            <div className="swap-box teach-box">
-              <div className="swap-box-header">
-                <span className="swap-direction-icon">📤</span>
+
+            <div className="teach-card">
+
+              <span className="mini-label">
+                YOU CAN TEACH
+              </span>
+
+              <div className="offer-skills">
+
+                {match.teach_them.map(
+                  (skill) => (
+
+                    <span
+                      key={skill}
+                      className="offer-skill"
+                    >
+                      {skill}
+                    </span>
+
+                  )
+                )}
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* SESSION PLANNER */}
+
+        <section className="request-section">
+
+          <div className="section-heading">
+
+            <span className="step-number">
+              02
+            </span>
+
+            <div>
+
+              <h2>
+                Plan your session
+              </h2>
+
+              <p>
+                Select an available
+                period, start time and
+                duration.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div className="schedule-card">
+
+            <div className="schedule-card-top">
+
+              <div>
+
+                <span className="schedule-icon">
+                  ◷
+                </span>
+
                 <div>
-                  <span className="swap-box-title">Skills You Offer</span>
-                  <span className="swap-box-subtitle">What you can teach {match.username}</span>
+
+                  <strong>
+                    {match.username}
+                    &apos;s schedule
+                  </strong>
+
+                  <p>
+                    Choose any session
+                    inside their
+                    available time.
+                  </p>
+
                 </div>
+
               </div>
 
-              <div className="skills-badge-list">
-                {match.teach_them.map((skill) => (
-                  <span className="skill-pill pill-teach" key={skill}>
-                    {skill}
-                  </span>
-                ))}
-              </div>
+
+              {sessionSettings && (
+
+                <span className="max-duration-badge">
+
+                  Max{" "}
+
+                  {formatDuration(
+                    sessionSettings
+                      .max_session_duration_minutes
+                  )}
+
+                </span>
+
+              )}
+
             </div>
-          </div>
-        </section>
 
-        {/* Time Slot Picker */}
-        <section className="availability-section">
-          <div className="section-title-group">
-            <span className="section-step-num">Step 2</span>
-            <h3>Choose a Time Slot</h3>
-          </div>
-          <p className="section-subtext">
-            Times are based on {match.username}&apos;s weekly schedule.
-          </p>
 
-          <div className="slot-list">
-            {availableSlots.length === 0 ? (
-              <div className="empty-availability">
-                <p>No available slots shared yet by {match.username}.</p>
+            <div className="scheduler-grid">
+
+
+              {/* AVAILABILITY */}
+
+              <div className="scheduler-field">
+
+                <label>
+                  <span className="field-number">
+                    1
+                  </span>
+
+                  Availability
+                </label>
+
+
+                <div className="select-wrapper">
+
+                  <select
+                    value={
+                      selectedSlot ?? ""
+                    }
+                    onChange={(e) =>
+                      handleSlotChange(
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                  >
+
+                    <option value="">
+                      Choose availability
+                    </option>
+
+
+                    {availableSlots.map(
+                      (slot) => (
+
+                        <option
+                          key={slot.id}
+                          value={slot.id}
+                        >
+
+                          {formatDayLabel(
+                            slot.day
+                          )}
+
+                          {" · "}
+
+                          {formatTime(
+                            slot.start_time
+                          )}
+
+                          {" – "}
+
+                          {formatTime(
+                            slot.end_time
+                          )}
+
+                        </option>
+
+                      )
+                    )}
+
+                  </select>
+
+                  <span className="select-arrow">
+                    ▾
+                  </span>
+
+                </div>
+
               </div>
-            ) : (
-              availableSlots.map((slot) => (
-                <button
-                  type="button"
-                  key={slot.id}
-                  className={`slot-card ${
-                    selectedSlot === slot.id ? "selected" : ""
-                  }`}
-                  onClick={() => setSelectedSlot(slot.id)}
-                >
-                  <span className="slot-day">{formatDayLabel(slot.day)}</span>
-                  <span className="slot-time">{formatTimeRange(slot)}</span>
-                </button>
-              ))
-            )}
+
+
+              {/* START TIME */}
+
+              <div className="scheduler-field">
+
+                <label>
+                  <span className="field-number">
+                    2
+                  </span>
+
+                  Start time
+                </label>
+
+
+                <div className="select-wrapper">
+
+                  <select
+                    value={
+                      selectedStartTime
+                    }
+                    disabled={
+                      !selectedSlot
+                    }
+                    onChange={(e) =>
+                      handleStartTimeChange(
+                        e.target.value
+                      )
+                    }
+                  >
+
+                    <option value="">
+                      {selectedSlot
+                        ? "Choose start time"
+                        : "Select availability first"}
+                    </option>
+
+
+                    {startTimeOptions.map(
+                      (time) => (
+
+                        <option
+                          key={time}
+                          value={time}
+                        >
+                          {formatTime(time)}
+                        </option>
+
+                      )
+                    )}
+
+                  </select>
+
+                  <span className="select-arrow">
+                    ▾
+                  </span>
+
+                </div>
+
+                {selectedSlot && (
+                  <span className="field-hint">
+                    Every 15 minutes
+                  </span>
+                )}
+
+              </div>
+
+
+              {/* DURATION */}
+
+              <div className="scheduler-field">
+
+                <label>
+                  <span className="field-number">
+                    3
+                  </span>
+
+                  Duration
+                </label>
+
+
+                <div className="select-wrapper">
+
+                  <select
+                    value={
+                      selectedDuration ??
+                      ""
+                    }
+                    disabled={
+                      !selectedStartTime
+                    }
+                    onChange={(e) =>
+                      setSelectedDuration(
+                        Number(
+                          e.target.value
+                        )
+                      )
+                    }
+                  >
+
+                    <option value="">
+                      {selectedStartTime
+                        ? "Choose duration"
+                        : "Choose start time first"}
+                    </option>
+
+
+                    {durationOptions.map(
+                      (duration) => (
+
+                        <option
+                          key={duration}
+                          value={duration}
+                        >
+                          {formatDuration(
+                            duration
+                          )}
+                        </option>
+
+                      )
+                    )}
+
+                  </select>
+
+                  <span className="select-arrow">
+                    ▾
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+
+            {/* SESSION PREVIEW */}
+
+            {selectedSlotObject &&
+              selectedStartTime &&
+              selectedDuration &&
+              requestedEndTime && (
+
+                <div className="session-preview">
+
+                  <div className="preview-icon">
+                    ✓
+                  </div>
+
+
+                  <div className="preview-content">
+
+                    <span>
+                      YOUR PROPOSED SESSION
+                    </span>
+
+                    <strong>
+
+                      {formatDayLabel(
+                        selectedSlotObject.day
+                      )}
+
+                      {" · "}
+
+                      {formatTime(
+                        selectedStartTime
+                      )}
+
+                      {" – "}
+
+                      {formatTime(
+                        requestedEndTime
+                      )}
+
+                    </strong>
+
+                  </div>
+
+
+                  <div className="preview-duration">
+
+                    {formatDuration(
+                      selectedDuration
+                    )}
+
+                  </div>
+
+                </div>
+
+              )}
+
           </div>
+
         </section>
 
-        {/* Submit Actions */}
+
+        {/* FOOTER */}
+
         <div className="send-request-footer">
+
+          <div className="footer-help">
+
+            {!selectedSkill
+              ? "Choose a skill to continue"
+              : !selectedSlot
+              ? "Choose an available period"
+              : !selectedStartTime
+              ? "Choose your start time"
+              : selectedDuration === null
+              ? "Choose a session duration"
+              : "Everything looks good!"}
+
+          </div>
+
+
           <button
             type="button"
             className="send-request-button"
-            disabled={!selectedSkill || !selectedSlot || submitting}
-            onClick={handleSendRequest}
+            disabled={
+              !selectedSkill ||
+              !selectedSlot ||
+              !selectedStartTime ||
+              selectedDuration ===
+                null ||
+              submitting
+            }
+            onClick={
+              handleSendRequest
+            }
           >
-            {submitting ? "Sending..." : "Confirm & Send Request →"}
+
+            {submitting
+              ? "Sending..."
+              : "Send Request →"}
+
           </button>
+
         </div>
+
       </div>
+
     </main>
   );
 }
+
 
 export default SendRequest;

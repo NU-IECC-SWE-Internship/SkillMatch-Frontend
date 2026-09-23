@@ -21,7 +21,20 @@ function MatchCard({ match }: MatchCardProps) {
       <div className="match-header">
         <div className="match-avatar-info">
           <div className="avatar-placeholder">{initial}</div>
-          <h2 className="partner-name">{match.username}</h2>
+          <div>
+            <h2 className="partner-name">{match.username}</h2>
+            <div className="partner-rating-badge">
+              {match.rating_count && match.rating_count > 0 ? (
+                <>
+                  <span className="star-symbol">★</span>
+                  <span className="rating-val">{match.rating_average?.toFixed(1)}</span>
+                  <span className="rating-cnt">({match.rating_count} review{match.rating_count === 1 ? '' : 's'})</span>
+                </>
+              ) : (
+                <span className="rating-new">★ New Partner</span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

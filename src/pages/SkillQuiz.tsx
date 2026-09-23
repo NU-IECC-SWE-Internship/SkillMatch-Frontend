@@ -12,7 +12,7 @@ import "./SkillQuiz.css";
 
 type OptionKey = "A" | "B" | "C" | "D";
 
-const QUESTION_SECONDS = 15;
+const QUESTION_SECONDS = 20;
 
 function optionText(q: QuizQuestion, key: OptionKey) {
   if (key === "A") return q.option_a;
@@ -145,7 +145,7 @@ export default function SkillQuiz() {
     }, 0);
   }, [finishQuiz, isLast, result, submitting]);
 
-  // Timer: count down 15s per question; only while the quiz has started
+  // Timer: count down 20s per question; only while the quiz has started
   useEffect(() => {
     if (!started || loading || error || result || submitting || !current) return;
 
@@ -266,7 +266,7 @@ export default function SkillQuiz() {
             <h2>Are you ready to take the quiz now?</h2>
             <p>
               When you start, we generate {questionCount} fresh questions about{" "}
-              <strong>{skillName}</strong> with an AI. Each question has{" "}
+              <strong>{skillName}</strong> . Each question has{" "}
               {QUESTION_SECONDS} seconds. You need {passScore}/{questionCount}{" "}
               or higher to become Verified.
             </p>

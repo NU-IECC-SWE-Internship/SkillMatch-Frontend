@@ -47,6 +47,7 @@ export interface MatchRequest {
   receiver_rating_count?: number;
   skill: number;
   skill_name: string;
+  skill_is_verified?: boolean;
 
   selected_slot: number;
 

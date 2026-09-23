@@ -18,7 +18,7 @@ export default function Requests() {
     action: "accept" | "reject";
   } | null>(null);  
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-const [successMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const loadRequests = async () => {
     try {
       setLoading(true);

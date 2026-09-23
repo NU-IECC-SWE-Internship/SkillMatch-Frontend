@@ -363,6 +363,12 @@
   background: white;
 }
 
+.skill-choice-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 
 .offer-skills {
   display: flex;
@@ -374,6 +380,10 @@
 
 
 .offer-skill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
   padding: 8px 12px;
 
   border-radius: 9px;
@@ -386,6 +396,12 @@
 
   font-size: 13px;
   font-weight: 600;
+}
+
+.offer-skill.is-verified {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
 }
 
 

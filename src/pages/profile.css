@@ -350,33 +350,36 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.verify-badge {
+.teach-skill-name {
+  font-weight: 650;
+}
+
+.selected-tag.teach-skill-tag.is-verified-tag {
+  border-color: #5eead4;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.25);
+}
+
+.verify-cooldown {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.verify-badge.verified {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.verify-badge.unverified {
-  background: #fef3c7;
+  font-weight: 650;
   color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
 }
 
 .quiz-launch-btn {
   margin-left: 0 !important;
   padding: 4px 10px !important;
   border-radius: 7px !important;
-  background: #4f46e5 !important;
+  background: #0f766e !important;
   color: #ffffff !important;
   font-size: 12px;
   font-weight: 650;
@@ -384,7 +387,7 @@
 }
 
 .quiz-launch-btn:hover {
-  background: #4338ca !important;
+  background: #0d9488 !important;
   color: #ffffff !important;
 }
 

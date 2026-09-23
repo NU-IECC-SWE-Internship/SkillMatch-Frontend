@@ -24,7 +24,7 @@ import type {
   SkillItem,
 } from "../types/match";
 
-
+import VerifiedBadge from "../components/VerifiedBadge";
 
 import "./SendRequest.css";
 
@@ -727,16 +727,16 @@ function SendRequest() {
 
                     <button
                       type="button"
-                      key={skill}
+                      key={skill.name}
                       className={
                         selectedSkill ===
-                        skill
+                        skill.name
                           ? "skill-choice selected"
                           : "skill-choice"
                       }
                       onClick={() =>
                         setSelectedSkill(
-                          skill
+                          skill.name
                         )
                       }
                     >
@@ -745,7 +745,13 @@ function SendRequest() {
                         className="skill-radio"
                       />
 
-                      {skill}
+                      <span className="skill-choice-label">
+                        {skill.name}
+                        <VerifiedBadge
+                          verified={skill.is_verified}
+                          compact
+                        />
+                      </span>
 
                     </button>
 
@@ -774,10 +780,18 @@ function SendRequest() {
                   (skill) => (
 
                     <span
-                      key={skill}
-                      className="offer-skill"
+                      key={skill.name}
+                      className={
+                        skill.is_verified
+                          ? "offer-skill is-verified"
+                          : "offer-skill"
+                      }
                     >
-                      {skill}
+                      {skill.name}
+                      <VerifiedBadge
+                        verified={skill.is_verified}
+                        compact
+                      />
                     </span>
 
                   )

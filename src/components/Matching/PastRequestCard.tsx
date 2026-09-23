@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
+import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
 
 interface PastRequestCardProps {
@@ -23,16 +24,12 @@ export default function PastRequestCard({
     ? request.receiver_rating_count
     : request.sender_rating_count;
 
-  const initial = username
-    ? username.charAt(0).toUpperCase()
-    : "?";
+  const initial = username ? username.charAt(0).toUpperCase() : "?";
 
   return (
     <div className="incoming-card past-card">
       <div className="incoming-card-top">
-        <div className="sender-avatar muted">
-          {initial}
-        </div>
+        <div className="sender-avatar muted">{initial}</div>
 
         <div>
           <div className="sender-title-rating">
@@ -45,35 +42,49 @@ export default function PastRequestCard({
             />
           </div>
 
-          <span className="skill-pill pill-learn">
+          <span
+            className={
+              request.skill_is_verified
+                ? "skill-pill pill-learn is-verified"
+                : "skill-pill pill-learn"
+            }
+          >
             {request.skill_name || `Skill #${request.skill}`}
+            <VerifiedBadge verified={!!request.skill_is_verified} compact />
           </span>
         </div>
       </div>
 
-      <div className="status-badge-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span
-          className={`status-tag status-${request.status.toLowerCase()}`}
-        >
+      <div
+        className="status-badge-container"
+        style={{ display: "flex", alignItems: "center", gap: "10px" }}
+      >
+        <span className={`status-tag status-${request.status.toLowerCase()}`}>
           {request.status}
         </span>
         {request.status === "ACCEPTED" && (
-          <Link to="/meetings" className="view-meeting-link" style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
+          <Link
+            to="/meetings"
+            className="view-meeting-link"
+            style={{
+              fontSize: "0.85rem",
+              color: "#2563eb",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
             View Meeting &rarr;
           </Link>
         )}
       </div>
 
-      {request.status === "REJECTED" &&
-        request.rejection_reason && (
-          <div className="rejection-reason">
-            <span className="detail-label">
-              Reason for rejection
-            </span>
+      {request.status === "REJECTED" && request.rejection_reason && (
+        <div className="rejection-reason">
+          <span className="detail-label">Reason for rejection</span>
 
-            <p>{request.rejection_reason}</p>
-          </div>
-        )}
+          <p>{request.rejection_reason}</p>
+        </div>
+      )}
     </div>
   );
 }

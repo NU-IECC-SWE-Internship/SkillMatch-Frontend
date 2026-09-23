@@ -23,6 +23,8 @@ import type {
   AvailabilitySlot,
 } from "../api/profileApi";
 
+import VerifiedBadge from "../components/VerifiedBadge";
+
 import "./Profile.css";
 
 
@@ -725,20 +727,18 @@ function Profile() {
 
                     <span
                       key={skill.id}
-                      className="selected-tag teach-skill-tag"
+                      className={
+                        skill.is_verified
+                          ? "selected-tag teach-skill-tag is-verified-tag"
+                          : "selected-tag teach-skill-tag"
+                      }
                     >
 
                       <span className="teach-skill-meta">
-                        {skill.skill_name}
-                        <span
-                          className={
-                            skill.is_verified
-                              ? "verify-badge verified"
-                              : "verify-badge unverified"
-                          }
-                        >
-                          {skill.is_verified ? "Verified" : "Unverified"}
+                        <span className="teach-skill-name">
+                          {skill.skill_name}
                         </span>
+                        <VerifiedBadge verified={skill.is_verified} />
                       </span>
 
                       {!skill.is_verified && skill.can_take_quiz ? (
@@ -756,10 +756,10 @@ function Profile() {
                       {!skill.is_verified &&
                       !skill.can_take_quiz &&
                       skill.has_quiz_attempt ? (
-                        <span className="verify-badge unverified">
+                        <span className="verify-cooldown">
                           Retry in 24h
                           {typeof skill.quiz_score === "number"
-                            ? ` (${skill.quiz_score}/10)`
+                            ? ` · ${skill.quiz_score}/10`
                             : ""}
                         </span>
                       ) : null}

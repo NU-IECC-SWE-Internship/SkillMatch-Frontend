@@ -124,7 +124,11 @@ export function getErrorMessage(error: unknown): string {
   }
 
   if (typeof error.body === 'object' && error.body !== null) {
-    for (const value of Object.values(error.body as Record<string, unknown>)) {
+    const body = error.body as Record<string, unknown>
+    if (typeof body.error === 'string' && body.error.trim()) {
+      return body.error
+    }
+    for (const value of Object.values(body)) {
       if (Array.isArray(value) && typeof value[0] === 'string') {
         return value[0]
       }

@@ -56,7 +56,11 @@ export default function Requests() {
       );
 
       if (action === "accept") {
-        setSuccessMessage("Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab.");
+        setSuccessMessage(
+          "Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab."
+        );
+      } else {
+        setSuccessMessage("Request declined.");
       }
 
       setRequests((prev) =>
@@ -77,7 +81,13 @@ export default function Requests() {
         )
       );
     } catch (err) {
-      setErrorMessage(getErrorMessage(err));
+      const message = getErrorMessage(err);
+      setErrorMessage(message);
+
+      // If it was already processed, refresh so UI matches the DB
+      if (message.toLowerCase().includes("already been processed")) {
+        await loadRequests();
+      }
     } finally {
       setProcessingAction(null);
     }

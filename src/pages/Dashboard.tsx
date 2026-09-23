@@ -1,9 +1,29 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getProfile } from "../api/profileApi";
 import { logout } from "../lib/auth";
 import "./Dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getProfile()
+      .then((profile) => {
+        if (!cancelled && !profile.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        }
+      })
+      .catch(() => {
+        // Keep dashboard visible if profile check fails
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
 
   function handleLogout() {
     logout();

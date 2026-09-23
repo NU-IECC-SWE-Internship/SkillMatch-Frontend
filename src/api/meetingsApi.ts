@@ -12,6 +12,15 @@ export type MeetingStatus =
   | "CANCELLED";
 
 
+export interface ReviewItem {
+  id: number;
+  score: number | null;
+  feedback: string;
+  is_revealed: boolean;
+  created_at: string;
+}
+
+
 export interface Meeting {
   id: number;
 
@@ -29,6 +38,8 @@ export interface Meeting {
   participant_a_name: string;
   participant_b_name: string;
 
+  // Added by the rating / meeting updates from main
+  partner_id?: number;
   partner_name?: string;
 
   is_requester?: boolean;
@@ -49,6 +60,19 @@ export interface Meeting {
   my_token: string | null;
 
   created_at?: string;
+
+  // Rating / review information
+  has_user_rated?: boolean;
+  has_partner_rated?: boolean;
+
+  is_revealed?: boolean;
+
+  review_deadline_ts?: number;
+
+  can_review?: boolean;
+
+  user_review?: ReviewItem | null;
+  partner_review?: ReviewItem | null;
 }
 
 
@@ -58,12 +82,52 @@ export interface CreateMeetingPayload {
 }
 
 
+export interface RateMeetingResponse {
+  message: string;
+  is_revealed: boolean;
+  meeting: Meeting;
+}
+
+
+export interface MeetingReviewsResponse {
+  meeting_id: number;
+
+  is_revealed: boolean;
+
+  review_deadline_ts: number;
+
+  ratings: {
+    id: number;
+
+    meeting_id: number;
+
+    reviewer_id: number;
+    reviewer_username: string;
+
+    reviewed_user_id: number;
+    reviewed_username: string;
+
+    score: number | null;
+
+    feedback: string;
+
+    is_revealed: boolean;
+
+    revealed_at?: string | null;
+
+    created_at: string;
+  }[];
+}
+
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
   "http://127.0.0.1:8000";
 
 
-// ---------------- FETCH HELPER ----------------
+// ========================================================
+// FETCH HELPER
+// ========================================================
 
 async function meetingFetch(
   url: string,
@@ -100,7 +164,7 @@ async function meetingFetch(
   );
 
 
-  // Access token expired
+  // Access token expired -> refresh and retry once
   if (response.status === 401) {
     try {
       token =
@@ -137,13 +201,17 @@ async function meetingFetch(
 }
 
 
-// ---------------- GET MEETINGS ----------------
+// ========================================================
+// GET MEETINGS
+// ========================================================
 
 export async function getMeetings(
-  status: string = "SCHEDULED"
+  status: string = "all"
 ): Promise<Meeting[]> {
+
   const query =
-    status
+    status &&
+    status.toLowerCase() !== "all"
       ? `?status=${encodeURIComponent(status)}`
       : "";
 
@@ -171,11 +239,14 @@ export async function getMeetings(
 }
 
 
-// ---------------- MEETING DETAIL ----------------
+// ========================================================
+// GET MEETING DETAIL
+// ========================================================
 
 export async function getMeetingDetail(
   id: number
 ): Promise<Meeting> {
+
   const response =
     await meetingFetch(
       `/api/meetings/${id}/`
@@ -193,11 +264,14 @@ export async function getMeetingDetail(
 }
 
 
-// ---------------- CREATE MEETING ----------------
+// ========================================================
+// CREATE MEETING
+// ========================================================
 
 export async function createMeeting(
   payload: CreateMeetingPayload
 ): Promise<Meeting> {
+
   const response =
     await meetingFetch(
       "/api/meetings/",
@@ -229,13 +303,16 @@ export async function createMeeting(
 }
 
 
-// ---------------- CANCEL MEETING ----------------
+// ========================================================
+// CANCEL MEETING
+// ========================================================
 
 export async function cancelMeeting(
   id: number
 ): Promise<{
   message: string;
 }> {
+
   const response =
     await meetingFetch(
       `/api/meetings/${id}/`,
@@ -265,4 +342,79 @@ export async function cancelMeeting(
       message:
         "Meeting cancelled successfully.",
     }));
+}
+
+
+// ========================================================
+// SUBMIT MEETING RATING
+// ========================================================
+
+export async function submitMeetingRating(
+  meetingId: number,
+  score: number,
+  feedback?: string
+): Promise<RateMeetingResponse> {
+
+  const response =
+    await meetingFetch(
+      `/api/meetings/${meetingId}/reviews/`,
+      {
+        method: "POST",
+
+        body: JSON.stringify({
+          score,
+          feedback:
+            feedback || "",
+        }),
+      }
+    );
+
+
+  if (!response.ok) {
+    const errorData =
+      await response
+        .json()
+        .catch(() => ({}));
+
+
+    throw new Error(
+      errorData.error ||
+        `Failed to submit review (${response.status})`
+    );
+  }
+
+
+  return response.json();
+}
+
+
+// ========================================================
+// GET MEETING REVIEWS
+// ========================================================
+
+export async function getMeetingReviews(
+  meetingId: number
+): Promise<MeetingReviewsResponse> {
+
+  const response =
+    await meetingFetch(
+      `/api/meetings/${meetingId}/reviews/`
+    );
+
+
+  if (!response.ok) {
+    const errorData =
+      await response
+        .json()
+        .catch(() => ({}));
+
+
+    throw new Error(
+      errorData.error ||
+        `Failed to fetch meeting reviews (${response.status})`
+    );
+  }
+
+
+  return response.json();
 }

@@ -73,6 +73,15 @@ function messageFromBody(
     return (data as { detail: string }).detail
   }
 
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'error' in data &&
+    typeof (data as { error: unknown }).error === 'string'
+  ) {
+    return (data as { error: string }).error
+  }
+
   return `Request failed (${status})`
 }
 
@@ -231,19 +240,46 @@ export function getErrorMessage(
     typeof error.body === 'object' &&
     error.body !== null
   ) {
+    const body = error.body as Record<
+      string,
+      unknown
+    >
+
+    // Backend errors such as:
+    // { "error": "A rejection reason is required." }
+    if (
+      typeof body.error === 'string' &&
+      body.error.trim()
+    ) {
+      return body.error
+    }
+
+    // DRF detail responses such as:
+    // { "detail": "Authentication credentials were not provided." }
+    if (
+      typeof body.detail === 'string' &&
+      body.detail.trim()
+    ) {
+      return body.detail
+    }
+
+    // DRF validation errors such as:
+    // { "skill": ["The receiver does not offer this skill."] }
     for (
-      const value of Object.values(
-        error.body as Record<
-          string,
-          unknown
-        >,
-      )
+      const value of Object.values(body)
     ) {
       if (
         Array.isArray(value) &&
         typeof value[0] === 'string'
       ) {
         return value[0]
+      }
+
+      if (
+        typeof value === 'string' &&
+        value.trim()
+      ) {
+        return value
       }
     }
   }

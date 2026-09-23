@@ -1,5 +1,6 @@
 import type { IncomingRequestItem } from "../../api/matchingApi";
 import { useState } from "react";
+import UserRatingBadge from "./UserRatingBadge";
 
 interface PendingRequestCardProps {
   request: IncomingRequestItem;
@@ -32,7 +33,13 @@ export default function PendingRequestCard({
         <div className="sender-avatar">{initial}</div>
 
         <div>
-          <h3 className="sender-name">{request.sender_username}</h3>
+          <div className="sender-title-rating">
+            <h3 className="sender-name">{request.sender_username}</h3>
+            <UserRatingBadge
+              ratingAverage={request.sender_rating_average}
+              ratingCount={request.sender_rating_count}
+            />
+          </div>
           <span className="request-tag">Wants to learn from you</span>
         </div>
       </div>

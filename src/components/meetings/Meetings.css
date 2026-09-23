@@ -559,3 +559,512 @@
   color: var(--blue-400);
   font-weight: 700;
 }
+
+/* ==========================================================================
+   3-Tab Meeting Navigation & Badges
+   ========================================================================== */
+.meetings-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.35rem;
+  border-radius: 0.85rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.meetings-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.7rem 1.3rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.meetings-tab-btn:hover {
+  color: var(--blue-700);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.meetings-tab-btn.active {
+  background: #ffffff;
+  color: var(--blue-700);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.tab-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.tab-count-badge.highlight {
+  background: #fee2e2;
+  color: #dc2626;
+  animation: pulseBadge 1.8s infinite;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* Toast Alert */
+.meetings-toast-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 0.85rem 1.25rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.1);
+  animation: modalEnter 0.2s ease;
+}
+
+.toast-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  color: #065f46;
+  cursor: pointer;
+  padding: 0 0.35rem;
+  line-height: 1;
+}
+
+/* Meeting Skill Pill */
+.meeting-skill-pill {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  margin-left: 0.4rem;
+}
+
+/* Badges for Reviews */
+.badge-revealed {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-private {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-action-needed {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fde68a;
+  font-weight: 700;
+}
+
+.past-meeting-action-cluster {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.btn-review-action {
+  padding: 0.55rem 1.15rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn-review-action:hover {
+  transform: translateY(-1px);
+}
+
+.btn-review-action.rate {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.3);
+}
+
+.btn-review-action.view {
+  background: #f8fafc;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-review-action.view:hover {
+  background: #f1f5f9;
+}
+
+/* ==========================================================================
+   Rating & Review Modals
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1.25rem;
+}
+
+.rating-modal-card,
+.review-details-modal-card {
+  background: #ffffff;
+  border-radius: 1.25rem;
+  max-width: 580px;
+  width: 100%;
+  padding: 2.25rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  animation: modalEnter 0.22s ease-out;
+  box-sizing: border-box;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.rating-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.rating-modal-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--blue-600);
+  background: #eff6ff;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 0.45rem;
+}
+
+.rating-modal-title {
+  font-family: var(--display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text-h);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.75rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.modal-close-btn:hover {
+  color: #0f172a;
+}
+
+.blind-review-callout {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.75rem;
+}
+
+.callout-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.callout-content strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.callout-content p {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.star-rating-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1rem;
+  background: #fafafa;
+  border-radius: 0.85rem;
+  border: 1px dashed #e2e8f0;
+}
+
+.rating-field-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--text-h);
+  margin-bottom: 0.5rem;
+}
+
+.label-optional {
+  font-weight: 400;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.stars-row {
+  display: inline-flex;
+  gap: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 0 0.15rem;
+  line-height: 1;
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.star-btn.filled {
+  color: #f59e0b;
+}
+
+.star-btn:hover {
+  transform: scale(1.2);
+  color: #d97706;
+}
+
+.star-feedback-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 650;
+  color: #d97706;
+  min-height: 1.3rem;
+}
+
+.rating-input-group {
+  margin-bottom: 1.75rem;
+}
+
+.rating-textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rating-textarea:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.rating-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.rating-alert.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 0.75rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.88rem;
+  margin-bottom: 1.25rem;
+}
+
+/* ==========================================================================
+   View Reviews Modal Details
+   ========================================================================== */
+.review-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.review-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.95rem;
+  padding: 1.35rem;
+}
+
+.review-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.review-card-tag {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.review-card-tag.your-tag {
+  color: var(--blue-700);
+}
+
+.review-card-tag.partner-tag {
+  color: #7c3aed;
+}
+
+.status-badge-mini {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 8px;
+}
+
+.status-badge-mini.submitted {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.status-badge-mini.revealed {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.status-badge-mini.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-badge-mini.expired {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.review-stars-display {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.star-icon {
+  font-size: 1.2rem;
+  color: #cbd5e1;
+}
+
+.star-icon.active {
+  color: #f59e0b;
+}
+
+.score-number {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #d97706;
+  margin-left: 0.35rem;
+}
+
+.review-feedback-text {
+  font-size: 0.92rem;
+  color: #334155;
+  line-height: 1.5;
+  margin: 0 0 0.5rem;
+  font-style: italic;
+}
+
+.review-date-stamp {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.review-card-locked {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px dashed #cbd5e1;
+}
+
+.review-card-locked .locked-icon {
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.review-card-locked h4 {
+  font-size: 0.98rem;
+  color: #1e293b;
+  margin: 0 0 0.4rem;
+}
+
+.review-card-locked p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 0.85rem;
+}
+
+.countdown-pill {
+  display: inline-block;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+}
+
+.review-card-empty,
+.review-card-empty-action {
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.5;
+}

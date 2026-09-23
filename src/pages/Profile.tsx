@@ -78,6 +78,9 @@ function Profile() {
     setMaxSessionDuration,
   ] = useState(120);
 
+  const [ratingAverage, setRatingAverage] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
+
 
   // ---------------- SKILLS ----------------
 
@@ -136,6 +139,14 @@ function Profile() {
 
         setMaxSessionDuration(
           profileData.max_session_duration_minutes || 120
+        );
+
+        setRatingAverage(
+          profileData.rating_average || 0
+        );
+
+        setRatingCount(
+          profileData.rating_count || 0
         );
 
         setSkills(skillsData);
@@ -540,9 +551,37 @@ function Profile() {
               SKILLMATCH
             </p>
 
-            <h1>
-              {username || "Profile"}
-            </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <h1>
+                {username || "Profile"}
+              </h1>
+
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'rgba(255, 255, 255, 0.95)',
+                  padding: '0.35rem 0.85rem',
+                  borderRadius: '20px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '0.9rem',
+                  fontWeight: 650,
+                  margin: '0.25rem 0',
+                }}
+              >
+                {ratingCount > 0 ? (
+                  <>
+                    <span style={{ color: '#f59e0b', fontSize: '1.1rem' }}>★</span>
+                    <span style={{ color: '#1e293b', fontWeight: 700 }}>{ratingAverage.toFixed(1)}</span>
+                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({ratingCount} review{ratingCount === 1 ? '' : 's'})</span>
+                  </>
+                ) : (
+                  <span style={{ color: '#2563eb', fontSize: '0.82rem' }}>★ New Member</span>
+                )}
+              </div>
+            </div>
 
             <p>
               Manage your skills and

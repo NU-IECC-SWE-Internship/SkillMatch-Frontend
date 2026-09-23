@@ -37,9 +37,14 @@ export interface MatchRequest {
   sender: number;
   sender_username: string;
 
+
+
+  sender_rating_average?: number;
+  sender_rating_count?: number;
   receiver: number;
   receiver_username: string;
-
+  receiver_rating_average?: number;
+  receiver_rating_count?: number;
   skill: number;
   skill_name: string;
 
@@ -165,11 +170,14 @@ export async function getSentRequests(): Promise<
 export async function respondToMatchRequest(
   requestId: number,
   action: "accept" | "reject",
-  rejectionReason?: string
+  rejectionReason?: string,
+  timezone?: string
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
   rejection_reason?: string | null;
+
+  meeting_id?: number;
 }> {
   const token = getAccessToken();
 
@@ -186,11 +194,9 @@ export async function respondToMatchRequest(
         action,
 
         ...(action === "reject"
-          ? {
-              rejection_reason:
-                rejectionReason || "",
-            }
-          : {}),
+
+          ? { rejection_reason: rejectionReason }
+          : { timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }),
       },
 
       token,

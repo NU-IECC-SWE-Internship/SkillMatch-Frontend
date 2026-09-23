@@ -45,12 +45,22 @@ const [successMessage] = useState<string | null>(null);
         id: requestId,
         action,
       });
+      setErrorMessage(null);
+      setSuccessMessage(null);
 
       await respondToMatchRequest(
         requestId,
         action,
         rejectionReason
       );
+
+      if (action === "accept") {
+        setSuccessMessage(
+          "Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab."
+        );
+      } else {
+        setSuccessMessage("Request declined.");
+      }
 
       setRequests((prev) =>
         prev.map((req) =>
@@ -70,7 +80,13 @@ const [successMessage] = useState<string | null>(null);
         )
       );
     } catch (err) {
-      setErrorMessage(getErrorMessage(err));
+      const message = getErrorMessage(err);
+      setErrorMessage(message);
+
+      // If it was already processed, refresh so UI matches the DB
+      if (message.toLowerCase().includes("already been processed")) {
+        await loadRequests();
+      }
     } finally {
       setProcessingAction(null);
     }

@@ -8,6 +8,7 @@ import {
 
 import { getErrorMessage } from "../lib/api";
 import PastRequestCard from "../components/Matching/PastRequestCard";
+import UserRatingBadge from "../components/Matching/UserRatingBadge";
 
 import "./Requests.css";
 
@@ -158,10 +159,16 @@ export default function MyRequests() {
                         </div>
 
                         <div>
-                          <h3 className="sender-name">
-                            Request to{" "}
-                            {request.receiver_username}
-                          </h3>
+                          <div className="sender-title-rating">
+                            <h3 className="sender-name">
+                              Request to{" "}
+                              {request.receiver_username}
+                            </h3>
+                            <UserRatingBadge
+                              ratingAverage={request.receiver_rating_average}
+                              ratingCount={request.receiver_rating_count}
+                            />
+                          </div>
 
                           <span className="skill-pill pill-learn">
                             {request.skill_name ||

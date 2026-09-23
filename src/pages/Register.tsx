@@ -3,7 +3,6 @@ import type { SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/api'
 import { register } from '../lib/auth'
-import { getProfile } from '../api/profileApi'
 import './Login.css'
 
 export default function Register() {
@@ -27,16 +26,10 @@ export default function Register() {
         password,
       })
 
-      const profile = await getProfile()
-
-      if (profile.onboarding_completed) {
-        navigate('/dashboard', { replace: true })
-      } else {
-        navigate('/onboarding', { replace: true })
-      }
+      // New accounts go to onboarding; skip extra profile round-trip
+      navigate('/onboarding', { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
-    } finally {
       setLoading(false)
     }
   }

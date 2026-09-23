@@ -80,11 +80,11 @@ export default function App() {
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:userId/request" element={<SendRequest />} />
       <Route path="/requests" element={<Requests />} />
       <Route path="/my-requests" element={<MyRequests />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

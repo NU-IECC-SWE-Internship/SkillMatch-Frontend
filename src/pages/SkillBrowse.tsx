@@ -1,26 +1,72 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
-import { getTeachers } from "../api/matchingApi";
+import { getMatches, getTeachers } from "../api/matchingApi";
 
-import type { Teacher, SkillItem } from "../types/match";
+import type { Teacher, SkillItem, Match } from "../types/match";
+import MatchCard from "../components/Matching/MatchCard";
+import StatusModal from "../components/ui/StatusModal";
 
 import "./SkillBrowse.css";
 
 function SkillBrowse() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [learningSkills, setLearningSkills] = useState<SkillItem[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
 
-  const [selectedSkill, setSelectedSkill] = useState<number | null>(null);
+  const [activeFilter, setActiveFilter] = useState<number | "matches" | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusModal, setStatusModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   useEffect(() => {
-    loadTeachers();
+    const incomingModal = (
+      location.state as {
+        statusModal?: { title: string; message: string; type?: "success" | "error" };
+      } | null
+    )?.statusModal;
+
+    if (incomingModal) {
+      setStatusModal({
+        title: incomingModal.title,
+        message: incomingModal.message,
+        type: incomingModal.type ?? "success",
+      });
+    }
+  }, [location.state]);
+
+  useEffect(() => {
+    loadInitialData();
   }, []);
+
+  async function loadInitialData() {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [teachersData, matchesData] = await Promise.all([
+        getTeachers(),
+        getMatches().catch(() => [] as Match[]),
+      ]);
+
+      setLearningSkills(teachersData.learning_skills ?? []);
+      setTeachers(teachersData.teachers ?? []);
+      setMatches(matchesData ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Could not load skills and teachers.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function loadTeachers(skillId?: number) {
     try {
@@ -28,13 +74,7 @@ function SkillBrowse() {
       setError("");
 
       const data = await getTeachers(skillId);
-
-      // These are ONLY the skills the current user
-      // added to "Want to Learn".
-      setLearningSkills(data.learning_skills);
-
-      // These are the users who teach those skills.
-      setTeachers(data.teachers);
+      setTeachers(data.teachers ?? []);
     } catch (err) {
       console.error(err);
       setError("Could not load teachers.");
@@ -43,214 +83,266 @@ function SkillBrowse() {
     }
   }
 
-  function handleSkillClick(skillId: number | null) {
-    setSelectedSkill(skillId);
+  async function loadMatchesData() {
+    try {
+      setLoading(true);
+      setError("");
 
-    if (skillId === null) {
+      const matchesData = await getMatches();
+      setMatches(matchesData ?? []);
+    } catch (err) {
+      console.error(err);
+      setError("Could not load matches.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleFilterClick(filter: number | "matches" | null) {
+    setActiveFilter(filter);
+
+    if (filter === "matches") {
+      loadMatchesData();
+    } else if (filter === null) {
       loadTeachers();
     } else {
-      loadTeachers(skillId);
+      loadTeachers(filter);
     }
   }
 
   return (
-    <div className="teachers-page">
-      <div className="teachers-panel">
+    <>
+      <StatusModal
+        isOpen={Boolean(statusModal)}
+        title={statusModal?.title ?? ""}
+        message={statusModal?.message ?? ""}
+        type={statusModal?.type ?? "success"}
+        onClose={() => setStatusModal(null)}
+      />
 
-        {/* Top bar */}
+      <div className="teachers-page">
+        <div className="teachers-panel">
 
-        <div className="teachers-topbar">
-          <div>
+          {/* Top bar */}
+
+          <div className="teachers-topbar">
+            <div>
+              <Link
+                to="/dashboard"
+                className="teachers-back-link"
+              >
+                ← Back to Dashboard
+              </Link>
+
+              <h1 className="teachers-title">
+                Find Someone to Learn From
+              </h1>
+
+              <p className="teachers-subtitle">
+                People who teach the skills you want to learn.
+              </p>
+            </div>
+
             <Link
-              to="/dashboard"
-              className="teachers-back-link"
+              to="/profile"
+              className="teachers-profile-link"
             >
-              ← Back to Dashboard
+              My Profile →
             </Link>
-
-            <h1 className="teachers-title">
-              Find Someone to Learn From
-            </h1>
-
-            <p className="teachers-subtitle">
-              People who teach the skills you want to learn.
-            </p>
           </div>
 
-          <Link
-            to="/profile"
-            className="teachers-profile-link"
-          >
-            My Profile →
-          </Link>
-        </div>
+          {/* Skills filter */}
 
+          <section className="teachers-filter-section">
 
-        {/* Skills filter */}
+            <div className="section-heading">
+              <h2>What do you want to learn?</h2>
 
-        <section className="teachers-filter-section">
+              <span>
+                {learningSkills.length} skills
+              </span>
+            </div>
 
-          <div className="section-heading">
-            <h2>What do you want to learn?</h2>
+            <div className="skills-scroll">
 
-            <span>
-              {learningSkills.length} skills
-            </span>
-          </div>
+              {/* All button */}
 
-          <div className="skills-scroll">
-
-            {/* All button */}
-
-            <button
-              className={
-                selectedSkill === null
-                  ? "skill-filter active"
-                  : "skill-filter"
-              }
-              onClick={() => handleSkillClick(null)}
-            >
-              All
-            </button>
-
-
-            {/* ONLY the current user's learning skills */}
-
-            {learningSkills.map((skill) => (
               <button
-                key={skill.id}
                 className={
-                  selectedSkill === skill.id
+                  activeFilter === null
                     ? "skill-filter active"
                     : "skill-filter"
                 }
-                onClick={() => handleSkillClick(skill.id)}
+                onClick={() => handleFilterClick(null)}
               >
-                {skill.name}
+                All
               </button>
-            ))}
 
-          </div>
+              {/* Matches filter button */}
 
-        </section>
+              <button
+                className={
+                  activeFilter === "matches"
+                    ? "skill-filter active"
+                    : "skill-filter"
+                }
+                onClick={() => handleFilterClick("matches")}
+              >
+                Matches
+              </button>
 
+              {/* Skill pills */}
 
-        {/* Teachers */}
-
-        <section className="teachers-list-section">
-
-          <div className="section-heading">
-            <h2>People who can teach you</h2>
-
-            <span>
-              {teachers.length} people
-            </span>
-          </div>
-
-
-          {/* Loading */}
-
-          {loading && (
-            <div className="teachers-message">
-              Loading teachers...
-            </div>
-          )}
-
-
-          {/* Error */}
-
-          {!loading && error && (
-            <div className="teachers-message error">
-              {error}
-            </div>
-          )}
-
-
-          {/* No teachers */}
-
-          {!loading && !error && teachers.length === 0 && (
-            <div className="teachers-message">
-              No one currently teaches this skill.
-            </div>
-          )}
-
-
-          {/* Teacher cards */}
-
-          {!loading && !error && teachers.length > 0 && (
-            <div className="teachers-list">
-
-              {teachers.map((teacher) => (
-                <div
-                  key={teacher.user_id}
-                  className="teacher-card"
+              {learningSkills.map((skill) => (
+                <button
+                  key={skill.id}
+                  className={
+                    activeFilter === skill.id
+                      ? "skill-filter active"
+                      : "skill-filter"
+                  }
+                  onClick={() => handleFilterClick(skill.id)}
                 >
-
-                  {/* Avatar */}
-
-                  <div className="teacher-avatar">
-                    {teacher.username
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-
-
-                  {/* Teacher information */}
-
-                  <div className="teacher-info">
-
-                    <h3>
-                      {teacher.username}
-                    </h3>
-
-                    <p className="teacher-label">
-                      Teaches
-                    </p>
-
-                    <div className="teacher-skills">
-
-                      {teacher.skills.map((skill) => (
-                        <span
-                          key={skill.id}
-                          className="teacher-skill"
-                        >
-                          {skill.name}
-                        </span>
-                      ))}
-
-                    </div>
-
-                  </div>
-
-
-                  {/* Request button */}
-
-                  <button
-                    className="teacher-view-btn"
-                    onClick={() =>
-                      navigate(
-                        `/matches/${teacher.user_id}/request`,
-                        {
-                          state: {
-                            teacher,
-                          },
-                        }
-                      )
-                    }
-                  >
-                    Learn from them →
-                  </button>
-
-                </div>
+                  {skill.name}
+                </button>
               ))}
 
             </div>
-          )}
 
-        </section>
+          </section>
 
+          {/* Teachers / Matches */}
+
+          <section className="teachers-list-section">
+
+            <div className="section-heading">
+              <h2>
+                {activeFilter === "matches"
+                  ? "Mutual Matches"
+                  : "People who can teach you"}
+              </h2>
+
+              <span>
+                {activeFilter === "matches"
+                  ? `${matches.length} matches`
+                  : `${teachers.length} people`}
+              </span>
+            </div>
+
+            {/* Loading */}
+
+            {loading && (
+              <div className="teachers-message">
+                Loading...
+              </div>
+            )}
+
+            {/* Error */}
+
+            {!loading && error && (
+              <div className="teachers-message error">
+                {error}
+              </div>
+            )}
+
+            {/* No teachers / matches */}
+
+            {!loading && !error && activeFilter === "matches" && matches.length === 0 && (
+              <div className="teachers-message">
+                No mutual matches found. Add skills you can teach and want to learn to find a match.
+              </div>
+            )}
+
+            {!loading && !error && activeFilter !== "matches" && teachers.length === 0 && (
+              <div className="teachers-message">
+                No one currently teaches this skill.
+              </div>
+            )}
+
+            {/* Content List */}
+
+            {!loading && !error && (
+              activeFilter === "matches" ? (
+                <div className="matches-list">
+                  {matches.map((match) => (
+                    <MatchCard
+                      key={match.user_id}
+                      match={match}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="teachers-list">
+                  {teachers.map((teacher) => (
+                    <div
+                      key={teacher.user_id}
+                      className="teacher-card"
+                    >
+
+                      {/* Avatar */}
+
+                      <div className="teacher-avatar">
+                        {teacher.username
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+
+                      {/* Teacher information */}
+
+                      <div className="teacher-info">
+
+                        <h3>
+                          {teacher.username}
+                        </h3>
+
+                        <p className="teacher-label">
+                          Teaches
+                        </p>
+
+                        <div className="teacher-skills">
+
+                          {teacher.skills.map((skill) => (
+                            <span
+                              key={skill.id}
+                              className="teacher-skill"
+                            >
+                              {skill.name}
+                            </span>
+                          ))}
+
+                        </div>
+
+                      </div>
+
+                      {/* Request button */}
+
+                      <button
+                        className="teacher-view-btn"
+                        onClick={() =>
+                          navigate(
+                            `/matches/${teacher.user_id}/request`,
+                            {
+                              state: {
+                                teacher,
+                              },
+                            }
+                          )
+                        }
+                      >
+                        Learn from them →
+                      </button>
+
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+          </section>
+
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

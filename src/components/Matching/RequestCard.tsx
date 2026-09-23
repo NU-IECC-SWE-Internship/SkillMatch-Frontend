@@ -29,7 +29,10 @@ export default function PendingRequestCard({
   const [showSkillSelector, setShowSkillSelector] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const senderTeachSkills = request.sender_teach_skills ?? [];
+  const senderTeachSkills = [
+    ...(request.sender_teach_skills ?? []),
+    { id: -1, name: "None" },
+  ];
 
   const handleAccept = () => {
     if (!showSkillSelector) {
@@ -45,7 +48,7 @@ export default function PendingRequestCard({
       request.id,
       "accept",
       undefined,
-      selectedSkill
+      selectedSkill === -1 ? undefined : selectedSkill
     );
   };
 
@@ -91,7 +94,7 @@ export default function PendingRequestCard({
         <div className="choose-skill-section">
           <span className="detail-label">
             Choose a skill you want to learn from{" "}
-            {request.sender_username}
+            {request.sender_username} or select None if you are not interested
           </span>
 
           <div className="skill-selector-list">

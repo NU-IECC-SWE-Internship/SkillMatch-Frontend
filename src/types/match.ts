@@ -3,6 +3,8 @@ export interface Match {
   username: string;
   teach_me: string[];
   teach_them: string[];
+  teach_me_ids?: number[];
+  teach_them_ids?: number[];
 }
 
 export interface SkillItem {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import {
   getUserAvailability,
@@ -55,6 +55,7 @@ function SendRequest() {
   >([]);
 
   const [mySkills, setMySkills] = useState<MySkill[]>([]);
+  const [partnerWantsToLearn, setPartnerWantsToLearn] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(
     !matchFromState && !teacherFromState
@@ -68,11 +69,9 @@ function SendRequest() {
     type: "success" | "error";
   } | null>(null);
 
-
   /*
-   * Load selected user
+   * Load selected user and detect mutual match skills across all origins
    */
-
   useEffect(() => {
     let isMounted = true;
 
@@ -81,31 +80,31 @@ function SendRequest() {
         if (teacherFromState) {
           if (isMounted) {
             setTeacher(teacherFromState);
-            setLoading(false);
           }
-
-          return;
-        }
-
-        if (matchFromState) {
+        } else if (matchFromState) {
           if (isMounted) {
             setMatch(matchFromState);
-            setLoading(false);
+            setPartnerWantsToLearn(matchFromState.teach_them ?? []);
           }
-
-          return;
         }
 
-        if (userId) {
-          const matchesData = await getMatches();
+        const resolvedId =
+          teacherFromState?.user_id ??
+          matchFromState?.user_id ??
+          (userId ? Number(userId) : null);
 
+        if (resolvedId) {
+          const matchesData = await getMatches();
           if (!isMounted) return;
 
-          const selectedMatch = matchesData.find(
-            (item) => item.user_id === Number(userId)
+          const matchedUser = matchesData.find(
+            (item) => item.user_id === resolvedId
           );
 
-          setMatch(selectedMatch ?? null);
+          if (matchedUser) {
+            setMatch(matchedUser);
+            setPartnerWantsToLearn(matchedUser.teach_them ?? []);
+          }
         }
       } catch (error) {
         console.error("Failed to load initial data:", error);
@@ -123,13 +122,9 @@ function SendRequest() {
     };
   }, [matchFromState, teacherFromState, userId]);
 
-
   /*
    * Load CURRENT USER'S skills
-   *
-   * These are used for "Skills You Offer".
    */
-
   useEffect(() => {
     let isMounted = true;
 
@@ -141,10 +136,7 @@ function SendRequest() {
           setMySkills(data);
         }
       } catch (error) {
-        console.error(
-          "Failed to load my skills:",
-          error
-        );
+        console.error("Failed to load my skills:", error);
 
         if (isMounted) {
           setMySkills([]);
@@ -159,26 +151,9 @@ function SendRequest() {
     };
   }, []);
 
-
-  /*
-   * Get selected user's ID
-   */
-
-  const partnerId =
-    teacher?.user_id ?? match?.user_id ?? null;
-
-
-  /*
-   * Get selected user's username
-   */
-
-  const partnerUsername =
-    teacher?.username ?? match?.username ?? "";
-
-
-  /*
-   * Load selected user's availability
-   */
+  const partnerId = teacher?.user_id ?? match?.user_id ?? null;
+  const partnerUsername = teacher?.username ?? match?.username ?? "";
+  const targetPath = teacherFromState ? "/skillbrowse" : "/matches";
 
   useEffect(() => {
     if (partnerId === null) {
@@ -187,23 +162,17 @@ function SendRequest() {
     }
 
     const currentPartnerId = partnerId;
-
     let isMounted = true;
 
     async function loadAvailability() {
       try {
-        const slots = await getUserAvailability(
-          currentPartnerId
-        );
+        const slots = await getUserAvailability(currentPartnerId);
 
         if (isMounted) {
           setAvailableSlots(slots);
         }
       } catch (error) {
-        console.error(
-          "Failed to load user availability:",
-          error
-        );
+        console.error("Failed to load user availability:", error);
 
         if (isMounted) {
           setAvailableSlots([]);
@@ -218,72 +187,50 @@ function SendRequest() {
     };
   }, [partnerId]);
 
-
-  /*
-   * Skills the selected person teaches.
-   *
-   * SkillBrowse:
-   *    teacher.skills
-   *
-   * Existing Matches:
-   *    match.teach_me
-   */
-
   const skillsToLearn =
     teacher?.skills.map((skill) => ({
       id: skill.id,
       name: skill.name,
     })) ??
-    match?.teach_me.map((skill, index) => ({
-      id: index,
-      name: skill,
-    })) ??
+    (match
+      ? match.teach_me.map((skill, index) => ({
+          id: match.teach_me_ids?.[index] ?? index + 1,
+          name: skill,
+        }))
+      : []) ??
     [];
-
-
-  /*
-   * CURRENT USER'S skills.
-   *
-   * These are displayed under:
-   * "Skills You Offer"
-   *
-   * Only skills marked as "teach" are considered
-   * skills the current user offers.
-   */
 
   const skillsYouOffer = mySkills.filter(
     (skill) => skill.skill_type === "teach"
   );
 
+  const matchingSkillNames = new Set<string>(
+    partnerWantsToLearn.map((s) => s.toLowerCase().trim())
+  );
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(teacherFromState ? "/skillbrowse" : "/matches");
+  };
 
   const formatDayLabel = (day: string) =>
     day.charAt(0).toUpperCase() + day.slice(1);
 
-
   const formatTimeRange = (slot: AvailabilitySlot) => {
     const formatTime = (value: string) => {
       const [hours, minutes] = value.split(":");
-
       const parsedHours = Number(hours);
-
-      const suffix =
-        parsedHours >= 12 ? "PM" : "AM";
-
-      const normalizedHours =
-        ((parsedHours + 11) % 12) + 1;
-
+      const suffix = parsedHours >= 12 ? "PM" : "AM";
+      const normalizedHours = ((parsedHours + 11) % 12) + 1;
       return `${normalizedHours}:${minutes} ${suffix}`;
     };
 
-    return `${formatTime(slot.start_time)} – ${formatTime(
-      slot.end_time
-    )}`;
+    return `${formatTime(slot.start_time)} – ${formatTime(slot.end_time)}`;
   };
-
-
-  /*
-   * Send request
-   */
 
   const handleSendRequest = async () => {
     setStatusModal(null);
@@ -291,42 +238,29 @@ function SendRequest() {
     if (!partnerId) {
       setStatusModal({
         title: "Unable to send request",
-        message:
-          "Unable to load the selected user's details.",
+        message: "Unable to load the selected user's details.",
         type: "error",
       });
-
       return;
     }
 
     if (selectedSkill === null) {
       setStatusModal({
         title: "Choose a skill",
-        message:
-          "Please select a skill you want to learn.",
+        message: "Please select a skill you want to learn.",
         type: "error",
       });
-
       return;
     }
 
     if (selectedSlot === null) {
       setStatusModal({
         title: "Choose a time slot",
-        message:
-          "Please select a convenient meeting time slot.",
+        message: "Please select a convenient meeting time slot.",
         type: "error",
       });
-
       return;
     }
-
-
-    /*
-     * Find the selected skill.
-     *
-     * For SkillBrowse, this comes from teacher.skills.
-     */
 
     const selectedSkillObject = skillsToLearn.find(
       (skill) => skill.name === selectedSkill
@@ -335,14 +269,11 @@ function SendRequest() {
     if (!selectedSkillObject) {
       setStatusModal({
         title: "Skill not found",
-        message:
-          "The selected skill could not be found.",
+        message: "The selected skill could not be found.",
         type: "error",
       });
-
       return;
     }
-
 
     try {
       setSubmitting(true);
@@ -353,12 +284,11 @@ function SendRequest() {
         selected_slot: selectedSlot,
       });
 
-      navigate("/matches", {
+      navigate(targetPath, {
         state: {
           statusModal: {
             title: "Request sent",
-            message:
-              "Your skill swap request was sent successfully.",
+            message: "Your skill swap request was sent successfully.",
             type: "success",
           },
         },
@@ -376,67 +306,48 @@ function SendRequest() {
     }
   };
 
-
-  /*
-   * Loading
-   */
-
   if (loading) {
     return (
       <main className="send-request-page">
         <div className="send-request-panel">
-
-          <Link
-            to="/matches"
+          <button
+            type="button"
             className="send-request-back-btn"
+            onClick={handleBack}
           >
             &larr; Back
-          </Link>
-
+          </button>
           <div className="empty-state">
             <h2>Loading user details...</h2>
           </div>
-
         </div>
       </main>
     );
   }
-
-
-  /*
-   * User not found
-   */
 
   if (!partnerId) {
     return (
       <main className="send-request-page">
         <div className="send-request-panel">
-
-          <Link
-            to="/matches"
+          <button
+            type="button"
             className="send-request-back-btn"
+            onClick={handleBack}
           >
             &larr; Back
-          </Link>
-
+          </button>
           <div className="empty-state">
             <h2>User not found</h2>
-
-            <p>
-              We could not load this user's profile details.
-            </p>
+            <p>We could not load this user's profile details.</p>
           </div>
-
         </div>
       </main>
     );
   }
 
-
   const initial = partnerUsername
     ? partnerUsername.charAt(0).toUpperCase()
     : "?";
-
 
   return (
     <>
@@ -448,92 +359,51 @@ function SendRequest() {
         onClose={() => setStatusModal(null)}
       />
 
-
       <main className="send-request-page">
         <div className="send-request-panel">
-
-          {/* Navigation */}
-
           <div className="send-request-nav">
-
-            <Link
-              to="/matches"
+            <button
+              type="button"
               className="send-request-back-btn"
+              onClick={handleBack}
             >
-              &larr; Back to Matches
-            </Link>
-
-            <span className="send-request-brand">
-              SkillMatch
-            </span>
-
+              &larr; Back
+            </button>
+            <span className="send-request-brand">SkillMatch</span>
           </div>
 
-
-          {/* Partner Header */}
-
           <header className="send-request-header">
-
             <div className="partner-profile-lockup">
-
-              <div className="partner-avatar">
-                {initial}
-              </div>
-
+              <div className="partner-avatar">{initial}</div>
               <div>
-
-                <span className="step-tag">
-                  PROPOSE A SESSION
-                </span>
-
+                <span className="step-tag">PROPOSE A SESSION</span>
                 <h1 className="request-title">
                   Skill Swap with {partnerUsername}
                 </h1>
-
               </div>
-
             </div>
-
           </header>
 
-
-          {/* Swap Overview */}
-
           <section className="swap-overview-section">
-
             <div className="swap-grid">
-
               {/* Skill to Learn */}
-
               <div className="swap-box learn-box">
-
                 <div className="swap-box-header">
-
-                  <span className="swap-direction-icon">
-                    📥
-                  </span>
-
+                  <span className="swap-direction-icon">📥</span>
                   <div>
-
                     <span className="swap-box-title">
                       Step 1: Select Skill to Learn
                     </span>
-
                     <span className="swap-box-subtitle">
                       What {partnerUsername} will teach you
                     </span>
-
                   </div>
-
                 </div>
 
-
                 <div className="skill-selector-list">
-
                   {skillsToLearn.length === 0 ? (
                     <p className="empty-state-text">
-                      This user has not added any teaching
-                      skills yet.
+                      This user has not added any teaching skills yet.
                     </p>
                   ) : (
                     skillsToLearn.map((skill) => (
@@ -541,178 +411,117 @@ function SendRequest() {
                         type="button"
                         key={skill.id}
                         className={`skill-choice-pill ${
-                          selectedSkill === skill.name
-                            ? "selected"
-                            : ""
+                          selectedSkill === skill.name ? "selected" : ""
                         }`}
-                        onClick={() =>
-                          setSelectedSkill(skill.name)
-                        }
+                        onClick={() => setSelectedSkill(skill.name)}
                       >
-
                         <span className="radio-indicator"></span>
-
-                        <span className="skill-text">
-                          {skill.name}
-                        </span>
-
+                        <span className="skill-text">{skill.name}</span>
                       </button>
                     ))
                   )}
-
                 </div>
-
               </div>
-
-
-              {/* Divider */}
 
               <div className="swap-divider">
                 <span>⇄</span>
               </div>
 
-
-              {/* CURRENT USER'S SKILLS */}
-
+              {/* Skills You Offer with Color Legend */}
               <div className="swap-box teach-box">
-
                 <div className="swap-box-header">
-
-                  <span className="swap-direction-icon">
-                    📤
-                  </span>
-
+                  <span className="swap-direction-icon">📤</span>
                   <div>
-
-                    <span className="swap-box-title">
-                      Skills You Offer
-                    </span>
-
+                    <span className="swap-box-title">Skills You Offer</span>
                     <span className="swap-box-subtitle">
                       Skills you can teach {partnerUsername}
                     </span>
-
                   </div>
-
                 </div>
 
+                <div className="skill-legend">
+                  <span className="legend-item">
+                    <span className="legend-dot matched-dot"></span>
+                    <strong>Green:</strong> Matched skill ({partnerUsername} wants to learn this)
+                  </span>
+                  <span className="legend-item">
+                    <span className="legend-dot default-dot"></span>
+                    <strong>Gray:</strong> Other skills you teach
+                  </span>
+                </div>
 
                 <div className="skills-badge-list">
-
                   {skillsYouOffer.length === 0 ? (
                     <span className="empty-state-text">
                       You have not added any teaching skills yet.
                     </span>
                   ) : (
-                    skillsYouOffer.map((skill) => (
-                      <span
-                        className="skill-pill pill-teach"
-                        key={skill.id}
-                      >
-                        {skill.skill_name}
-                      </span>
-                    ))
+                    skillsYouOffer.map((skill) => {
+                      const isMatch = matchingSkillNames.has(
+                        skill.skill_name.toLowerCase().trim()
+                      );
+
+                      return (
+                        <span
+                          className={`skill-pill pill-teach ${
+                            isMatch ? "pill-matched" : ""
+                          }`}
+                          key={skill.id}
+                        >
+                          {isMatch && <span className="matched-star">★ </span>}
+                          {skill.skill_name}
+                        </span>
+                      );
+                    })
                   )}
-
                 </div>
-
               </div>
-
             </div>
-
           </section>
 
-
-          {/* Time Slot Picker */}
-
           <section className="availability-section">
-
             <div className="section-title-group">
-
-              <span className="section-step-num">
-                Step 2
-              </span>
-
-              <h3>
-                Choose a Time Slot
-              </h3>
-
+              <span className="section-step-num">Step 2</span>
+              <h3>Choose a Time Slot</h3>
             </div>
 
             <p className="section-subtext">
-              Times are based on {partnerUsername}
-              &apos;s weekly schedule.
+              Times are based on {partnerUsername}&apos;s weekly schedule.
             </p>
 
-
             <div className="slot-list">
-
               {availableSlots.length === 0 ? (
-
                 <div className="empty-availability">
-                  <p>
-                    No available slots shared yet by{" "}
-                    {partnerUsername}.
-                  </p>
+                  <p>No available slots shared yet by {partnerUsername}.</p>
                 </div>
-
               ) : (
-
                 availableSlots.map((slot) => (
-
                   <button
                     type="button"
                     key={slot.id}
                     className={`slot-card ${
-                      selectedSlot === slot.id
-                        ? "selected"
-                        : ""
+                      selectedSlot === slot.id ? "selected" : ""
                     }`}
-                    onClick={() =>
-                      setSelectedSlot(slot.id)
-                    }
+                    onClick={() => setSelectedSlot(slot.id)}
                   >
-
-                    <span className="slot-day">
-                      {formatDayLabel(slot.day)}
-                    </span>
-
-                    <span className="slot-time">
-                      {formatTimeRange(slot)}
-                    </span>
-
+                    <span className="slot-day">{formatDayLabel(slot.day)}</span>
+                    <span className="slot-time">{formatTimeRange(slot)}</span>
                   </button>
-
                 ))
-
               )}
-
             </div>
-
           </section>
 
-
-          {/* Submit */}
-
           <div className="send-request-footer">
-
             <button
               type="button"
               className="send-request-button"
-              disabled={
-                !selectedSkill ||
-                !selectedSlot ||
-                submitting
-              }
+              disabled={!selectedSkill || !selectedSlot || submitting}
               onClick={handleSendRequest}
             >
-              {submitting
-                ? "Sending..."
-                : "Confirm & Send Request →"}
+              {submitting ? "Sending..." : "Confirm & Send Request →"}
             </button>
-
           </div>
-
         </div>
       </main>
     </>

@@ -18,7 +18,10 @@ export default function PastRequestCard({
     ? username.charAt(0).toUpperCase()
     : "?";
 
-  const selectedSkillName = request.receiver_skill_name || request.skill_name;
+  const selectedSkillName =
+    request.receiver_skill_name === null || request.receiver_skill_name === undefined
+      ? "None"
+      : request.receiver_skill_name || request.skill_name;
 
   return (
     <div className="incoming-card past-card">
@@ -38,7 +41,7 @@ export default function PastRequestCard({
         </div>
       </div>
 
-      {request.status === "ACCEPTED" && selectedSkillName && (
+      {request.status === "ACCEPTED" && (
         <div className="rejection-reason">
           <span className="detail-label">
             Selected skill

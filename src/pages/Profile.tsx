@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   getProfile,
@@ -63,6 +63,8 @@ const sessionDurationOptions = [
 
 
 function Profile() {
+  const navigate = useNavigate();
+
   // ---------------- PROFILE ----------------
 
   const [username, setUsername] = useState("");
@@ -723,10 +725,44 @@ function Profile() {
 
                     <span
                       key={skill.id}
-                      className="selected-tag"
+                      className="selected-tag teach-skill-tag"
                     >
 
-                      {skill.skill_name}
+                      <span className="teach-skill-meta">
+                        {skill.skill_name}
+                        <span
+                          className={
+                            skill.is_verified
+                              ? "verify-badge verified"
+                              : "verify-badge unverified"
+                          }
+                        >
+                          {skill.is_verified ? "Verified" : "Unverified"}
+                        </span>
+                      </span>
+
+                      {!skill.is_verified && skill.can_take_quiz ? (
+                        <button
+                          type="button"
+                          className="quiz-launch-btn"
+                          onClick={() =>
+                            navigate(`/skills/${skill.skill}/quiz`)
+                          }
+                        >
+                          Take quiz
+                        </button>
+                      ) : null}
+
+                      {!skill.is_verified &&
+                      !skill.can_take_quiz &&
+                      skill.has_quiz_attempt ? (
+                        <span className="verify-badge unverified">
+                          Retry in 24h
+                          {typeof skill.quiz_score === "number"
+                            ? ` (${skill.quiz_score}/10)`
+                            : ""}
+                        </span>
+                      ) : null}
 
                       <button
                         type="button"

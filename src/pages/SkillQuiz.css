@@ -1,0 +1,182 @@
+.skill-quiz-page {
+  min-height: 100svh;
+  padding: 1.5rem;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(147, 197, 253, 0.35), transparent 40%),
+    linear-gradient(160deg, #f8fbff, #ffffff);
+}
+
+.skill-quiz-shell {
+  width: min(720px, 100%);
+  margin: 0 auto;
+}
+
+.skill-quiz-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.skill-quiz-back {
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.skill-quiz-brand {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.skill-quiz-header h1 {
+  margin: 0 0 0.4rem;
+  font-size: 1.6rem;
+  color: #0f172a;
+}
+
+.skill-quiz-header p {
+  margin: 0 0 1.25rem;
+  color: #64748b;
+}
+
+.skill-quiz-card,
+.skill-quiz-result,
+.skill-quiz-ready,
+.skill-quiz-error-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.skill-quiz-ready h2 {
+  margin: 0 0 0.5rem;
+}
+
+.skill-quiz-ready p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.skill-quiz-warning {
+  margin-top: 0.85rem !important;
+  color: #92400e !important;
+}
+
+.skill-quiz-progress {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.skill-quiz-timer {
+  font-variant-numeric: tabular-nums;
+}
+
+.skill-quiz-timer.urgent {
+  color: #dc2626;
+}
+
+.skill-quiz-timer-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 1.1rem;
+}
+
+.skill-quiz-timer-bar span {
+  display: block;
+  height: 100%;
+  background: #4f46e5;
+  transition: width 0.9s linear;
+}
+
+.skill-quiz-question {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  line-height: 1.45;
+  color: #0f172a;
+}
+
+.skill-quiz-options {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.skill-quiz-option {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  cursor: pointer;
+  color: #334155;
+}
+
+.skill-quiz-option.selected {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #312e81;
+}
+
+.skill-quiz-option input {
+  margin-top: 0.2rem;
+}
+
+.skill-quiz-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.2rem;
+}
+
+.skill-quiz-primary,
+.skill-quiz-secondary {
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1.1rem;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.skill-quiz-primary {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.skill-quiz-secondary {
+  background: #e2e8f0;
+  color: #334155;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.skill-quiz-primary:disabled {
+  cursor: not-allowed;
+  background: #94a3b8;
+}
+
+.skill-quiz-status,
+.skill-quiz-inline-error {
+  margin: 0.75rem 0 0;
+}
+
+.skill-quiz-inline-error {
+  color: #b91c1c;
+}
+
+.skill-quiz-result h2 {
+  margin: 0 0 0.45rem;
+}

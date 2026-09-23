@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import type { Match } from "../../types/match";
+import UserRatingBadge from "./UserRatingBadge";
 
 interface MatchCardProps {
   match: Match;
@@ -21,7 +22,13 @@ function MatchCard({ match }: MatchCardProps) {
       <div className="match-header">
         <div className="match-avatar-info">
           <div className="avatar-placeholder">{initial}</div>
-          <h2 className="partner-name">{match.username}</h2>
+          <div>
+            <h2 className="partner-name">{match.username}</h2>
+            <UserRatingBadge
+              ratingAverage={match.rating_average}
+              ratingCount={match.rating_count}
+            />
+          </div>
         </div>
       </div>
 

@@ -14,8 +14,12 @@ export interface MatchRequest {
   id: number;
   sender: number;
   sender_username: string;
+  sender_rating_average?: number;
+  sender_rating_count?: number;
   receiver: number;
   receiver_username: string;
+  receiver_rating_average?: number;
+  receiver_rating_count?: number;
   skill: number;
   skill_name: string;
   selected_slot: number;

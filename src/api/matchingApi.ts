@@ -1,15 +1,7 @@
 import { apiRequest } from "../lib/api";
 import { getAccessToken } from "../lib/auth";
 import type { Match, SkillItem, TeachersResponse } from "../types/match";
-
-import type {
-  Match,
-  SkillItem,
-} from "../types/match";
-
-import type {
-  AvailabilitySlot,
-} from "./profileApi";
+import type { AvailabilitySlot } from "./profileApi";
 
 
 export type MatchRequestStatus =
@@ -180,9 +172,9 @@ export async function respondToMatchRequest(
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
-  rejection_reason?: string;
-  receiver_skill?: number;
-  receiver_skill_name?: string;
+  rejection_reason?: string | null;
+  receiver_skill?: number | null;
+  receiver_skill_name?: string | null;
   meeting_id?: number;
 }> {
   const token = getAccessToken();
@@ -191,14 +183,15 @@ export async function respondToMatchRequest(
     message: string;
     status: MatchRequestStatus;
     rejection_reason?: string | null;
+    receiver_skill?: number | null;
+    receiver_skill_name?: string | null;
+    meeting_id?: number;
   }>(
     `/api/requests/${requestId}/respond/`,
     {
       method: "POST",
-
       body: {
         action,
-
         ...(action === "reject"
           ? {
               rejection_reason: rejectionReason,
@@ -206,12 +199,9 @@ export async function respondToMatchRequest(
           : {
               receiver_skill: receiverSkill,
               timezone:
-                timezone ||
-                Intl.DateTimeFormat().resolvedOptions().timeZone,
-              timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+                timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
             }),
       },
-
       token,
     }
   );

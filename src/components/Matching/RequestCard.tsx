@@ -36,6 +36,11 @@ export default function PendingRequestCard({
   ];
 
   const handleAccept = () => {
+    if (showRejectForm) {
+      setShowRejectForm(false);
+      setRejectionReason("");
+    }
+
     if (!showSkillSelector) {
       setShowSkillSelector(true);
       return;
@@ -51,6 +56,19 @@ export default function PendingRequestCard({
       undefined,
       selectedSkill === -1 ? undefined : selectedSkill
     );
+  };
+
+  const handleDecline = () => {
+    if (showSkillSelector) {
+      setShowSkillSelector(false);
+      setSelectedSkill(null);
+    }
+
+    setShowRejectForm((current) => !current);
+
+    if (showRejectForm) {
+      setRejectionReason("");
+    }
   };
 
   return (
@@ -143,9 +161,9 @@ export default function PendingRequestCard({
           type="button"
           className="decline-btn"
           disabled={isProcessing}
-          onClick={() => setShowRejectForm(true)}
+          onClick={handleDecline}
         >
-          Decline
+          {showRejectForm ? "Close" : "Decline"}
         </button>
       </div>
 

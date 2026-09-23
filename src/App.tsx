@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
 import MeetingRoom from './pages/MeetingRoom';
 import Requests from "./pages/Requests";
+import SkillBrowse from "./pages/SkillBrowse";
 import { isAuthenticated } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
 import SkillQuiz from "./pages/SkillQuiz";
@@ -94,6 +95,7 @@ export default function App() {
       <Route path="/requests" element={<Requests />} />
       <Route path="/my-requests" element={<MyRequests />} />
       <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/skillbrowse" element={<SkillBrowse />} />
     </Routes>
   );
 }

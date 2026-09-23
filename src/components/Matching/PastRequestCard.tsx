@@ -26,6 +26,12 @@ export default function PastRequestCard({
 
   const initial = username ? username.charAt(0).toUpperCase() : "?";
 
+  const selectedSkillName =
+    request.receiver_skill_name === null ||
+    request.receiver_skill_name === undefined
+      ? "None"
+      : request.receiver_skill_name || request.skill_name;
+
   return (
     <div className="incoming-card past-card">
       <div className="incoming-card-top">
@@ -55,6 +61,20 @@ export default function PastRequestCard({
         </div>
       </div>
 
+      {request.status === "ACCEPTED" && (
+        <div className="rejection-reason">
+          <span className="detail-label">Selected skill</span>
+          <p>{selectedSkillName}</p>
+        </div>
+      )}
+
+      {request.status === "REJECTED" && request.rejection_reason && (
+        <div className="rejection-reason">
+          <span className="detail-label">Reason for rejection</span>
+          <p>{request.rejection_reason}</p>
+        </div>
+      )}
+
       <div
         className="status-badge-container"
         style={{ display: "flex", alignItems: "center", gap: "10px" }}
@@ -62,6 +82,7 @@ export default function PastRequestCard({
         <span className={`status-tag status-${request.status.toLowerCase()}`}>
           {request.status}
         </span>
+
         {request.status === "ACCEPTED" && (
           <Link
             to="/meetings"
@@ -77,14 +98,6 @@ export default function PastRequestCard({
           </Link>
         )}
       </div>
-
-      {request.status === "REJECTED" && request.rejection_reason && (
-        <div className="rejection-reason">
-          <span className="detail-label">Reason for rejection</span>
-
-          <p>{request.rejection_reason}</p>
-        </div>
-      )}
     </div>
   );
 }

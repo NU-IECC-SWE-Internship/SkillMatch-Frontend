@@ -10,7 +10,8 @@ interface PendingRequestCardProps {
   onAction: (
     requestId: number,
     action: "accept" | "reject",
-    rejectionReason?: string
+    rejectionReason?: string,
+    receiverSkill?: number
   ) => void;
   formatSlot: (request: IncomingRequestItem) => string;
 }
@@ -25,8 +26,33 @@ export default function PendingRequestCard({
   const initial = request.sender_username
     ? request.sender_username.charAt(0).toUpperCase()
     : "?";
+
+  const [selectedSkill, setSelectedSkill] = useState<number | null>(null);
+  const [showSkillSelector, setShowSkillSelector] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const senderTeachSkills = [
+    ...(request.sender_teach_skills ?? []),
+    { id: -1, name: "None" },
+  ];
+
+  const handleAccept = () => {
+    if (!showSkillSelector) {
+      setShowSkillSelector(true);
+      return;
+    }
+
+    if (selectedSkill === null) {
+      return;
+    }
+
+    onAction(
+      request.id,
+      "accept",
+      undefined,
+      selectedSkill === -1 ? undefined : selectedSkill
+    );
+  };
 
   return (
     <div className="incoming-card">
@@ -68,14 +94,59 @@ export default function PendingRequestCard({
         </div>
       </div>
 
+      {showSkillSelector && (
+        <div className="choose-skill-section">
+          <span className="detail-label">
+            Choose a skill you want to learn from {request.sender_username} or
+            select None if you are not interested
+          </span>
+
+          <div className="skill-selector-list">
+            {senderTeachSkills.length === 0 ? (
+              <p className="no-skill-text">
+                No teach skills available for this user.
+              </p>
+            ) : (
+              senderTeachSkills.map((skill) => (
+                <button
+                  type="button"
+                  key={skill.id}
+                  className={`skill-choice-pill ${
+                    selectedSkill === skill.id ? "selected" : ""
+                  }`}
+                  disabled={isProcessing}
+                  onClick={() => setSelectedSkill(skill.id)}
+                >
+                  <span className="radio-indicator"></span>
+
+                  <span className="skill-text">
+                    {skill.name}
+                    <VerifiedBadge
+                      verified={!!skill.is_verified}
+                      compact
+                    />
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="incoming-card-actions">
         <button
           type="button"
           className="accept-btn"
-          disabled={isProcessing}
-          onClick={() => onAction(request.id, "accept")}
+          disabled={
+            isProcessing || (showSkillSelector && selectedSkill === null)
+          }
+          onClick={handleAccept}
         >
-          {processingAction === "accept" ? "Accepting..." : "Accept Swap"}
+          {processingAction === "accept"
+            ? "Accepting..."
+            : showSkillSelector
+              ? "Confirm Accept"
+              : "Accept Swap"}
         </button>
 
         <button
@@ -87,6 +158,7 @@ export default function PendingRequestCard({
           Decline
         </button>
       </div>
+
       {showRejectForm && (
         <div className="reject-form">
           <div className="reject-form-header">

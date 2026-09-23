@@ -275,6 +275,72 @@
   gap: 10px;
 }
 
+.choose-skill-section {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(191, 219, 254, 0.75);
+  background: #f8fbff;
+}
+
+.choose-skill-section .detail-label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.skill-selector-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.skill-choice-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--text-h);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.skill-choice-pill:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  transform: translateY(-1px);
+}
+
+.skill-choice-pill.selected {
+  border-color: var(--blue-600);
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.skill-choice-pill .radio-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #94a3b8;
+  background: #ffffff;
+  display: inline-block;
+  transition: all 0.15s ease;
+}
+
+.skill-choice-pill.selected .radio-indicator {
+  border-color: var(--blue-600);
+  background: var(--blue-600);
+  box-shadow: inset 0 0 0 2px #ffffff;
+}
+
+.skill-choice-pill .skill-text {
+  line-height: 1;
+}
+
 .accept-btn {
   background: var(--blue-600);
   color: #ffffff;

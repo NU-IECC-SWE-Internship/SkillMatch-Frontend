@@ -3,7 +3,10 @@ import { getAccessToken } from "../lib/auth";
 import type { Match, SkillItem, TeachersResponse } from "../types/match";
 import type { AvailabilitySlot } from "./profileApi";
 
-export type MatchRequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type MatchRequestStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED";
 
 // ---------------- CREATE REQUEST ----------------
 
@@ -120,8 +123,8 @@ export async function respondToMatchRequest(
   message: string;
   status: MatchRequestStatus;
   rejection_reason?: string | null;
-  receiver_skill?: number;
-  receiver_skill_name?: string;
+  receiver_skill?: number | null;
+  receiver_skill_name?: string | null;
   meeting_id?: number;
 }> {
   const token = getAccessToken();
@@ -130,8 +133,8 @@ export async function respondToMatchRequest(
     message: string;
     status: MatchRequestStatus;
     rejection_reason?: string | null;
-    receiver_skill?: number;
-    receiver_skill_name?: string;
+    receiver_skill?: number | null;
+    receiver_skill_name?: string | null;
     meeting_id?: number;
   }>(`/api/requests/${requestId}/respond/`, {
     method: "POST",

@@ -1,9 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  useLocation,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import {
   getMySkills,
@@ -526,12 +522,12 @@ function SendRequest() {
                       <button
                         type="button"
                         key={skill.id}
-                        className={`skill-choice-pill ${
+                        className={`skill-choice ${
                           selectedSkill === skill.name ? "selected" : ""
                         }`}
                         onClick={() => setSelectedSkill(skill.name)}
                       >
-                        <span className="radio-indicator"></span>
+                        <span className="skill-radio"></span>
                         <span className="skill-text">
                           {skill.name}
                           <VerifiedBadge

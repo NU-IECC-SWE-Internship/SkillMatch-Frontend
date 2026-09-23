@@ -48,14 +48,6 @@ function Matches() {
     loadMatches();
   }, []);
 
-  if (loading) {
-    return <p>Loading matches...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
-  }
-
   return (
     <>
       <StatusModal
@@ -86,7 +78,9 @@ function Matches() {
         </div>
 
         <div className="matches-list">
-          {matches.length > 0 ? (
+          {error ? (
+            <p>{error}</p>
+          ) : loading ? null : matches.length > 0 ? (
             matches.map((match) => (
               <MatchCard
                 key={match.user_id}

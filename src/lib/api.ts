@@ -4,9 +4,11 @@ import {
   refreshAccessToken,
 } from './auth'
 
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
   ''
+
 
 // These routes must NOT send a Bearer token / try auto-refresh.
 const NO_AUTH = new Set([
@@ -15,17 +17,24 @@ const NO_AUTH = new Set([
   '/api/auth/refresh/',
 ])
 
+
 export class ApiError extends Error {
   status: number
   body: unknown
 
-  constructor(message: string, status: number, body: unknown) {
+  constructor(
+    message: string,
+    status: number,
+    body: unknown,
+  ) {
     super(message)
+
     this.name = 'ApiError'
     this.status = status
     this.body = body
   }
 }
+
 
 type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
@@ -33,9 +42,16 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   skipAuth?: boolean
 }
 
-async function readJson(response: Response): Promise<unknown> {
+
+async function readJson(
+  response: Response,
+): Promise<unknown> {
   const text = await response.text()
-  if (!text) return null
+
+  if (!text) {
+    return null
+  }
+
   try {
     return JSON.parse(text)
   } catch {
@@ -43,7 +59,11 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-function messageFromBody(data: unknown, status: number): string {
+
+function messageFromBody(
+  data: unknown,
+  status: number,
+): string {
   if (
     typeof data === 'object' &&
     data !== null &&
@@ -52,27 +72,70 @@ function messageFromBody(data: unknown, status: number): string {
   ) {
     return (data as { detail: string }).detail
   }
+
+  if (
+    typeof data === 'object' &&
+    data !== null &&
+    'error' in data &&
+    typeof (data as { error: unknown }).error === 'string'
+  ) {
+    return (data as { error: string }).error
+  }
+
   return `Request failed (${status})`
 }
+
 
 export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { body, token, headers, skipAuth, ...init } = options
-  const noAuth = skipAuth || NO_AUTH.has(path)
+  const {
+    body,
+    token,
+    headers,
+    skipAuth,
+    ...init
+  } = options
 
-  async function send(access: string | null) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      ...init,
-      headers: {
-        Accept: 'application/json',
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
-        ...(access ? { Authorization: `Bearer ${access}` } : {}),
-        ...headers,
+  const noAuth =
+    skipAuth || NO_AUTH.has(path)
+
+
+  async function send(
+    access: string | null,
+  ) {
+    const response = await fetch(
+      `${API_BASE_URL}${path}`,
+      {
+        ...init,
+
+        headers: {
+          Accept: 'application/json',
+
+          ...(body !== undefined
+            ? {
+                'Content-Type':
+                  'application/json',
+              }
+            : {}),
+
+          ...(access
+            ? {
+                Authorization:
+                  `Bearer ${access}`,
+              }
+            : {}),
+
+          ...headers,
+        },
+
+        body:
+          body !== undefined
+            ? JSON.stringify(body)
+            : undefined,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    })
+    )
 
     return {
       response,
@@ -80,56 +143,147 @@ export async function apiRequest<T>(
     }
   }
 
-  // 1) First try with current access token (unless this is login/register/refresh)
+
+  // First request
   let access: string | null = null
+
   if (!noAuth) {
-    access = token !== undefined ? token : getAccessToken()
+    access =
+      token !== undefined
+        ? token
+        : getAccessToken()
   }
 
-  let { response, data } = await send(access)
 
-  // 2) If Django says unauthorized → try refresh, then retry once
-  if (response.status === 401 && !noAuth) {
+  let {
+    response,
+    data,
+  } = await send(access)
+
+
+  // Access token expired -> refresh and retry once
+  if (
+    response.status === 401 &&
+    !noAuth
+  ) {
     try {
-      const newAccess = await refreshAccessToken()
-      ;({ response, data } = await send(newAccess))
+      const newAccess =
+        await refreshAccessToken()
+
+      ;({
+        response,
+        data,
+      } = await send(newAccess))
+
     } catch {
       forceLogout()
-      throw new ApiError('Session expired. Please sign in again.', 401, data)
+
+      throw new ApiError(
+        'Session expired. Please sign in again.',
+        401,
+        data,
+      )
     }
   }
 
-  // 3) Still not OK → throw
+
+  // Request failed
   if (!response.ok) {
-    throw new ApiError(messageFromBody(data, response.status), response.status, data)
+    throw new ApiError(
+      messageFromBody(
+        data,
+        response.status,
+      ),
+      response.status,
+      data,
+    )
   }
+
 
   return data as T
 }
 
-export function getErrorMessage(error: unknown): string {
+
+export function getErrorMessage(
+  error: unknown,
+): string {
   if (error instanceof TypeError) {
-    return 'Cannot reach the server. Is the Django API running?'
+    return (
+      'Cannot reach the server. ' +
+      'Is the Django API running?'
+    )
   }
+
 
   if (!(error instanceof ApiError)) {
-    return 'Something went wrong. Please try again.'
+    return (
+      'Something went wrong. ' +
+      'Please try again.'
+    )
   }
 
+
   if (error.status === 401) {
-    if (error.message.toLowerCase().includes('session expired')) {
+    if (
+      error.message
+        .toLowerCase()
+        .includes('session expired')
+    ) {
       return error.message
     }
+
     return 'Incorrect username or password.'
   }
 
-  if (typeof error.body === 'object' && error.body !== null) {
-    for (const value of Object.values(error.body as Record<string, unknown>)) {
-      if (Array.isArray(value) && typeof value[0] === 'string') {
+
+  if (
+    typeof error.body === 'object' &&
+    error.body !== null
+  ) {
+    const body = error.body as Record<
+      string,
+      unknown
+    >
+
+    // Backend errors such as:
+    // { "error": "A rejection reason is required." }
+    if (
+      typeof body.error === 'string' &&
+      body.error.trim()
+    ) {
+      return body.error
+    }
+
+    // DRF detail responses such as:
+    // { "detail": "Authentication credentials were not provided." }
+    if (
+      typeof body.detail === 'string' &&
+      body.detail.trim()
+    ) {
+      return body.detail
+    }
+
+    // DRF validation errors such as:
+    // { "skill": ["The receiver does not offer this skill."] }
+    for (
+      const value of Object.values(body)
+    ) {
+      if (
+        Array.isArray(value) &&
+        typeof value[0] === 'string'
+      ) {
         return value[0]
+      }
+
+      if (
+        typeof value === 'string' &&
+        value.trim()
+      ) {
+        return value
       }
     }
   }
+
 
   return error.message
 }

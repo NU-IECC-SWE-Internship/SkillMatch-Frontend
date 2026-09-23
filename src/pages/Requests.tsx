@@ -105,11 +105,17 @@ export default function Requests() {
         )
       );
     } catch (err) {
+      const message = getErrorMessage(err);
       setStatusModal({
         title: action === "accept" ? "Accept failed" : "Decline failed",
-        message: getErrorMessage(err),
+        message,
         type: "error",
       });
+
+      // If it was already processed, refresh so UI matches the DB
+      if (message.toLowerCase().includes("already been processed")) {
+        await loadRequests();
+      }
     } finally {
       setProcessingAction(null);
     }
@@ -147,73 +153,73 @@ export default function Requests() {
 
       <main className="requests-page">
         <div className="requests-container">
-        <div className="requests-topbar">
-          <Link to="/dashboard" className="requests-nav-link">
-            &larr; Back to Dashboard
-          </Link>
-          <span className="requests-brand">SkillMatch</span>
-        </div>
-
-        <header className="requests-header">
-          <h1>Incoming Swap Requests</h1>
-          <p>People who want to exchange skills with you.</p>
-        </header>
-
-        {loading ? (
-          <div className="requests-empty">
-            <p>Loading incoming requests...</p>
-          </div>
-        ) : requests.length === 0 ? (
-          <div className="requests-empty">
-            <h3>No requests yet</h3>
-            <p>When another user requests a skill swap with you, it will appear here.</p>
-            <Link to="/matches" className="browse-matches-btn">
-              Browse Matches
+          <div className="requests-topbar">
+            <Link to="/dashboard" className="requests-nav-link">
+              &larr; Back to Dashboard
             </Link>
+            <span className="requests-brand">SkillMatch</span>
           </div>
-        ) : (
-          <>
-            {/* Pending Requests */}
-            <section className="requests-group">
-              <h2 className="group-title">
-                Needs Your Response ({pendingRequests.length})
-              </h2>
 
-              {pendingRequests.length === 0 ? (
-                <p className="no-pending-text">All caught up! No pending requests.</p>
-              ) : (
-                <div className="requests-grid">
-                  {pendingRequests.map((req) => (
-                    <RequestCard
-                      key={req.id}
-                      request={req}
-                      isProcessing={processingAction?.id === req.id}
-                      processingAction={
-                        processingAction?.id === req.id
-                          ? processingAction.action
-                          : null
-                      }
-                      onAction={handleAction}
-                      formatSlot={formatSlot}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+          <header className="requests-header">
+            <h1>Incoming Swap Requests</h1>
+            <p>People who want to exchange skills with you.</p>
+          </header>
 
-            {/* Past Requests */}
-            {pastRequests.length > 0 && (
-              <section className="requests-group past-group">
-                <h2 className="group-title">Previous Requests</h2>
-                <div className="requests-grid">
-                  {pastRequests.map((req) => (
-                    <PastRequestCard key={req.id} request={req} />
-                  ))}
-                </div>
+          {loading ? (
+            <div className="requests-empty">
+              <p>Loading incoming requests...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="requests-empty">
+              <h3>No requests yet</h3>
+              <p>When another user requests a skill swap with you, it will appear here.</p>
+              <Link to="/matches" className="browse-matches-btn">
+                Browse Matches
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Pending Requests */}
+              <section className="requests-group">
+                <h2 className="group-title">
+                  Needs Your Response ({pendingRequests.length})
+                </h2>
+
+                {pendingRequests.length === 0 ? (
+                  <p className="no-pending-text">All caught up! No pending requests.</p>
+                ) : (
+                  <div className="requests-grid">
+                    {pendingRequests.map((req) => (
+                      <RequestCard
+                        key={req.id}
+                        request={req}
+                        isProcessing={processingAction?.id === req.id}
+                        processingAction={
+                          processingAction?.id === req.id
+                            ? processingAction.action
+                            : null
+                        }
+                        onAction={handleAction}
+                        formatSlot={formatSlot}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
-            )}
-          </>
-        )}
+
+              {/* Past Requests */}
+              {pastRequests.length > 0 && (
+                <section className="requests-group past-group">
+                  <h2 className="group-title">Previous Requests</h2>
+                  <div className="requests-grid">
+                    {pastRequests.map((req) => (
+                      <PastRequestCard key={req.id} request={req} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
         </div>
       </main>
     </>

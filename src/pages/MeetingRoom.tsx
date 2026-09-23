@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import MeetingSession from '../components/meetings/MeetingSession';
+import RatingModal from '../components/meetings/RatingModal';
 import { getMeetingDetail, type Meeting } from '../api/meetingsApi';
 import '../components/meetings/Meetings.css';
 
@@ -15,6 +16,7 @@ const MeetingRoom: React.FC = () => {
   );
   const [loading, setLoading] = useState<boolean>(!meeting);
   const [error, setError] = useState<string | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState<boolean>(false);
 
   useEffect(() => {
     if (!id || isNaN(Number(id))) {
@@ -56,6 +58,14 @@ const MeetingRoom: React.FC = () => {
       isMounted = false;
     };
   }, [id]);
+
+  const handleLeaveCall = () => {
+    if (meeting && !meeting.has_user_rated) {
+      setShowRatingModal(true);
+    } else {
+      navigate('/meetings');
+    }
+  };
 
   if (loading) {
     return (
@@ -115,14 +125,25 @@ const MeetingRoom: React.FC = () => {
   }
 
   return (
-    <MeetingSession
-      roomUrl={meeting.room_url}
-      token={meeting.my_token}
-      startTs={meeting.start_time_ts}
-      endTs={meeting.end_time_ts}
-      onLeave={() => navigate('/meetings')}
-    />
+    <>
+      <MeetingSession
+        roomUrl={meeting.room_url}
+        token={meeting.my_token}
+        startTs={meeting.start_time_ts}
+        endTs={meeting.end_time_ts}
+        onLeave={handleLeaveCall}
+      />
+      {showRatingModal && (
+        <RatingModal
+          isOpen={showRatingModal}
+          meeting={meeting}
+          onClose={() => navigate('/meetings')}
+          onSuccess={() => navigate('/meetings')}
+        />
+      )}
+    </>
   );
 };
 
 export default MeetingRoom;
+

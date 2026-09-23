@@ -4,10 +4,12 @@ import { apiRequest } from '../lib/api'
 export interface Profile {
   id: number
   user: number
-   username: string
+  username: string
   bio: string
   onboarding_completed: boolean
   max_session_duration_minutes: number
+  rating_average?: number
+  rating_count?: number
 }
 
 

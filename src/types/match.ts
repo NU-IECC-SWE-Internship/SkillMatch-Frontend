@@ -5,6 +5,8 @@ export interface Match {
   teach_them: string[];
   teach_me_ids?: number[];
   teach_them_ids?: number[];
+  rating_average?: number;
+  rating_count?: number;
 }
 
 export interface SkillItem {

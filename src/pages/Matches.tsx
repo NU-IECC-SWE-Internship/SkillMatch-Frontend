@@ -1,14 +1,33 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import MatchCard from "../components/Matching/MatchCard";
+import StatusModal from "../components/ui/StatusModal";
 import { getMatches } from "../api/matchingApi";
 import type { Match } from "../types/match";
 import "./Matches.css";
 
 function Matches() {
+  const location = useLocation();
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [statusModal, setStatusModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  useEffect(() => {
+    const incomingModal = (location.state as { statusModal?: { title: string; message: string; type?: "success" | "error" } } | null)?.statusModal;
+
+    if (incomingModal) {
+      setStatusModal({
+        title: incomingModal.title,
+        message: incomingModal.message,
+        type: incomingModal.type ?? "success",
+      });
+    }
+  }, [location.state]);
 
   useEffect(() => {
     async function loadMatches() {
@@ -30,8 +49,17 @@ function Matches() {
   }, []);
 
   return (
-    <main className="matches-page">
-      <div className="matches-container">
+    <>
+      <StatusModal
+        isOpen={Boolean(statusModal)}
+        title={statusModal?.title ?? ""}
+        message={statusModal?.message ?? ""}
+        type={statusModal?.type ?? "success"}
+        onClose={() => setStatusModal(null)}
+      />
+
+      <main className="matches-page">
+        <div className="matches-container">
         <div className="matches-topbar">
           <div>
             <Link to="/dashboard" className="matches-nav-link">
@@ -63,8 +91,9 @@ function Matches() {
             <p>No matches found yet. Add skills you can teach and want to learn to find a match.</p>
           )}
         </div>
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
 

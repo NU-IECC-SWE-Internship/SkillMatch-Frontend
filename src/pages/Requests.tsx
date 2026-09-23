@@ -8,6 +8,7 @@ import {
 import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
+import StatusModal from "../components/ui/StatusModal";
 import "./Requests.css";
 
 export default function Requests() {
@@ -16,16 +17,24 @@ export default function Requests() {
   const [processingAction, setProcessingAction] = useState<{
     id: number;
     action: "accept" | "reject";
-  } | null>(null);  
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-const [successMessage] = useState<string | null>(null);
+  } | null>(null);
+  const [statusModal, setStatusModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
   const loadRequests = async () => {
     try {
       setLoading(true);
       const data = await getIncomingRequests();
       setRequests(data);
     } catch (err) {
-      setErrorMessage(getErrorMessage(err));
+      setStatusModal({
+        title: "Request load failed",
+        message: getErrorMessage(err),
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -38,28 +47,36 @@ const [successMessage] = useState<string | null>(null);
   const handleAction = async (
     requestId: number,
     action: "accept" | "reject",
-    rejectionReason?: string
+    rejectionReason?: string,
+    receiverSkill?: number
   ) => {
     try {
       setProcessingAction({
         id: requestId,
         action,
       });
-      setErrorMessage(null);
-      setSuccessMessage(null);
+      setStatusModal(null);
 
-      await respondToMatchRequest(
+      const response = await respondToMatchRequest(
         requestId,
         action,
-        rejectionReason
+        rejectionReason,
+        undefined,
+        receiverSkill
       );
 
       if (action === "accept") {
-        setSuccessMessage(
-          "Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab."
-        );
+        setStatusModal({
+          title: "Swap accepted",
+          message: "Meeting scheduled successfully. You can join it in the Meetings tab.",
+          type: "success",
+        });
       } else {
-        setSuccessMessage("Request declined.");
+        setStatusModal({
+          title: "Request declined",
+          message: "This swap request has been declined.",
+          type: "success",
+        });
       }
 
       setRequests((prev) =>
@@ -73,15 +90,27 @@ const [successMessage] = useState<string | null>(null);
                     : "REJECTED",
                 rejection_reason:
                   action === "reject"
-                    ? rejectionReason || null
+                    ? response.rejection_reason ?? rejectionReason ?? null
                     : null,
+                receiver_skill:
+                  action === "accept"
+                    ? response.receiver_skill ?? req.receiver_skill ?? null
+                    : req.receiver_skill,
+                receiver_skill_name:
+                  action === "accept"
+                    ? response.receiver_skill_name ?? req.receiver_skill_name ?? null
+                    : req.receiver_skill_name,
               }
             : req
         )
       );
     } catch (err) {
       const message = getErrorMessage(err);
-      setErrorMessage(message);
+      setStatusModal({
+        title: action === "accept" ? "Accept failed" : "Decline failed",
+        message,
+        type: "error",
+      });
 
       // If it was already processed, refresh so UI matches the DB
       if (message.toLowerCase().includes("already been processed")) {
@@ -113,91 +142,86 @@ const [successMessage] = useState<string | null>(null);
   };
 
   return (
-    <main className="requests-page">
-      <div className="requests-container">
-        <div className="requests-topbar">
-          <Link to="/dashboard" className="requests-nav-link">
-            &larr; Back to Dashboard
-          </Link>
-          <span className="requests-brand">SkillMatch</span>
-        </div>
+    <>
+      <StatusModal
+        isOpen={Boolean(statusModal)}
+        title={statusModal?.title ?? ""}
+        message={statusModal?.message ?? ""}
+        type={statusModal?.type ?? "success"}
+        onClose={() => setStatusModal(null)}
+      />
 
-        <header className="requests-header">
-          <h1>Incoming Swap Requests</h1>
-          <p>People who want to exchange skills with you.</p>
-        </header>
-
-        {errorMessage && (
-          <div className="error-banner" role="alert">
-            {errorMessage}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="success-banner" role="status">
-            <span>✅ {successMessage}</span>
-            <Link to="/meetings" className="view-meeting-link">
-              Go to Meetings &rarr;
+      <main className="requests-page">
+        <div className="requests-container">
+          <div className="requests-topbar">
+            <Link to="/dashboard" className="requests-nav-link">
+              &larr; Back to Dashboard
             </Link>
+            <span className="requests-brand">SkillMatch</span>
           </div>
-        )}
 
-        {loading ? (
-          <div className="requests-empty">
-            <p>Loading incoming requests...</p>
-          </div>
-        ) : requests.length === 0 ? (
-          <div className="requests-empty">
-            <h3>No requests yet</h3>
-            <p>When another user requests a skill swap with you, it will appear here.</p>
-            <Link to="/matches" className="browse-matches-btn">
-              Browse Matches
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* Pending Requests */}
-            <section className="requests-group">
-              <h2 className="group-title">
-                Needs Your Response ({pendingRequests.length})
-              </h2>
+          <header className="requests-header">
+            <h1>Incoming Swap Requests</h1>
+            <p>People who want to exchange skills with you.</p>
+          </header>
 
-              {pendingRequests.length === 0 ? (
-                <p className="no-pending-text">All caught up! No pending requests.</p>
-              ) : (
-                <div className="requests-grid">
-                  {pendingRequests.map((req) => (
-                    <RequestCard
-                      key={req.id}
-                      request={req}
-                      isProcessing={processingAction?.id === req.id}
-                      processingAction={
-                        processingAction?.id === req.id
-                          ? processingAction.action
-                          : null
-                      }
-                      onAction={handleAction}
-                      formatSlot={formatSlot}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+          {loading ? (
+            <div className="requests-empty">
+              <p>Loading incoming requests...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="requests-empty">
+              <h3>No requests yet</h3>
+              <p>When another user requests a skill swap with you, it will appear here.</p>
+              <Link to="/matches" className="browse-matches-btn">
+                Browse Matches
+              </Link>
+            </div>
+          ) : (
+            <>
+              {/* Pending Requests */}
+              <section className="requests-group">
+                <h2 className="group-title">
+                  Needs Your Response ({pendingRequests.length})
+                </h2>
 
-            {/* Past Requests */}
-            {pastRequests.length > 0 && (
-              <section className="requests-group past-group">
-                <h2 className="group-title">Previous Requests</h2>
-                <div className="requests-grid">
-                  {pastRequests.map((req) => (
-                    <PastRequestCard key={req.id} request={req} />
-                  ))}
-                </div>
+                {pendingRequests.length === 0 ? (
+                  <p className="no-pending-text">All caught up! No pending requests.</p>
+                ) : (
+                  <div className="requests-grid">
+                    {pendingRequests.map((req) => (
+                      <RequestCard
+                        key={req.id}
+                        request={req}
+                        isProcessing={processingAction?.id === req.id}
+                        processingAction={
+                          processingAction?.id === req.id
+                            ? processingAction.action
+                            : null
+                        }
+                        onAction={handleAction}
+                        formatSlot={formatSlot}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+
+              {/* Past Requests */}
+              {pastRequests.length > 0 && (
+                <section className="requests-group past-group">
+                  <h2 className="group-title">Previous Requests</h2>
+                  <div className="requests-grid">
+                    {pastRequests.map((req) => (
+                      <PastRequestCard key={req.id} request={req} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

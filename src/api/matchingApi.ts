@@ -1,5 +1,6 @@
 import { apiRequest } from "../lib/api";
 import { getAccessToken } from "../lib/auth";
+import type { Match, SkillItem, TeachersResponse } from "../types/match";
 
 import type {
   Match,
@@ -47,6 +48,7 @@ export interface MatchRequest {
   receiver_rating_count?: number;
   skill: number;
   skill_name: string;
+  sender_teach_skills: SkillItem[];
 
   selected_slot: number;
 
@@ -54,6 +56,8 @@ export interface MatchRequest {
 
   selected_slot_start_time: string;
   selected_slot_end_time: string;
+  receiver_skill: number | null;
+  receiver_skill_name: string | null;
 
   requested_start_time?: string;
   requested_end_time?: string;
@@ -171,12 +175,14 @@ export async function respondToMatchRequest(
   requestId: number,
   action: "accept" | "reject",
   rejectionReason?: string,
-  timezone?: string
+  timezone?: string,
+  receiverSkill?: number
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
-  rejection_reason?: string | null;
-
+  rejection_reason?: string;
+  receiver_skill?: number;
+  receiver_skill_name?: string;
   meeting_id?: number;
 }> {
   const token = getAccessToken();
@@ -194,9 +200,16 @@ export async function respondToMatchRequest(
         action,
 
         ...(action === "reject"
-
-          ? { rejection_reason: rejectionReason }
-          : { timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }),
+          ? {
+              rejection_reason: rejectionReason,
+            }
+          : {
+              receiver_skill: receiverSkill,
+              timezone:
+                timezone ||
+                Intl.DateTimeFormat().resolvedOptions().timeZone,
+              timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+            }),
       },
 
       token,
@@ -211,12 +224,26 @@ export async function getUserSessionSettings(
   userId: number
 ): Promise<UserSessionSettings> {
   const token = getAccessToken();
-
-  return apiRequest<UserSessionSettings>(
+return apiRequest<UserSessionSettings>(
     `/api/users/${userId}/session-settings/`,
     {
       method: "GET",
       token,
     }
   );
+}
+
+export async function getTeachers(
+  skillId?: number
+): Promise<TeachersResponse> {
+  const token = getAccessToken();
+
+  const url = skillId
+    ? `/api/teachers/?skill=${skillId}`
+    : "/api/teachers/";
+
+  return apiRequest<TeachersResponse>(url, {
+    method: "GET",
+    token,
+  });
 }

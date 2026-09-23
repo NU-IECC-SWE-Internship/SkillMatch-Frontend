@@ -241,16 +241,27 @@
 .skill-pill {
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
+.skill-pill.is-verified {
+  padding-right: 0.35rem;
+}
+
 .pill-learn {
   background: #eff6ff;
   color: var(--blue-700);
   border: 1px solid #dbeafe;
+}
+
+.pill-learn.is-verified {
+  background: #ecfdf5;
+  color: #0f766e;
+  border-color: #6ee7b7;
 }
 
 .slot-pill {

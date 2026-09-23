@@ -1,8 +1,13 @@
+export interface MatchSkill {
+  name: string;
+  is_verified: boolean;
+}
+
 export interface Match {
   user_id: number;
   username: string;
-  teach_me: string[];
-  teach_them: string[];
+  teach_me: MatchSkill[];
+  teach_them: MatchSkill[];
   teach_me_ids?: number[];
   teach_them_ids?: number[];
   rating_average?: number;
@@ -12,6 +17,7 @@ export interface Match {
 export interface SkillItem {
   id: number;
   name: string;
+  is_verified?: boolean;
 }
 
 export interface Teacher {

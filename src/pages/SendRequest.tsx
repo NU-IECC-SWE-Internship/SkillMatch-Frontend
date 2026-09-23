@@ -16,6 +16,7 @@ import {
 
 import { getErrorMessage } from "../lib/api";
 import StatusModal from "../components/ui/StatusModal";
+import VerifiedBadge from "../components/VerifiedBadge";
 
 import type {
   Match,
@@ -30,6 +31,7 @@ interface MySkill {
   skill: number;
   skill_name: string;
   skill_type: "teach" | "learn";
+  is_verified?: boolean;
 }
 
 function timeToMinutes(value: string) {
@@ -116,7 +118,9 @@ function SendRequest() {
           setTeacher(teacherFromState);
         } else if (matchFromState && isMounted) {
           setMatch(matchFromState);
-          setPartnerWantsToLearn(matchFromState.teach_them ?? []);
+          setPartnerWantsToLearn(
+            (matchFromState.teach_them ?? []).map((skill) => skill.name)
+          );
         }
 
         const resolvedId =
@@ -140,7 +144,9 @@ function SendRequest() {
 
           if (matchedUser) {
             setMatch(matchedUser);
-            setPartnerWantsToLearn(matchedUser.teach_them ?? []);
+            setPartnerWantsToLearn(
+              (matchedUser.teach_them ?? []).map((skill) => skill.name)
+            );
           }
         }
       } catch (error) {
@@ -228,11 +234,13 @@ function SendRequest() {
     teacher?.skills.map((skill) => ({
       id: skill.id,
       name: skill.name,
+      is_verified: skill.is_verified ?? false,
     })) ??
     (match
       ? match.teach_me.map((skill, index) => ({
           id: match.teach_me_ids?.[index] ?? index + 1,
-          name: skill,
+          name: skill.name,
+          is_verified: skill.is_verified,
         }))
       : []) ??
     [];
@@ -520,7 +528,13 @@ function SendRequest() {
                         onClick={() => setSelectedSkill(skill.name)}
                       >
                         <span className="skill-radio"></span>
-                        <span className="skill-text">{skill.name}</span>
+                        <span className="skill-text">
+                          {skill.name}
+                          <VerifiedBadge
+                            verified={!!skill.is_verified}
+                            compact
+                          />
+                        </span>
                       </button>
                     ))
                   )}
@@ -569,11 +583,15 @@ function SendRequest() {
                         <span
                           className={`skill-pill pill-teach ${
                             isMatch ? "pill-matched" : ""
-                          }`}
+                          }${skill.is_verified ? " is-verified" : ""}`}
                           key={skill.id}
                         >
                           {isMatch && <span className="matched-star">★ </span>}
                           {skill.skill_name}
+                          <VerifiedBadge
+                            verified={!!skill.is_verified}
+                            compact
+                          />
                         </span>
                       );
                     })

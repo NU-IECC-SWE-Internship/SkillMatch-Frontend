@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
+import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
 
 interface PastRequestCardProps {
@@ -23,21 +24,18 @@ export default function PastRequestCard({
     ? request.receiver_rating_count
     : request.sender_rating_count;
 
-  const initial = username
-    ? username.charAt(0).toUpperCase()
-    : "?";
+  const initial = username ? username.charAt(0).toUpperCase() : "?";
 
   const selectedSkillName =
-    request.receiver_skill_name === null || request.receiver_skill_name === undefined
+    request.receiver_skill_name === null ||
+    request.receiver_skill_name === undefined
       ? "None"
       : request.receiver_skill_name || request.skill_name;
 
   return (
     <div className="incoming-card past-card">
       <div className="incoming-card-top">
-        <div className="sender-avatar muted">
-          {initial}
-        </div>
+        <div className="sender-avatar muted">{initial}</div>
 
         <div>
           <div className="sender-title-rating">
@@ -50,40 +48,38 @@ export default function PastRequestCard({
             />
           </div>
 
-          <span className="skill-pill pill-learn">
+          <span
+            className={
+              request.skill_is_verified
+                ? "skill-pill pill-learn is-verified"
+                : "skill-pill pill-learn"
+            }
+          >
             {request.skill_name || `Skill #${request.skill}`}
+            <VerifiedBadge verified={!!request.skill_is_verified} compact />
           </span>
         </div>
       </div>
 
       {request.status === "ACCEPTED" && (
         <div className="rejection-reason">
-          <span className="detail-label">
-            Selected skill
-          </span>
-
+          <span className="detail-label">Selected skill</span>
           <p>{selectedSkillName}</p>
         </div>
       )}
 
       {request.status === "REJECTED" && request.rejection_reason && (
         <div className="rejection-reason">
-          <span className="detail-label">
-            Reason for rejection
-          </span>
-
+          <span className="detail-label">Reason for rejection</span>
           <p>{request.rejection_reason}</p>
         </div>
       )}
 
-      {/* 2. Status badge & View Meeting link moved to the end */}
       <div
         className="status-badge-container"
         style={{ display: "flex", alignItems: "center", gap: "10px" }}
       >
-        <span
-          className={`status-tag status-${request.status.toLowerCase()}`}
-        >
+        <span className={`status-tag status-${request.status.toLowerCase()}`}>
           {request.status}
         </span>
 

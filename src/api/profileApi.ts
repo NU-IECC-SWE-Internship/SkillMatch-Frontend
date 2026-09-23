@@ -24,6 +24,47 @@ export interface UserSkill {
   skill: number
   skill_name: string
   skill_type: 'teach' | 'learn'
+  is_verified: boolean
+  has_quiz_attempt?: boolean
+  quiz_score?: number | null
+  can_take_quiz?: boolean
+  quiz_available_at?: string | null
+}
+
+export interface QuizQuestion {
+  id: number
+  question_text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+  order: number
+}
+
+export interface SkillQuiz {
+  skill_id: number
+  skill_name: string
+  pass_score: number
+  question_count?: number
+  can_take: boolean
+  has_attempt: boolean
+  available_at?: string | null
+  cooldown_hours?: number
+  attempt: {
+    score: number
+    passed: boolean
+    created_at: string
+  } | null
+  questions: QuizQuestion[]
+}
+
+export interface QuizSubmitResult {
+  score: number
+  total: number
+  passed: boolean
+  is_verified: boolean
+  pass_score: number
+  can_retry?: boolean
 }
 
 
@@ -112,6 +153,33 @@ export async function deleteUserSkill(id: number) {
   return apiRequest(`/api/my-skills/${id}/`, {
     method: 'DELETE',
   })
+}
+
+export async function getSkillQuiz(
+  skillId: number,
+): Promise<SkillQuiz> {
+  return apiRequest<SkillQuiz>(`/api/skills/${skillId}/quiz/`)
+}
+
+export async function startSkillQuiz(
+  skillId: number,
+): Promise<SkillQuiz> {
+  return apiRequest<SkillQuiz>(`/api/skills/${skillId}/quiz/start/`, {
+    method: 'POST',
+  })
+}
+
+export async function submitSkillQuiz(
+  skillId: number,
+  answers: { question_id: number; selected: 'A' | 'B' | 'C' | 'D' }[],
+): Promise<QuizSubmitResult> {
+  return apiRequest<QuizSubmitResult>(
+    `/api/skills/${skillId}/quiz/submit/`,
+    {
+      method: 'POST',
+      body: { answers },
+    },
+  )
 }
 
 

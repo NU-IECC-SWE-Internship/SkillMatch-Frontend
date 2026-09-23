@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import {
   getProfile,
@@ -22,6 +22,8 @@ import type {
   UserSkill,
   AvailabilitySlot,
 } from "../api/profileApi";
+
+import VerifiedBadge from "../components/VerifiedBadge";
 
 import "./Profile.css";
 
@@ -63,6 +65,8 @@ const sessionDurationOptions = [
 
 
 function Profile() {
+  const navigate = useNavigate();
+
   // ---------------- PROFILE ----------------
 
   const [username, setUsername] = useState("");
@@ -723,10 +727,42 @@ function Profile() {
 
                     <span
                       key={skill.id}
-                      className="selected-tag"
+                      className={
+                        skill.is_verified
+                          ? "selected-tag teach-skill-tag is-verified-tag"
+                          : "selected-tag teach-skill-tag"
+                      }
                     >
 
-                      {skill.skill_name}
+                      <span className="teach-skill-meta">
+                        <span className="teach-skill-name">
+                          {skill.skill_name}
+                        </span>
+                        <VerifiedBadge verified={skill.is_verified} />
+                      </span>
+
+                      {!skill.is_verified && skill.can_take_quiz ? (
+                        <button
+                          type="button"
+                          className="quiz-launch-btn"
+                          onClick={() =>
+                            navigate(`/skills/${skill.skill}/quiz`)
+                          }
+                        >
+                          Take quiz
+                        </button>
+                      ) : null}
+
+                      {!skill.is_verified &&
+                      !skill.can_take_quiz &&
+                      skill.has_quiz_attempt ? (
+                        <span className="verify-cooldown">
+                          Retry in 24h
+                          {typeof skill.quiz_score === "number"
+                            ? ` · ${skill.quiz_score}/10`
+                            : ""}
+                        </span>
+                      ) : null}
 
                       <button
                         type="button"

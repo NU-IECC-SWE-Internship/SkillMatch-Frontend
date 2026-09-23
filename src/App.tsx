@@ -13,6 +13,7 @@ import Requests from "./pages/Requests";
 import SkillBrowse from "./pages/SkillBrowse";
 import { isAuthenticated } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
+import SkillQuiz from "./pages/SkillQuiz";
 
 
 
@@ -62,6 +63,13 @@ function ProtectedMeetingRoom() {
   return <MeetingRoom />;
 }
 
+function ProtectedSkillQuiz() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <SkillQuiz />;
+}
+
 function RootRedirect() {
   return isAuthenticated() ? (
     <Navigate to="/dashboard" replace />
@@ -80,6 +88,7 @@ export default function App() {
       <Route path="/meetings" element={<ProtectedMeetings />} />
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
+      <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="/matches" element={<Matches />} />
       <Route path="/matches/:userId/request" element={<SendRequest />} />

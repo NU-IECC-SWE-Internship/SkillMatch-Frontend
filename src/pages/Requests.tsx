@@ -68,7 +68,8 @@ export default function Requests() {
       if (action === "accept") {
         setStatusModal({
           title: "Swap accepted",
-          message: "Meeting scheduled successfully. You can join it in the Meetings tab.",
+          message:
+            "Meeting scheduled successfully. You can join it in the Meetings tab.",
           type: "success",
         });
       } else {
@@ -84,10 +85,7 @@ export default function Requests() {
           req.id === requestId
             ? {
                 ...req,
-                status:
-                  action === "accept"
-                    ? "ACCEPTED"
-                    : "REJECTED",
+                status: action === "accept" ? "ACCEPTED" : "REJECTED",
                 rejection_reason:
                   action === "reject"
                     ? response.rejection_reason ?? rejectionReason ?? null
@@ -98,7 +96,9 @@ export default function Requests() {
                     : req.receiver_skill,
                 receiver_skill_name:
                   action === "accept"
-                    ? response.receiver_skill_name ?? req.receiver_skill_name ?? null
+                    ? response.receiver_skill_name ??
+                      req.receiver_skill_name ??
+                      null
                     : req.receiver_skill_name,
               }
             : req
@@ -112,7 +112,6 @@ export default function Requests() {
         type: "error",
       });
 
-      // If it was already processed, refresh so UI matches the DB
       if (message.toLowerCase().includes("already been processed")) {
         await loadRequests();
       }
@@ -172,21 +171,25 @@ export default function Requests() {
           ) : requests.length === 0 ? (
             <div className="requests-empty">
               <h3>No requests yet</h3>
-              <p>When another user requests a skill swap with you, it will appear here.</p>
+              <p>
+                When another user requests a skill swap with you, it will appear
+                here.
+              </p>
               <Link to="/matches" className="browse-matches-btn">
                 Browse Matches
               </Link>
             </div>
           ) : (
             <>
-              {/* Pending Requests */}
               <section className="requests-group">
                 <h2 className="group-title">
                   Needs Your Response ({pendingRequests.length})
                 </h2>
 
                 {pendingRequests.length === 0 ? (
-                  <p className="no-pending-text">All caught up! No pending requests.</p>
+                  <p className="no-pending-text">
+                    All caught up! No pending requests.
+                  </p>
                 ) : (
                   <div className="requests-grid">
                     {pendingRequests.map((req) => (
@@ -207,7 +210,6 @@ export default function Requests() {
                 )}
               </section>
 
-              {/* Past Requests */}
               {pastRequests.length > 0 && (
                 <section className="requests-group past-group">
                   <h2 className="group-title">Previous Requests</h2>

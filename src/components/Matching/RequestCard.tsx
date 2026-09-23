@@ -1,5 +1,6 @@
 import type { IncomingRequestItem } from "../../api/matchingApi";
 import { useState } from "react";
+import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
 
 interface PendingRequestCardProps {
@@ -76,7 +77,7 @@ export default function PendingRequestCard({
       <div className="incoming-card-top">
         <div className="sender-avatar">{initial}</div>
 
-       <div>
+        <div>
           <div className="sender-title-rating">
             <h3 className="sender-name">{request.sender_username}</h3>
             <UserRatingBadge
@@ -90,36 +91,39 @@ export default function PendingRequestCard({
 
       <div className="swap-details">
         <div className="detail-item">
-          <span className="detail-label">
-            Requested Skill
-          </span>
+          <span className="detail-label">Requested Skill</span>
 
-          <span className="skill-pill pill-learn">
+          <span
+            className={
+              request.skill_is_verified
+                ? "skill-pill pill-learn is-verified"
+                : "skill-pill pill-learn"
+            }
+          >
             {request.skill_name || `Skill #${request.skill}`}
+            <VerifiedBadge verified={!!request.skill_is_verified} compact />
           </span>
         </div>
 
         <div className="detail-item">
-          <span className="detail-label">
-            Preferred Time Slot
-          </span>
+          <span className="detail-label">Preferred Time Slot</span>
 
-          <span className="slot-pill">
-            {formatSlot(request)}
-          </span>
+          <span className="slot-pill">{formatSlot(request)}</span>
         </div>
       </div>
 
       {showSkillSelector && (
         <div className="choose-skill-section">
           <span className="detail-label">
-            Choose a skill you want to learn from{" "}
-            {request.sender_username} or select None if you are not interested
+            Choose a skill you want to learn from {request.sender_username} or
+            select None if you are not interested
           </span>
 
           <div className="skill-selector-list">
             {senderTeachSkills.length === 0 ? (
-              <p className="no-skill-text">No teach skills available for this user.</p>
+              <p className="no-skill-text">
+                No teach skills available for this user.
+              </p>
             ) : (
               senderTeachSkills.map((skill) => (
                 <button
@@ -135,6 +139,10 @@ export default function PendingRequestCard({
 
                   <span className="skill-text">
                     {skill.name}
+                    <VerifiedBadge
+                      verified={!!skill.is_verified}
+                      compact
+                    />
                   </span>
                 </button>
               ))
@@ -147,7 +155,9 @@ export default function PendingRequestCard({
         <button
           type="button"
           className="accept-btn"
-          disabled={isProcessing || (showSkillSelector && selectedSkill === null)}
+          disabled={
+            isProcessing || (showSkillSelector && selectedSkill === null)
+          }
           onClick={handleAccept}
         >
           {processingAction === "accept"
@@ -171,24 +181,19 @@ export default function PendingRequestCard({
         <div className="reject-form">
           <div className="reject-form-header">
             <h4>Decline this request</h4>
-
             <p>
-              Please provide a short reason so the requester
-              understands why you cannot accept the swap.
+              Please provide a short reason so the requester understands why
+              you cannot accept the swap.
             </p>
           </div>
 
           <div className="reject-form-field">
-            <label htmlFor={`reason-${request.id}`}>
-              Reason
-            </label>
+            <label htmlFor={`reason-${request.id}`}>Reason</label>
 
             <textarea
               id={`reason-${request.id}`}
               value={rejectionReason}
-              onChange={(e) =>
-                setRejectionReason(e.target.value)
-              }
+              onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="e.g. I'm not available at the selected time."
               rows={4}
             />
@@ -210,16 +215,9 @@ export default function PendingRequestCard({
             <button
               type="button"
               className="confirm-reject-btn"
-              disabled={
-                isProcessing ||
-                rejectionReason.trim().length === 0
-              }
+              disabled={isProcessing || rejectionReason.trim().length === 0}
               onClick={() =>
-                onAction(
-                  request.id,
-                  "reject",
-                  rejectionReason.trim()
-                )
+                onAction(request.id, "reject", rejectionReason.trim())
               }
             >
               {processingAction === "reject"

@@ -17,7 +17,7 @@ import MyRequests from "./pages/MyRequests";
 import SkillQuiz from "./pages/SkillQuiz";
 import AdminSkills from "./pages/AdminSkills";
 
-
+import UserProfile from "./pages/UserProfile";
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -94,6 +94,13 @@ function RootRedirect() {
     <Navigate to="/login" replace />
   );
 }
+function ProtectedUserProfile() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <UserProfile />;
+}
 
 export default function App() {
   return (
@@ -113,7 +120,12 @@ export default function App() {
       <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
       <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
+<<<<<<< HEAD
       <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
+=======
+      <Route path="/skillbrowse" element={<SkillBrowse />} />
+      <Route path="/users/:userId" element={<ProtectedUserProfile />} />
+>>>>>>> origin/main
     </Routes>
   );
 }

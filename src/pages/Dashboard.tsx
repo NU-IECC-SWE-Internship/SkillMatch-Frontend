@@ -74,18 +74,6 @@ export default function Dashboard() {
 
         <div className="dashboard-cards-grid">
           {/* Action Hub 1: Matches */}
-          <div className="dashboard-feature-card" onClick={() => navigate("/matches")}>
-            <div className="feature-card-header">
-              <span className="feature-card-icon">Match</span>
-              <span className="feature-tag">EXPLORE</span>
-            </div>
-            <div className="feature-card-body">
-              <h3>Find Skill Partners</h3>
-              <p>Discover community members who match what you want to learn or teach.</p>
-            </div>
-            <span className="feature-action-link">Browse matches &rarr;</span>
-          </div>
-
           <div className="dashboard-feature-card" onClick={() => navigate("/skillbrowse")}>
             <div className="feature-card-header">
               <span className="feature-card-icon">Skill</span>

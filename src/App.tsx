@@ -99,7 +99,7 @@ function ProtectedUserProfile() {
     return <Navigate to="/login" replace />;
   }
 
-  return <UserProfile />;
+  return <UserOnly><UserProfile /></UserOnly>;
 }
 
 export default function App() {
@@ -120,12 +120,8 @@ export default function App() {
       <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
       <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
-<<<<<<< HEAD
       <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
-=======
-      <Route path="/skillbrowse" element={<SkillBrowse />} />
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
->>>>>>> origin/main
     </Routes>
   );
 }

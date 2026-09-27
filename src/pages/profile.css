@@ -625,6 +625,20 @@
 }
 
 
+.pending-approval-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+
 .quiz-launch-btn {
 
   margin-left: 0 !important;
@@ -1615,144 +1629,6 @@
 
   border-radius: 8px;
 
-<<<<<<< HEAD
-  background: #eef2ff;
-  color: #4338ca;
-
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.teach-skill-tag {
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.teach-skill-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.teach-skill-name {
-  font-weight: 650;
-}
-
-.selected-tag.teach-skill-tag.is-verified-tag {
-  border-color: #5eead4;
-  background: linear-gradient(135deg, #f0fdfa 0%, #ecfdf5 100%);
-  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.25);
-}
-
-.verify-cooldown {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 650;
-  color: #92400e;
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-}
-
-.pending-approval-tag {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 650;
-  color: #475569;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-}
-
-.quiz-launch-btn {
-  margin-left: 0 !important;
-  padding: 4px 10px !important;
-  border-radius: 7px !important;
-  background: #0f766e !important;
-  color: #ffffff !important;
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.quiz-launch-btn:hover {
-  background: #0d9488 !important;
-  color: #ffffff !important;
-}
-
-.selected-tag button {
-  margin-left: 8px;
-  padding: 0;
-
-  border: none;
-
-  background: transparent;
-  color: #4338ca;
-
-  font-size: 17px;
-  line-height: 1;
-
-  cursor: pointer;
-}
-
-
-/* =========================
-   AVAILABILITY FORM
-========================= */
-
-.availability-form {
-  display: grid;
-
-  grid-template-columns:
-    1fr
-    1fr
-    1fr;
-
-  gap: 16px;
-
-  padding: 22px;
-
-  background: #f8fafc;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-
-  gap: 7px;
-}
-
-.form-group label {
-  color: #475569;
-
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group select {
-  width: 100%;
-
-  padding: 11px 12px;
-
-  background: white;
-
-  border: 1px solid #cbd5e1;
-  border-radius: 9px;
-
-  color: #1e293b;
-
-=======
->>>>>>> origin/main
   font-size: 14px;
 
   font-weight: 700;

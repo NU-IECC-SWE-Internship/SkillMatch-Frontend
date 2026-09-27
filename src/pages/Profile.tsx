@@ -739,6 +739,14 @@ function Profile() {
                           {skill.skill_name}
                         </span>
                         <VerifiedBadge verified={skill.is_verified} />
+                        {skill.skill_is_approved === false ? (
+                          <span
+                            className="pending-approval-tag"
+                            title="An admin needs to approve this skill before it shows in matches."
+                          >
+                            Pending approval
+                          </span>
+                        ) : null}
                       </span>
 
                       {!skill.is_verified && skill.can_take_quiz ? (
@@ -895,6 +903,15 @@ function Profile() {
                     >
 
                       {skill.skill_name}
+
+                      {skill.skill_is_approved === false ? (
+                        <span
+                          className="pending-approval-tag"
+                          title="An admin needs to approve this skill before it shows in matches."
+                        >
+                          Pending approval
+                        </span>
+                      ) : null}
 
                       <button
                         type="button"

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/api'
-import { login } from '../lib/auth'
+import { loadStaffRole, login } from '../lib/auth'
 import './Login.css'
 
 export default function Login() {
@@ -20,8 +20,9 @@ export default function Login() {
 
     try {
       await login({ username: username.trim(), password })
-      // Go straight in — Dashboard redirects to onboarding if needed
-      navigate('/dashboard', { replace: true })
+      const isStaff = await loadStaffRole().catch(() => false)
+      // Admins go to their dashboard; others to Dashboard (which handles onboarding)
+      navigate(isStaff ? '/admin/skills' : '/dashboard', { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
       setLoading(false)

@@ -16,6 +16,10 @@ export default function PastRequestCard({
     ? request.receiver_username
     : request.sender_username;
 
+  const userId = sentByMe
+    ? request.receiver
+    : request.sender;
+
   const ratingAvg = sentByMe
     ? request.receiver_rating_average
     : request.sender_rating_average;
@@ -24,7 +28,9 @@ export default function PastRequestCard({
     ? request.receiver_rating_count
     : request.sender_rating_count;
 
-  const initial = username ? username.charAt(0).toUpperCase() : "?";
+  const initial = username
+    ? username.charAt(0).toUpperCase()
+    : "?";
 
   const selectedSkillName =
     request.receiver_skill_name === null ||
@@ -35,13 +41,30 @@ export default function PastRequestCard({
   return (
     <div className="incoming-card past-card">
       <div className="incoming-card-top">
-        <div className="sender-avatar muted">{initial}</div>
+        <Link
+          to={`/users/${userId}`}
+          className="sender-avatar muted"
+          style={{ textDecoration: "none" }}
+        >
+          {initial}
+        </Link>
 
         <div>
           <div className="sender-title-rating">
             <h3 className="sender-name">
-              {sentByMe ? `Request to ${username}` : username}
+              {sentByMe && "Request to "}
+
+              <Link
+                to={`/users/${userId}`}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {username}
+              </Link>
             </h3>
+
             <UserRatingBadge
               ratingAverage={ratingAvg}
               ratingCount={ratingCount}
@@ -56,30 +79,47 @@ export default function PastRequestCard({
             }
           >
             {request.skill_name || `Skill #${request.skill}`}
-            <VerifiedBadge verified={!!request.skill_is_verified} compact />
+
+            <VerifiedBadge
+              verified={!!request.skill_is_verified}
+              compact
+            />
           </span>
         </div>
       </div>
 
       {request.status === "ACCEPTED" && (
         <div className="rejection-reason">
-          <span className="detail-label">Selected skill</span>
+          <span className="detail-label">
+            Selected skill
+          </span>
+
           <p>{selectedSkillName}</p>
         </div>
       )}
 
-      {request.status === "REJECTED" && request.rejection_reason && (
-        <div className="rejection-reason">
-          <span className="detail-label">Reason for rejection</span>
-          <p>{request.rejection_reason}</p>
-        </div>
-      )}
+      {request.status === "REJECTED" &&
+        request.rejection_reason && (
+          <div className="rejection-reason">
+            <span className="detail-label">
+              Reason for rejection
+            </span>
+
+            <p>{request.rejection_reason}</p>
+          </div>
+        )}
 
       <div
         className="status-badge-container"
-        style={{ display: "flex", alignItems: "center", gap: "10px" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
       >
-        <span className={`status-tag status-${request.status.toLowerCase()}`}>
+        <span
+          className={`status-tag status-${request.status.toLowerCase()}`}
+        >
           {request.status}
         </span>
 

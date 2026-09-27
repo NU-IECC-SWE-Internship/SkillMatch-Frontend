@@ -74,6 +74,21 @@ export interface AvailabilitySlot {
   start_time: string
   end_time: string
 }
+export interface PublicUserSkill {
+  skill: number
+  skill_name: string
+  skill_type: 'teach' | 'learn'
+  is_verified: boolean
+}
+export interface PublicUserProfile {
+  user: number
+  username: string
+  bio: string
+  rating_average: number
+  rating_count: number
+  teach_skills: PublicUserSkill[]
+  learn_skills: PublicUserSkill[]
+}
 
 
 // ---------------- PROFILE ----------------
@@ -112,7 +127,13 @@ export async function completeOnboarding() {
   })
 }
 
-
+export async function getUserProfile(
+  userId: number,
+): Promise<PublicUserProfile> {
+  return apiRequest<PublicUserProfile>(
+    `/api/users/${userId}/profile/`,
+  )
+}
 // ---------------- SKILLS ----------------
 
 export async function getSkills(): Promise<Skill[]> {

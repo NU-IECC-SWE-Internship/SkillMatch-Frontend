@@ -15,7 +15,7 @@ import { isAuthenticated } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
 import SkillQuiz from "./pages/SkillQuiz";
 
-
+import UserProfile from "./pages/UserProfile";
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -77,6 +77,13 @@ function RootRedirect() {
     <Navigate to="/login" replace />
   );
 }
+function ProtectedUserProfile() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <UserProfile />;
+}
 
 export default function App() {
   return (
@@ -96,6 +103,7 @@ export default function App() {
       <Route path="/my-requests" element={<MyRequests />} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/skillbrowse" element={<SkillBrowse />} />
+      <Route path="/users/:userId" element={<ProtectedUserProfile />} />
     </Routes>
   );
 }

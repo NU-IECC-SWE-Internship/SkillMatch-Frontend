@@ -17,10 +17,13 @@ function SkillBrowse() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
 
-  const [activeFilter, setActiveFilter] = useState<number | "matches" | null>(null);
+  const [activeFilter, setActiveFilter] = useState<
+    number | "matches" | null
+  >(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [statusModal, setStatusModal] = useState<{
     title: string;
     message: string;
@@ -30,7 +33,11 @@ function SkillBrowse() {
   useEffect(() => {
     const incomingModal = (
       location.state as {
-        statusModal?: { title: string; message: string; type?: "success" | "error" };
+        statusModal?: {
+          title: string;
+          message: string;
+          type?: "success" | "error";
+        };
       } | null
     )?.statusModal;
 
@@ -74,6 +81,7 @@ function SkillBrowse() {
       setError("");
 
       const data = await getTeachers(skillId);
+
       setTeachers(data.teachers ?? []);
     } catch (err) {
       console.error(err);
@@ -89,6 +97,7 @@ function SkillBrowse() {
       setError("");
 
       const matchesData = await getMatches();
+
       setMatches(matchesData ?? []);
     } catch (err) {
       console.error(err);
@@ -98,7 +107,9 @@ function SkillBrowse() {
     }
   }
 
-  function handleFilterClick(filter: number | "matches" | null) {
+  function handleFilterClick(
+    filter: number | "matches" | null
+  ) {
     setActiveFilter(filter);
 
     if (filter === "matches") {
@@ -122,9 +133,6 @@ function SkillBrowse() {
 
       <div className="teachers-page">
         <div className="teachers-panel">
-
-          {/* Top bar */}
-
           <div className="teachers-topbar">
             <div>
               <Link
@@ -151,10 +159,7 @@ function SkillBrowse() {
             </Link>
           </div>
 
-          {/* Skills filter */}
-
           <section className="teachers-filter-section">
-
             <div className="section-heading">
               <h2>What do you want to learn?</h2>
 
@@ -164,9 +169,6 @@ function SkillBrowse() {
             </div>
 
             <div className="skills-scroll">
-
-              {/* All button */}
-
               <button
                 className={
                   activeFilter === null
@@ -178,20 +180,18 @@ function SkillBrowse() {
                 All
               </button>
 
-              {/* Matches filter button */}
-
               <button
                 className={
                   activeFilter === "matches"
                     ? "skill-filter active"
                     : "skill-filter"
                 }
-                onClick={() => handleFilterClick("matches")}
+                onClick={() =>
+                  handleFilterClick("matches")
+                }
               >
                 Matches
               </button>
-
-              {/* Skill pills */}
 
               {learningSkills.map((skill) => (
                 <button
@@ -201,20 +201,17 @@ function SkillBrowse() {
                       ? "skill-filter active"
                       : "skill-filter"
                   }
-                  onClick={() => handleFilterClick(skill.id)}
+                  onClick={() =>
+                    handleFilterClick(skill.id)
+                  }
                 >
                   {skill.name}
                 </button>
               ))}
-
             </div>
-
           </section>
 
-          {/* Teachers / Matches */}
-
           <section className="teachers-list-section">
-
             <div className="section-heading">
               <h2>
                 {activeFilter === "matches"
@@ -229,15 +226,11 @@ function SkillBrowse() {
               </span>
             </div>
 
-            {/* Loading */}
-
             {loading && (
               <div className="teachers-message">
                 Loading...
               </div>
             )}
-
-            {/* Error */}
 
             {!loading && error && (
               <div className="teachers-message error">
@@ -245,24 +238,28 @@ function SkillBrowse() {
               </div>
             )}
 
-            {/* No teachers / matches */}
+            {!loading &&
+              !error &&
+              activeFilter === "matches" &&
+              matches.length === 0 && (
+                <div className="teachers-message">
+                  No mutual matches found. Add skills you
+                  can teach and want to learn to find a match.
+                </div>
+              )}
 
-            {!loading && !error && activeFilter === "matches" && matches.length === 0 && (
-              <div className="teachers-message">
-                No mutual matches found. Add skills you can teach and want to learn to find a match.
-              </div>
-            )}
+            {!loading &&
+              !error &&
+              activeFilter !== "matches" &&
+              teachers.length === 0 && (
+                <div className="teachers-message">
+                  No one currently teaches this skill.
+                </div>
+              )}
 
-            {!loading && !error && activeFilter !== "matches" && teachers.length === 0 && (
-              <div className="teachers-message">
-                No one currently teaches this skill.
-              </div>
-            )}
-
-            {/* Content List */}
-
-            {!loading && !error && (
-              activeFilter === "matches" ? (
+            {!loading &&
+              !error &&
+              (activeFilter === "matches" ? (
                 <div className="matches-list">
                   {matches.map((match) => (
                     <MatchCard
@@ -278,21 +275,29 @@ function SkillBrowse() {
                       key={teacher.user_id}
                       className="teacher-card"
                     >
-
-                      {/* Avatar */}
-
-                      <div className="teacher-avatar">
+                      <Link
+                        to={`/users/${teacher.user_id}`}
+                        className="teacher-avatar"
+                        style={{
+                          textDecoration: "none",
+                        }}
+                      >
                         {teacher.username
                           .charAt(0)
                           .toUpperCase()}
-                      </div>
-
-                      {/* Teacher information */}
+                      </Link>
 
                       <div className="teacher-info">
-
                         <h3>
-                          {teacher.username}
+                          <Link
+                            to={`/users/${teacher.user_id}`}
+                            style={{
+                              textDecoration: "none",
+                              color: "inherit",
+                            }}
+                          >
+                            {teacher.username}
+                          </Link>
                         </h3>
 
                         <p className="teacher-label">
@@ -300,7 +305,6 @@ function SkillBrowse() {
                         </p>
 
                         <div className="teacher-skills">
-
                           {teacher.skills.map((skill) => (
                             <span
                               key={skill.id}
@@ -309,12 +313,8 @@ function SkillBrowse() {
                               {skill.name}
                             </span>
                           ))}
-
                         </div>
-
                       </div>
-
-                      {/* Request button */}
 
                       <button
                         className="teacher-view-btn"
@@ -331,15 +331,11 @@ function SkillBrowse() {
                       >
                         Learn from them →
                       </button>
-
                     </div>
                   ))}
                 </div>
-              )
-            )}
-
+              ))}
           </section>
-
         </div>
       </div>
     </>

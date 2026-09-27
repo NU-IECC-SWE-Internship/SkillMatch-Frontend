@@ -16,15 +16,35 @@ function MatchCard({ match }: MatchCardProps) {
     });
   };
 
-  const initial = match.username ? match.username.charAt(0).toUpperCase() : "?";
+  const handleProfile = () => {
+    navigate(`/users/${match.user_id}`);
+  };
+
+  const initial = match.username
+    ? match.username.charAt(0).toUpperCase()
+    : "?";
 
   return (
     <div className="match-card">
       <div className="match-header">
         <div className="match-avatar-info">
-          <div className="avatar-placeholder">{initial}</div>
+          <div
+            className="avatar-placeholder"
+            onClick={handleProfile}
+            style={{ cursor: "pointer" }}
+          >
+            {initial}
+          </div>
+
           <div>
-            <h2 className="partner-name">{match.username}</h2>
+            <h2
+              className="partner-name"
+              onClick={handleProfile}
+              style={{ cursor: "pointer" }}
+            >
+              {match.username}
+            </h2>
+
             <UserRatingBadge
               ratingAverage={match.rating_average}
               ratingCount={match.rating_count}
@@ -38,7 +58,9 @@ function MatchCard({ match }: MatchCardProps) {
           <div className="swap-box-header">
             <div>
               <span className="swap-box-title">You Learn</span>
-              <span className="swap-box-subtitle">from {match.username}</span>
+              <span className="swap-box-subtitle">
+                from {match.username}
+              </span>
             </div>
           </div>
 
@@ -53,7 +75,10 @@ function MatchCard({ match }: MatchCardProps) {
                 key={skill.name}
               >
                 {skill.name}
-                <VerifiedBadge verified={skill.is_verified} compact />
+                <VerifiedBadge
+                  verified={skill.is_verified}
+                  compact
+                />
               </span>
             ))}
           </div>
@@ -67,7 +92,9 @@ function MatchCard({ match }: MatchCardProps) {
           <div className="swap-box-header">
             <div>
               <span className="swap-box-title">You Teach</span>
-              <span className="swap-box-subtitle">to {match.username}</span>
+              <span className="swap-box-subtitle">
+                to {match.username}
+              </span>
             </div>
           </div>
 
@@ -82,7 +109,10 @@ function MatchCard({ match }: MatchCardProps) {
                 key={skill.name}
               >
                 {skill.name}
-                <VerifiedBadge verified={skill.is_verified} compact />
+                <VerifiedBadge
+                  verified={skill.is_verified}
+                  compact
+                />
               </span>
             ))}
           </div>
@@ -90,7 +120,10 @@ function MatchCard({ match }: MatchCardProps) {
       </div>
 
       <div className="match-card-footer">
-        <button className="match-button" onClick={handleRequest}>
+        <button
+          className="match-button"
+          onClick={handleRequest}
+        >
           Request Skill Swap &rarr;
         </button>
       </div>

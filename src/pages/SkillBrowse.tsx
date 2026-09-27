@@ -1,21 +1,31 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { getMatches, getTeachers } from "../api/matchingApi";
+import { getMySkills } from "../api/profileApi";
 
-import type { Teacher, SkillItem, Match } from "../types/match";
+import type { Teacher, SkillItem, Match, MatchSkill } from "../types/match";
 import MatchCard from "../components/Matching/MatchCard";
 import StatusModal from "../components/ui/StatusModal";
 
 import "./SkillBrowse.css";
 
+interface MySkill {
+  id: number;
+  skill: number;
+  skill_name: string;
+  skill_type: "teach" | "learn";
+  is_verified?: boolean;
+}
+
 function SkillBrowse() {
-  const navigate = useNavigate();
   const location = useLocation();
 
   const [learningSkills, setLearningSkills] = useState<SkillItem[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [myTeachSkills, setMyTeachSkills] = useState<MatchSkill[]>([]);
+
 
   const [activeFilter, setActiveFilter] = useState<
     number | "matches" | null
@@ -59,11 +69,20 @@ function SkillBrowse() {
       setLoading(true);
       setError("");
 
-      const [teachersData, matchesData] = await Promise.all([
+      const [teachersData, matchesData, userSkillsData] = await Promise.all([
         getTeachers(),
         getMatches().catch(() => [] as Match[]),
+        getMySkills().catch(() => [] as MySkill[]),
       ]);
 
+      const teachSkills: MatchSkill[] = (userSkillsData ?? [])
+        .filter((s) => s.skill_type === "teach")
+        .map((s) => ({
+          name: s.skill_name,
+          is_verified: Boolean(s.is_verified),
+        }));
+
+      setMyTeachSkills(teachSkills);
       setLearningSkills(teachersData.learning_skills ?? []);
       setTeachers(teachersData.teachers ?? []);
       setMatches(matchesData ?? []);
@@ -81,7 +100,6 @@ function SkillBrowse() {
       setError("");
 
       const data = await getTeachers(skillId);
-
       setTeachers(data.teachers ?? []);
     } catch (err) {
       console.error(err);
@@ -97,7 +115,6 @@ function SkillBrowse() {
       setError("");
 
       const matchesData = await getMatches();
-
       setMatches(matchesData ?? []);
     } catch (err) {
       console.error(err);
@@ -107,9 +124,7 @@ function SkillBrowse() {
     }
   }
 
-  function handleFilterClick(
-    filter: number | "matches" | null
-  ) {
+  function handleFilterClick(filter: number | "matches" | null) {
     setActiveFilter(filter);
 
     if (filter === "matches") {
@@ -120,6 +135,33 @@ function SkillBrowse() {
       loadTeachers(filter);
     }
   }
+
+  // Converts a teacher into the Match interface expected by MatchCard
+  const teachersAsMatches: Match[] = teachers.map((teacher: any) => ({
+    user_id: teacher.user_id,
+    username: teacher.username,
+    rating_average: teacher.rating_average ?? 0,
+    rating_count: teacher.rating_count ?? 0,
+    teach_me: (teacher.skills ?? []).map((s: any) => ({
+      name: typeof s === "string" ? s : s.name,
+      is_verified: Boolean(s.is_verified),
+    })),
+    teach_them: myTeachSkills,
+    teach_me_ids: (teacher.skills ?? []).map((s: any) => s.id),
+    teach_them_ids: [],
+  }));
+
+  const formattedMatches: Match[] = matches.map((m: any) => ({
+    ...m,
+    teach_me: (m.teach_me ?? []).map((s: any) => ({
+      name: typeof s === "string" ? s : s.name,
+      is_verified: Boolean(s.is_verified),
+    })),
+    teach_them: (m.teach_them ?? []).map((s: any) => ({
+      name: typeof s === "string" ? s : s.name,
+      is_verified: Boolean(s.is_verified),
+    })),
+  }));
 
   return (
     <>
@@ -163,9 +205,7 @@ function SkillBrowse() {
             <div className="section-heading">
               <h2>What do you want to learn?</h2>
 
-              <span>
-                {learningSkills.length} skills
-              </span>
+              <span>{learningSkills.length} skills</span>
             </div>
 
             <div className="skills-scroll">
@@ -186,9 +226,7 @@ function SkillBrowse() {
                     ? "skill-filter active"
                     : "skill-filter"
                 }
-                onClick={() =>
-                  handleFilterClick("matches")
-                }
+                onClick={() => handleFilterClick("matches")}
               >
                 Matches
               </button>
@@ -201,9 +239,7 @@ function SkillBrowse() {
                       ? "skill-filter active"
                       : "skill-filter"
                   }
-                  onClick={() =>
-                    handleFilterClick(skill.id)
-                  }
+                  onClick={() => handleFilterClick(skill.id)}
                 >
                   {skill.name}
                 </button>
@@ -221,120 +257,48 @@ function SkillBrowse() {
 
               <span>
                 {activeFilter === "matches"
-                  ? `${matches.length} matches`
+                  ? `${formattedMatches.length} matches`
                   : `${teachers.length} people`}
               </span>
             </div>
 
             {loading && (
-              <div className="teachers-message">
-                Loading...
-              </div>
+              <div className="teachers-message">Loading...</div>
             )}
 
             {!loading && error && (
-              <div className="teachers-message error">
-                {error}
-              </div>
+              <div className="teachers-message error">{error}</div>
             )}
 
             {!loading &&
               !error &&
               activeFilter === "matches" &&
-              matches.length === 0 && (
+              formattedMatches.length === 0 && (
                 <div className="teachers-message">
-                  No mutual matches found. Add skills you
-                  can teach and want to learn to find a match.
+                  No mutual matches found. Add skills you can teach and want to
+                  learn to find a match.
                 </div>
               )}
 
             {!loading &&
               !error &&
               activeFilter !== "matches" &&
-              teachers.length === 0 && (
+              teachersAsMatches.length === 0 && (
                 <div className="teachers-message">
                   No one currently teaches this skill.
                 </div>
               )}
 
-            {!loading &&
-              !error &&
-              (activeFilter === "matches" ? (
-                <div className="matches-list">
-                  {matches.map((match) => (
-                    <MatchCard
-                      key={match.user_id}
-                      match={match}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="teachers-list">
-                  {teachers.map((teacher) => (
-                    <div
-                      key={teacher.user_id}
-                      className="teacher-card"
-                    >
-                      <Link
-                        to={`/users/${teacher.user_id}`}
-                        className="teacher-avatar"
-                        style={{
-                          textDecoration: "none",
-                        }}
-                      >
-                        {teacher.username
-                          .charAt(0)
-                          .toUpperCase()}
-                      </Link>
-
-                      <div className="teacher-info">
-                        <h3>
-                          <Link
-                            to={`/users/${teacher.user_id}`}
-                            style={{
-                              textDecoration: "none",
-                              color: "inherit",
-                            }}
-                          >
-                            {teacher.username}
-                          </Link>
-                        </h3>
-
-                        <p className="teacher-label">
-                          Teaches
-                        </p>
-
-                        <div className="teacher-skills">
-                          {teacher.skills.map((skill) => (
-                            <span
-                              key={skill.id}
-                              className="teacher-skill"
-                            >
-                              {skill.name}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <button
-                        className="teacher-view-btn"
-                        onClick={() =>
-                          navigate(
-                            `/matches/${teacher.user_id}/request`,
-                            {
-                              state: {
-                                teacher,
-                              },
-                            }
-                          )
-                        }
-                      >
-                        Learn from them →
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ))}
+            {!loading && !error && (
+              <div className="matches-list">
+                {(activeFilter === "matches"
+                  ? formattedMatches
+                  : teachersAsMatches
+                ).map((match) => (
+                  <MatchCard key={match.user_id} match={match} />
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>

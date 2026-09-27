@@ -13,9 +13,18 @@ export interface Profile {
 }
 
 
+export interface Me {
+  id: number
+  username: string
+  email: string
+  is_staff: boolean
+}
+
+
 export interface Skill {
   id: number
   name: string
+  is_approved?: boolean
 }
 
 
@@ -23,6 +32,7 @@ export interface UserSkill {
   id: number
   skill: number
   skill_name: string
+  skill_is_approved?: boolean
   skill_type: 'teach' | 'learn'
   is_verified: boolean
   has_quiz_attempt?: boolean
@@ -53,6 +63,7 @@ export interface SkillQuiz {
   attempt: {
     score: number
     passed: boolean
+    abandoned?: boolean
     created_at: string
   } | null
   questions: QuizQuestion[]
@@ -92,6 +103,11 @@ export interface PublicUserProfile {
 
 
 // ---------------- PROFILE ----------------
+
+export async function getMe() {
+  return apiRequest<Me>('/api/auth/me/')
+}
+
 
 export async function getProfile() {
   return apiRequest<Profile>('/api/profile/')

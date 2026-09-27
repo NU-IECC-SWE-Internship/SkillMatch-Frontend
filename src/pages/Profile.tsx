@@ -6,6 +6,7 @@ import {
   getProfile,
   updateProfile,
   updateMaxSessionDuration,
+  updateEmailNotifications,
   getSkills,
   createSkill,
   getMySkills,
@@ -80,6 +81,9 @@ function Profile() {
 
   const [ratingAverage, setRatingAverage] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationFeedback, setNotificationFeedback] = useState("");
 
 
   // ---------------- SKILLS ----------------
@@ -149,6 +153,10 @@ function Profile() {
           profileData.rating_count || 0
         );
 
+        setEmailNotifications(
+          profileData.email_notifications_enabled ?? true
+        );
+
         setSkills(skillsData);
 
         setMySkills(mySkillsData);
@@ -176,6 +184,9 @@ function Profile() {
         updateProfile(bio),
         updateMaxSessionDuration(
           maxSessionDuration
+        ),
+        updateEmailNotifications(
+          emailNotifications
         ),
       ]);
 
@@ -619,6 +630,126 @@ function Profile() {
             }
             placeholder="Tell others about yourself..."
           />
+
+        </section>
+
+
+        {/* NOTIFICATIONS PREFERENCE */}
+
+        <section className="profile-card">
+
+          <div
+            className="section-heading"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+              gap: "1.25rem",
+            }}
+          >
+
+            <div>
+
+              <h2>
+                Email Notifications
+              </h2>
+
+              <p>
+                Get notified when you receive match requests, updates, or meeting cancellations.
+              </p>
+
+            </div>
+
+
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "12px",
+                background: "rgba(248, 250, 252, 0.95)",
+                padding: "8px 18px",
+                borderRadius: "14px",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+              }}
+            >
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  gap: "10px",
+                  margin: 0,
+                  userSelect: "none",
+                }}
+              >
+
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  disabled={notificationsLoading}
+                  onChange={async () => {
+                    const nextVal = !emailNotifications;
+                    setEmailNotifications(nextVal);
+                    setNotificationsLoading(true);
+                    setNotificationFeedback("");
+                    try {
+                      await updateEmailNotifications(nextVal);
+                      setNotificationFeedback(
+                        nextVal
+                          ? "Email notifications turned ON"
+                          : "Email notifications paused"
+                      );
+                      setTimeout(() => setNotificationFeedback(""), 3500);
+                    } catch (err) {
+                      console.error(err);
+                      setEmailNotifications(!nextVal);
+                      setNotificationFeedback("Failed to update setting");
+                    } finally {
+                      setNotificationsLoading(false);
+                    }
+                  }}
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    accentColor: "#4f46e5",
+                    cursor: "pointer",
+                  }}
+                />
+
+                <span
+                  style={{
+                    fontWeight: 650,
+                    fontSize: "0.92rem",
+                    color: emailNotifications ? "#4f46e5" : "#64748b",
+                  }}
+                >
+                  {emailNotifications
+                    ? "Notifications Enabled"
+                    : "Notifications Disabled"}
+                </span>
+
+              </label>
+
+            </div>
+
+          </div>
+
+
+          {notificationFeedback && (
+            <p
+              style={{
+                marginTop: "12px",
+                fontSize: "0.85rem",
+                color: "#4f46e5",
+                fontWeight: 600,
+              }}
+            >
+              ✓ {notificationFeedback}
+            </p>
+          )}
 
         </section>
 

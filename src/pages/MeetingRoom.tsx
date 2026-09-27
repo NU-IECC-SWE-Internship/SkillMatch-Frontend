@@ -60,7 +60,7 @@ const MeetingRoom: React.FC = () => {
   }, [id]);
 
   const handleLeaveCall = () => {
-    if (meeting && !meeting.has_user_rated) {
+    if (meeting && !meeting.has_user_rated && meeting.status !== 'MISSED' && meeting.status !== 'CANCELLED' && Date.now() > meeting.end_time_ts) {
       setShowRatingModal(true);
     } else {
       navigate('/meetings');

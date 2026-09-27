@@ -10,6 +10,7 @@ export interface Profile {
   max_session_duration_minutes: number
   rating_average?: number
   rating_count?: number
+  email_notifications_enabled?: boolean
 }
 
 
@@ -57,6 +58,18 @@ export async function updateMaxSessionDuration(
     method: 'PATCH',
     body: {
       max_session_duration_minutes: duration,
+    },
+  })
+}
+
+
+export async function updateEmailNotifications(
+  enabled: boolean,
+) {
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: {
+      email_notifications_enabled: enabled,
     },
   })
 }

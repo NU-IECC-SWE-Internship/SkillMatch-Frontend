@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "../api/profileApi";
-import { logout } from "../lib/auth";
+import { loadStaffRole, logout } from "../lib/auth";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -10,15 +10,26 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    getProfile()
-      .then((profile) => {
+    async function checkAccount() {
+      // Admins only use the admin dashboard and skip onboarding.
+      const isStaff = await loadStaffRole().catch(() => false);
+      if (cancelled) return;
+      if (isStaff) {
+        navigate("/admin/skills", { replace: true });
+        return;
+      }
+
+      try {
+        const profile = await getProfile();
         if (!cancelled && !profile.onboarding_completed) {
           navigate("/onboarding", { replace: true });
         }
-      })
-      .catch(() => {
+      } catch {
         // Keep dashboard visible if profile check fails
-      });
+      }
+    }
+
+    void checkAccount();
 
     return () => {
       cancelled = true;

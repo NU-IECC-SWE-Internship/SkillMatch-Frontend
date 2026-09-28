@@ -42,6 +42,7 @@ export default function SkillQuiz() {
   const [blockedAttempt, setBlockedAttempt] = useState<{
     score: number;
     passed: boolean;
+    abandoned: boolean;
     availableAt: string | null;
   } | null>(null);
   const advancingRef = useRef(false);
@@ -83,9 +84,15 @@ export default function SkillQuiz() {
               ? {
                   score: quiz.attempt.score,
                   passed: quiz.attempt.passed,
+                  abandoned: Boolean(quiz.attempt.abandoned),
                   availableAt: quiz.available_at ?? null,
                 }
-              : { score: 0, passed: false, availableAt: quiz.available_at ?? null },
+              : {
+                  score: 0,
+                  passed: false,
+                  abandoned: false,
+                  availableAt: quiz.available_at ?? null,
+                },
           );
         } else {
           setBlockedAttempt(null);
@@ -170,6 +177,19 @@ export default function SkillQuiz() {
     goNext,
   ]);
 
+  // Leaving mid-quiz counts as a failed attempt, so warn before unload.
+  useEffect(() => {
+    if (!started || result) return;
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [started, result]);
+
   async function startQuiz() {
     try {
       setGenerating(true);
@@ -218,12 +238,15 @@ export default function SkillQuiz() {
           </div>
         ) : blockedAttempt ? (
           <section className="skill-quiz-result">
-            <h2>Cooldown cooldown</h2>
+            <h2>Quiz on cooldown</h2>
             <p>
-              You already took the {skillName} quiz
-              {blockedAttempt.passed
-                ? ` and passed with ${blockedAttempt.score}/10.`
-                : ` (score ${blockedAttempt.score}/10).`}
+              {blockedAttempt.abandoned
+                ? `Your last ${skillName} quiz was left before it was submitted, so it counted as a failed attempt (0/10).`
+                : `You already took the ${skillName} quiz${
+                    blockedAttempt.passed
+                      ? ` and passed with ${blockedAttempt.score}/10.`
+                      : ` (score ${blockedAttempt.score}/10).`
+                  }`}
             </p>
             <p>
               {blockedAttempt.availableAt
@@ -272,7 +295,8 @@ export default function SkillQuiz() {
             </p>
             <p className="skill-quiz-warning">
               Important: after this attempt you must wait{" "}
-              <strong>24 hours</strong> before retrying.
+              <strong>24 hours</strong> before retrying. Leaving or refreshing
+              the page before you finish counts as a failed attempt.
             </p>
             {error ? (
               <p className="skill-quiz-inline-error" role="alert">

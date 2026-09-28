@@ -228,7 +228,7 @@ const Meetings: React.FC = () => {
                 : 'Completed sessions will appear here where you can leave and view peer reviews.'}
             </p>
             <div style={{ marginTop: '1.25rem' }}>
-              <Link to="/matches" className="btn-schedule">
+              <Link to="/skillbrowse" className="btn-schedule">
                 Find Skill Partners &rarr;
               </Link>
             </div>

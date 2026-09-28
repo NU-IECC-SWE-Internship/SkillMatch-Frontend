@@ -175,8 +175,8 @@ export default function Requests() {
                 When another user requests a skill swap with you, it will appear
                 here.
               </p>
-              <Link to="/matches" className="browse-matches-btn">
-                Browse Matches
+              <Link to="/skillbrowse" className="browse-skills-btn">
+                Browse Skills
               </Link>
             </div>
           ) : (

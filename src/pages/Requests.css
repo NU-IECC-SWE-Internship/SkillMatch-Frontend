@@ -428,7 +428,7 @@
   display: none;
 }
 
-.browse-matches-btn {
+.browse-skills-btn {
   display: inline-block;
   margin-top: 16px;
   background: var(--blue-600);
@@ -566,7 +566,7 @@
   opacity: 0.9;
   transform: none;
 }
-.browse-matches-btn:hover {
+.browse-skills-btn:hover {
   background: var(--blue-700);
 }
 

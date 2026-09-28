@@ -137,29 +137,30 @@ function SkillBrowse() {
   }
 
   // Converts a teacher into the Match interface expected by MatchCard
-  const teachersAsMatches: Match[] = teachers.map((teacher: any) => ({
+  const teachersAsMatches: Match[] = teachers.map((teacher) => ({
     user_id: teacher.user_id,
     username: teacher.username,
     rating_average: teacher.rating_average ?? 0,
     rating_count: teacher.rating_count ?? 0,
-    teach_me: (teacher.skills ?? []).map((s: any) => ({
-      name: typeof s === "string" ? s : s.name,
-      is_verified: Boolean(s.is_verified),
+    teach_me: teacher.skills.map((skill) => ({
+      name: skill.name,
+      is_verified: Boolean(skill.is_verified),
+      is_matching: true,
     })),
     teach_them: myTeachSkills,
-    teach_me_ids: (teacher.skills ?? []).map((s: any) => s.id),
+    teach_me_ids: teacher.skills.map((skill) => skill.id),
     teach_them_ids: [],
   }));
 
-  const formattedMatches: Match[] = matches.map((m: any) => ({
+  const formattedMatches: Match[] = matches.map((m) => ({
     ...m,
-    teach_me: (m.teach_me ?? []).map((s: any) => ({
-      name: typeof s === "string" ? s : s.name,
-      is_verified: Boolean(s.is_verified),
+    teach_me: m.teach_me.map((skill) => ({
+      ...skill,
+      is_matching: true,
     })),
-    teach_them: (m.teach_them ?? []).map((s: any) => ({
-      name: typeof s === "string" ? s : s.name,
-      is_verified: Boolean(s.is_verified),
+    teach_them: m.teach_them.map((skill) => ({
+      ...skill,
+      is_matching: true,
     })),
   }));
 

@@ -119,14 +119,14 @@ export default function UserProfile() {
           }}
         >
           <Link
-            to="/matches"
+            to="/skillbrowse"
             style={{
               textDecoration: 'none',
               color: '#4f46e5',
               fontWeight: 600,
             }}
           >
-            ← Back to Matches
+            &larr; Back to Browse Skills
           </Link>
 
           <Link

@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Matches from "./pages/Matches";
 import SendRequest from "./pages/SendRequest";
 import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
@@ -115,7 +114,7 @@ export default function App() {
       <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
       <Route path="/admin/skills" element={<ProtectedAdminSkills />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
-      <Route path="/matches" element={<UserOnly><Matches /></UserOnly>} />
+      <Route path="/matches" element={<Navigate to="/skillbrowse" replace />} />
       <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
       <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
       <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />

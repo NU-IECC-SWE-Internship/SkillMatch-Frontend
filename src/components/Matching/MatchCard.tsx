@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { Match } from "../../types/match";
 import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
+import "./MatchCard.css";
 
 interface MatchCardProps {
   match: Match;
@@ -67,11 +68,7 @@ function MatchCard({ match }: MatchCardProps) {
           <div className="skills-badge-list">
             {match.teach_me.map((skill) => (
               <span
-                className={
-                  skill.is_verified
-                    ? "skill-pill pill-learn is-verified"
-                    : "skill-pill pill-learn"
-                }
+                className={`skill-pill ${skill.is_matching ? "pill-matched" : "pill-default"}${skill.is_verified ? " is-verified" : ""}`}
                 key={skill.name}
               >
                 {skill.name}
@@ -101,11 +98,7 @@ function MatchCard({ match }: MatchCardProps) {
           <div className="skills-badge-list">
             {match.teach_them.map((skill) => (
               <span
-                className={
-                  skill.is_verified
-                    ? "skill-pill pill-teach is-verified"
-                    : "skill-pill pill-teach"
-                }
+                className={`skill-pill ${skill.is_matching ? "pill-matched" : "pill-default"}${skill.is_verified ? " is-verified" : ""}`}
                 key={skill.name}
               >
                 {skill.name}

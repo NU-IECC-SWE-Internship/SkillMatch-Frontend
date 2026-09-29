@@ -84,10 +84,10 @@ export default function MyRequests() {
           </Link>
 
           <Link
-            to="/matches"
+            to="/skillbrowse"
             className="requests-nav-link"
           >
-            Find Matches &rarr;
+            Browse Skills &rarr;
           </Link>
         </div>
 
@@ -124,10 +124,10 @@ export default function MyRequests() {
             </p>
 
             <Link
-              to="/matches"
-              className="browse-matches-btn"
+              to="/skillbrowse"
+              className="browse-skills-btn"
             >
-              Browse Matches
+              Browse Skills
             </Link>
           </div>
         ) : (

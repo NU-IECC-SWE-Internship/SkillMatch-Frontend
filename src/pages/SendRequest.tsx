@@ -194,7 +194,7 @@ function SendRequest() {
 
   const partnerId = teacher?.user_id ?? match?.user_id ?? (userId ? Number(userId) : null);
   const partnerUsername = teacher?.username ?? match?.username ?? "";
-  const targetPath = teacherFromState ? "/skillbrowse" : "/matches";
+  const targetPath = "/skillbrowse";
 
   /*
    * Load partner session settings and availability
@@ -314,10 +314,6 @@ function SendRequest() {
   };
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
     navigate(targetPath);
   };
 

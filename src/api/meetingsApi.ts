@@ -346,6 +346,33 @@ export async function cancelMeeting(
 
 
 // ========================================================
+// UPDATE MEETING STATUS (e.g. END MEETING)
+// ========================================================
+
+export async function updateMeetingStatus(
+  id: number,
+  status: MeetingStatus
+): Promise<Meeting> {
+  const response = await meetingFetch(
+    `/api/meetings/${id}/`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      errorData.error || `Failed to update meeting status (${response.status})`
+    );
+  }
+
+  return response.json();
+}
+
+
+// ========================================================
 // SUBMIT MEETING RATING
 // ========================================================
 

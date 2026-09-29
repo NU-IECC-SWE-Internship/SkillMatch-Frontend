@@ -1,6 +1,7 @@
 export interface MatchSkill {
   name: string;
   is_verified: boolean;
+  is_matching?: boolean;
 }
 
 export interface Match {
@@ -24,6 +25,8 @@ export interface Teacher {
   user_id: number;
   username: string;
   skills: SkillItem[];
+  rating_average?: number;
+  rating_count?: number;
 }
 
 export interface TeachersResponse {

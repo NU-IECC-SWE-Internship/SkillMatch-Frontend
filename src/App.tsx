@@ -3,7 +3,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Matches from "./pages/Matches";
 import SendRequest from "./pages/SendRequest";
 import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
@@ -18,6 +17,7 @@ import SkillQuiz from "./pages/SkillQuiz";
 import AdminSkills from "./pages/AdminSkills";
 
 import UserProfile from "./pages/UserProfile";
+import Chat from "./pages/Chat";
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -101,6 +101,12 @@ function ProtectedUserProfile() {
 
   return <UserOnly><UserProfile /></UserOnly>;
 }
+function ProtectedChat() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <UserOnly><Chat /></UserOnly>;
+}
 
 export default function App() {
   return (
@@ -115,13 +121,14 @@ export default function App() {
       <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
       <Route path="/admin/skills" element={<ProtectedAdminSkills />} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
-      <Route path="/matches" element={<UserOnly><Matches /></UserOnly>} />
+      <Route path="/matches" element={<Navigate to="/skillbrowse" replace />} />
       <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
       <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
       <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
+      <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
   );
 }

@@ -73,7 +73,7 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-cards-grid">
-          {/* Action Hub 1: Matches */}
+          {/* Action Hub 1: Browse Skills */}
           <div className="dashboard-feature-card" onClick={() => navigate("/skillbrowse")}>
             <div className="feature-card-header">
               <span className="feature-card-icon">Skill</span>

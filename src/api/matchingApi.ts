@@ -5,8 +5,10 @@ import type { AvailabilitySlot } from "./profileApi";
 
 export type MatchRequestStatus =
   | "PENDING"
+  | "SCHEDULING"
   | "ACCEPTED"
   | "REJECTED";
+export type ScheduleMode = "now" | "later";
 
 // ---------------- CREATE REQUEST ----------------
 
@@ -39,10 +41,20 @@ export interface MatchRequest {
   selected_slot_start_time: string;
   selected_slot_end_time: string;
   receiver_skill: number | null;
-  receiver_skill_name: string | null;
-  requested_start_time?: string;
-  requested_end_time?: string;
-  status: MatchRequestStatus;
+receiver_skill_name: string | null;
+
+receiver_selected_slot: number | null;
+receiver_selected_slot_day: string | null;
+receiver_selected_slot_start_time: string | null;
+receiver_selected_slot_end_time: string | null;
+
+receiver_requested_start_time: string | null;
+receiver_requested_end_time: string | null;
+
+requested_start_time?: string;
+requested_end_time?: string;
+
+status: MatchRequestStatus;
   rejection_reason: string | null;
 }
 
@@ -115,10 +127,14 @@ export async function getSentRequests(): Promise<MatchRequest[]> {
 
 export async function respondToMatchRequest(
   requestId: number,
-  action: "accept" | "reject",
+  action: "accept" | "reject" | "schedule_return",
   rejectionReason?: string,
   timezone?: string,
-  receiverSkill?: number
+  receiverSkill?: number,
+  scheduleMode?: ScheduleMode,
+  receiverSelectedSlot?: number,
+  receiverRequestedStartTime?: string,
+  receiverRequestedEndTime?: string
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
@@ -126,8 +142,41 @@ export async function respondToMatchRequest(
   receiver_skill?: number | null;
   receiver_skill_name?: string | null;
   meeting_id?: number;
+  return_meeting_id?: number;
+  room_url?: string;
+  return_meeting_error?: string;
 }> {
   const token = getAccessToken();
+
+  const userTimezone =
+    timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  let body: Record<string, unknown>;
+
+  if (action === "reject") {
+    body = {
+      action,
+      rejection_reason: rejectionReason,
+    };
+  } else if (action === "schedule_return") {
+    body = {
+      action,
+      timezone: userTimezone,
+      receiver_selected_slot: receiverSelectedSlot,
+      receiver_requested_start_time: receiverRequestedStartTime,
+      receiver_requested_end_time: receiverRequestedEndTime,
+    };
+  } else {
+    body = {
+      action,
+      timezone: userTimezone,
+      receiver_skill: receiverSkill,
+      schedule_mode: scheduleMode,
+      receiver_selected_slot: receiverSelectedSlot,
+      receiver_requested_start_time: receiverRequestedStartTime,
+      receiver_requested_end_time: receiverRequestedEndTime,
+    };
+  }
 
   return apiRequest<{
     message: string;
@@ -136,25 +185,15 @@ export async function respondToMatchRequest(
     receiver_skill?: number | null;
     receiver_skill_name?: string | null;
     meeting_id?: number;
+    return_meeting_id?: number;
+    room_url?: string;
+    return_meeting_error?: string;
   }>(`/api/requests/${requestId}/respond/`, {
     method: "POST",
-    body: {
-      action,
-      ...(action === "reject"
-        ? {
-            rejection_reason: rejectionReason,
-          }
-        : {
-            receiver_skill: receiverSkill,
-            timezone:
-              timezone ||
-              Intl.DateTimeFormat().resolvedOptions().timeZone,
-          }),
-    },
+    body,
     token,
   });
 }
-
 // ---------------- USER SESSION SETTINGS ----------------
 
 export async function getUserSessionSettings(

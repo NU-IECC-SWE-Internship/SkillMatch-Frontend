@@ -17,6 +17,7 @@ import SkillQuiz from "./pages/SkillQuiz";
 import AdminSkills from "./pages/AdminSkills";
 
 import UserProfile from "./pages/UserProfile";
+import Chat from "./pages/Chat";
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -100,6 +101,12 @@ function ProtectedUserProfile() {
 
   return <UserOnly><UserProfile /></UserOnly>;
 }
+function ProtectedChat() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <UserOnly><Chat /></UserOnly>;
+}
 
 export default function App() {
   return (
@@ -121,6 +128,7 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
+      <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
   );
 }

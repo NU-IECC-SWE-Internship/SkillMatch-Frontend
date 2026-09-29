@@ -413,6 +413,13 @@ export default function UserProfile() {
 >
   Send a Request
 </Link>
+          <Link
+            to={`/chat/${profile.user}`}
+            className="primary-button"
+            style={{ textDecoration: 'none', display: 'inline-block', marginLeft: '12px' }}
+          >
+            Message
+          </Link>
         </div>
 
       </div>

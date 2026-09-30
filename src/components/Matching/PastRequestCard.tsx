@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
+import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
 
 interface PastRequestCardProps {
@@ -15,6 +16,10 @@ export default function PastRequestCard({
     ? request.receiver_username
     : request.sender_username;
 
+  const userId = sentByMe
+    ? request.receiver
+    : request.sender;
+
   const ratingAvg = sentByMe
     ? request.receiver_rating_average
     : request.sender_rating_average;
@@ -27,42 +32,71 @@ export default function PastRequestCard({
     ? username.charAt(0).toUpperCase()
     : "?";
 
+  const selectedSkillName =
+    request.receiver_skill_name === null ||
+    request.receiver_skill_name === undefined
+      ? "None"
+      : request.receiver_skill_name || request.skill_name;
+
   return (
     <div className="incoming-card past-card">
       <div className="incoming-card-top">
-        <div className="sender-avatar muted">
+        <Link
+          to={`/users/${userId}`}
+          className="sender-avatar muted"
+          style={{ textDecoration: "none" }}
+        >
           {initial}
-        </div>
+        </Link>
 
         <div>
           <div className="sender-title-rating">
             <h3 className="sender-name">
-              {sentByMe ? `Request to ${username}` : username}
+              {sentByMe && "Request to "}
+
+              <Link
+                to={`/users/${userId}`}
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                {username}
+              </Link>
             </h3>
+
             <UserRatingBadge
               ratingAverage={ratingAvg}
               ratingCount={ratingCount}
             />
           </div>
 
-          <span className="skill-pill pill-learn">
+          <span
+            className={
+              request.skill_is_verified
+                ? "skill-pill pill-learn is-verified"
+                : "skill-pill pill-learn"
+            }
+          >
             {request.skill_name || `Skill #${request.skill}`}
+
+            <VerifiedBadge
+              verified={!!request.skill_is_verified}
+              compact
+            />
           </span>
         </div>
       </div>
 
-      <div className="status-badge-container" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span
-          className={`status-tag status-${request.status.toLowerCase()}`}
-        >
-          {request.status}
-        </span>
-        {request.status === "ACCEPTED" && (
-          <Link to="/meetings" className="view-meeting-link" style={{ fontSize: '0.85rem', color: '#2563eb', fontWeight: 600, textDecoration: 'none' }}>
-            View Meeting &rarr;
-          </Link>
-        )}
-      </div>
+      {request.status === "ACCEPTED" && (
+        <div className="rejection-reason">
+          <span className="detail-label">
+            Selected skill
+          </span>
+
+          <p>{selectedSkillName}</p>
+        </div>
+      )}
 
       {request.status === "REJECTED" &&
         request.rejection_reason && (
@@ -74,6 +108,36 @@ export default function PastRequestCard({
             <p>{request.rejection_reason}</p>
           </div>
         )}
+
+      <div
+        className="status-badge-container"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+      >
+        <span
+          className={`status-tag status-${request.status.toLowerCase()}`}
+        >
+          {request.status}
+        </span>
+
+        {request.status === "ACCEPTED" && (
+          <Link
+            to="/meetings"
+            className="view-meeting-link"
+            style={{
+              fontSize: "0.85rem",
+              color: "#2563eb",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            View Meeting &rarr;
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

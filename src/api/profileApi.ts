@@ -14,9 +14,18 @@ export interface Profile {
 }
 
 
+export interface Me {
+  id: number
+  username: string
+  email: string
+  is_staff: boolean
+}
+
+
 export interface Skill {
   id: number
   name: string
+  is_approved?: boolean
 }
 
 
@@ -24,7 +33,50 @@ export interface UserSkill {
   id: number
   skill: number
   skill_name: string
+  skill_is_approved?: boolean
   skill_type: 'teach' | 'learn'
+  is_verified: boolean
+  has_quiz_attempt?: boolean
+  quiz_score?: number | null
+  can_take_quiz?: boolean
+  quiz_available_at?: string | null
+}
+
+export interface QuizQuestion {
+  id: number
+  question_text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+  order: number
+}
+
+export interface SkillQuiz {
+  skill_id: number
+  skill_name: string
+  pass_score: number
+  question_count?: number
+  can_take: boolean
+  has_attempt: boolean
+  available_at?: string | null
+  cooldown_hours?: number
+  attempt: {
+    score: number
+    passed: boolean
+    abandoned?: boolean
+    created_at: string
+  } | null
+  questions: QuizQuestion[]
+}
+
+export interface QuizSubmitResult {
+  score: number
+  total: number
+  passed: boolean
+  is_verified: boolean
+  pass_score: number
+  can_retry?: boolean
 }
 
 
@@ -34,9 +86,29 @@ export interface AvailabilitySlot {
   start_time: string
   end_time: string
 }
+export interface PublicUserSkill {
+  skill: number
+  skill_name: string
+  skill_type: 'teach' | 'learn'
+  is_verified: boolean
+}
+export interface PublicUserProfile {
+  user: number
+  username: string
+  bio: string
+  rating_average: number
+  rating_count: number
+  teach_skills: PublicUserSkill[]
+  learn_skills: PublicUserSkill[]
+}
 
 
 // ---------------- PROFILE ----------------
+
+export async function getMe() {
+  return apiRequest<Me>('/api/auth/me/')
+}
+
 
 export async function getProfile() {
   return apiRequest<Profile>('/api/profile/')
@@ -84,7 +156,13 @@ export async function completeOnboarding() {
   })
 }
 
-
+export async function getUserProfile(
+  userId: number,
+): Promise<PublicUserProfile> {
+  return apiRequest<PublicUserProfile>(
+    `/api/users/${userId}/profile/`,
+  )
+}
 // ---------------- SKILLS ----------------
 
 export async function getSkills(): Promise<Skill[]> {
@@ -125,6 +203,33 @@ export async function deleteUserSkill(id: number) {
   return apiRequest(`/api/my-skills/${id}/`, {
     method: 'DELETE',
   })
+}
+
+export async function getSkillQuiz(
+  skillId: number,
+): Promise<SkillQuiz> {
+  return apiRequest<SkillQuiz>(`/api/skills/${skillId}/quiz/`)
+}
+
+export async function startSkillQuiz(
+  skillId: number,
+): Promise<SkillQuiz> {
+  return apiRequest<SkillQuiz>(`/api/skills/${skillId}/quiz/start/`, {
+    method: 'POST',
+  })
+}
+
+export async function submitSkillQuiz(
+  skillId: number,
+  answers: { question_id: number; selected: 'A' | 'B' | 'C' | 'D' }[],
+): Promise<QuizSubmitResult> {
+  return apiRequest<QuizSubmitResult>(
+    `/api/skills/${skillId}/quiz/submit/`,
+    {
+      method: 'POST',
+      body: { answers },
+    },
+  )
 }
 
 

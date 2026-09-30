@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "../api/profileApi";
-import { logout } from "../lib/auth";
+import { loadStaffRole, logout } from "../lib/auth";
 import "./Dashboard.css";
 
 export default function Dashboard() {
@@ -10,15 +10,26 @@ export default function Dashboard() {
   useEffect(() => {
     let cancelled = false;
 
-    getProfile()
-      .then((profile) => {
+    async function checkAccount() {
+      // Admins only use the admin dashboard and skip onboarding.
+      const isStaff = await loadStaffRole().catch(() => false);
+      if (cancelled) return;
+      if (isStaff) {
+        navigate("/admin/skills", { replace: true });
+        return;
+      }
+
+      try {
+        const profile = await getProfile();
         if (!cancelled && !profile.onboarding_completed) {
           navigate("/onboarding", { replace: true });
         }
-      })
-      .catch(() => {
+      } catch {
         // Keep dashboard visible if profile check fails
-      });
+      }
+    }
+
+    void checkAccount();
 
     return () => {
       cancelled = true;
@@ -62,17 +73,17 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-cards-grid">
-          {/* Action Hub 1: Matches */}
-          <div className="dashboard-feature-card" onClick={() => navigate("/matches")}>
+          {/* Action Hub 1: Browse Skills */}
+          <div className="dashboard-feature-card" onClick={() => navigate("/skillbrowse")}>
             <div className="feature-card-header">
-              <span className="feature-card-icon">Match</span>
-              <span className="feature-tag">EXPLORE</span>
+              <span className="feature-card-icon">Skill</span>
+              <span className="feature-tag">FILTER</span>
             </div>
             <div className="feature-card-body">
-              <h3>Find Skill Partners</h3>
-              <p>Discover community members who match what you want to learn or teach.</p>
+              <h3>Browse by Learning Skill</h3>
+              <p>See all people who can teach the skills you want to learn, filtered by your chosen skill.</p>
             </div>
-            <span className="feature-action-link">Browse matches &rarr;</span>
+            <span className="feature-action-link">Browse teachers &rarr;</span>
           </div>
 
           {/* Action Hub 2: Active Meetings */}

@@ -30,7 +30,7 @@ const Meetings: React.FC = () => {
       const now = Date.now();
       const FIVE_MIN_MS = 5 * 60 * 1000;
       const hasActive = data.some(
-        (m) => m.status !== 'CANCELLED' && now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts
+        (m) => m.status !== 'CANCELLED' && m.status !== 'COMPLETED' && now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts
       );
       if (hasActive) {
         setActiveTab('active');
@@ -85,8 +85,9 @@ const Meetings: React.FC = () => {
     meetings.forEach((m) => {
       if (m.status === 'CANCELLED') return;
 
-      const isLive = now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts;
-      const isPast = now > m.end_time_ts || m.status === 'COMPLETED';
+      const isCompleted = m.status === 'COMPLETED';
+      const isLive = !isCompleted && now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts;
+      const isPast = isCompleted || now > m.end_time_ts;
 
       if (isLive) {
         active.push(m);
@@ -227,7 +228,7 @@ const Meetings: React.FC = () => {
                 : 'Completed sessions will appear here where you can leave and view peer reviews.'}
             </p>
             <div style={{ marginTop: '1.25rem' }}>
-              <Link to="/matches" className="btn-schedule">
+              <Link to="/skillbrowse" className="btn-schedule">
                 Find Skill Partners &rarr;
               </Link>
             </div>

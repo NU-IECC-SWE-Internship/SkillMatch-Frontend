@@ -1,0 +1,50 @@
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  white-space: nowrap;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.verified-badge-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+  display: block;
+}
+
+.verified-badge--compact .verified-badge-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.verified-badge-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #15803d;
+}
+
+.skill-pill.is-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-right: 6px;
+}
+
+.skill-pill.is-verified.pill-learn {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+}
+
+.skill-pill.is-verified.pill-teach {
+  background: #f0fdfa;
+  border-color: #99f6e4;
+  color: #0f766e;
+}

@@ -8,25 +8,37 @@ import {
 import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
+import StatusModal from "../components/ui/StatusModal";
 import "./Requests.css";
 
 export default function Requests() {
   const [requests, setRequests] = useState<IncomingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [processingAction, setProcessingAction] = useState<{
     id: number;
-    action: "accept" | "reject";
-  } | null>(null);  
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    action: "accept" | "reject" | "schedule_return";
+  } | null>(null);
+
+  const [statusModal, setStatusModal] = useState<{
+    title: string;
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
+
       const data = await getIncomingRequests();
+
       setRequests(data);
     } catch (err) {
-      setErrorMessage(getErrorMessage(err));
+      setStatusModal({
+        title: "Request load failed",
+        message: getErrorMessage(err),
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -38,29 +50,58 @@ export default function Requests() {
 
   const handleAction = async (
     requestId: number,
-    action: "accept" | "reject",
-    rejectionReason?: string
+    action: "accept" | "reject" | "schedule_return",
+    rejectionReason?: string,
+    receiverSkill?: number,
+    scheduleMode?: "now" | "later",
+    receiverSelectedSlot?: number,
+    receiverRequestedStartTime?: string,
+    receiverRequestedEndTime?: string
   ) => {
     try {
       setProcessingAction({
         id: requestId,
         action,
       });
-      setErrorMessage(null);
-      setSuccessMessage(null);
 
-      await respondToMatchRequest(
+      setStatusModal(null);
+
+      const response = await respondToMatchRequest(
         requestId,
         action,
-        rejectionReason
+        rejectionReason,
+        undefined,
+        receiverSkill,
+        scheduleMode,
+        receiverSelectedSlot,
+        receiverRequestedStartTime,
+        receiverRequestedEndTime
       );
 
-      if (action === "accept") {
-        setSuccessMessage(
-          "Swap accepted! Meeting scheduled successfully. You can join it in the Meetings tab."
-        );
+      if (action === "reject") {
+        setStatusModal({
+          title: "Request declined",
+          message: response.message,
+          type: "success",
+        });
+      } else if (action === "schedule_return") {
+        setStatusModal({
+          title: "Session scheduled",
+          message: response.message,
+          type: "success",
+        });
+      } else if (response.status === "SCHEDULING") {
+        setStatusModal({
+          title: "Swap accepted",
+          message: response.message,
+          type: "success",
+        });
       } else {
-        setSuccessMessage("Request declined.");
+        setStatusModal({
+          title: "Swap scheduled",
+          message: response.message,
+          type: "success",
+        });
       }
 
       setRequests((prev) =>
@@ -68,23 +109,39 @@ export default function Requests() {
           req.id === requestId
             ? {
                 ...req,
-                status:
-                  action === "accept"
-                    ? "ACCEPTED"
-                    : "REJECTED",
+                status: response.status,
                 rejection_reason:
                   action === "reject"
-                    ? rejectionReason || null
+                    ? response.rejection_reason ??
+                      rejectionReason ??
+                      null
                     : null,
+                receiver_skill:
+                  response.receiver_skill !== undefined
+                    ? response.receiver_skill
+                    : req.receiver_skill,
+                receiver_skill_name:
+                  response.receiver_skill_name !== undefined
+                    ? response.receiver_skill_name
+                    : req.receiver_skill_name,
               }
             : req
         )
       );
     } catch (err) {
       const message = getErrorMessage(err);
-      setErrorMessage(message);
 
-      // If it was already processed, refresh so UI matches the DB
+      setStatusModal({
+        title:
+          action === "reject"
+            ? "Decline failed"
+            : action === "schedule_return"
+              ? "Scheduling failed"
+              : "Accept failed",
+        message,
+        type: "error",
+      });
+
       if (message.toLowerCase().includes("already been processed")) {
         await loadRequests();
       }
@@ -93,112 +150,130 @@ export default function Requests() {
     }
   };
 
-  const pendingRequests = requests.filter((r) => r.status === "PENDING");
-  const pastRequests = requests.filter((r) => r.status !== "PENDING");
+  const pendingRequests = requests.filter(
+    (request) =>
+      request.status === "PENDING" || request.status === "SCHEDULING"
+  );
+
+  const pastRequests = requests.filter(
+    (request) =>
+      request.status !== "PENDING" && request.status !== "SCHEDULING"
+  );
 
   const formatTime = (value: string) => {
     const [hours, minutes] = value.split(":").map(Number);
+
     const suffix = hours >= 12 ? "PM" : "AM";
     const displayHours = ((hours + 11) % 12) + 1;
+
     return `${displayHours}:${String(minutes).padStart(2, "0")} ${suffix}`;
   };
 
   const formatSlot = (request: IncomingRequestItem) => {
-    if (!request.selected_slot_day) return `Slot #${request.selected_slot}`;
+    if (!request.selected_slot_day) {
+      return `Slot #${request.selected_slot}`;
+    }
+
     const day =
       request.selected_slot_day.charAt(0).toUpperCase() +
       request.selected_slot_day.slice(1);
-    return `${day}, ${formatTime(request.selected_slot_start_time)} – ${formatTime(
-      request.selected_slot_end_time
-    )}`;
+
+    return `${day}, ${formatTime(
+      request.selected_slot_start_time
+    )} – ${formatTime(request.selected_slot_end_time)}`;
   };
 
   return (
-    <main className="requests-page">
-      <div className="requests-container">
-        <div className="requests-topbar">
-          <Link to="/dashboard" className="requests-nav-link">
-            &larr; Back to Dashboard
-          </Link>
-          <span className="requests-brand">SkillMatch</span>
-        </div>
+    <>
+      <StatusModal
+        isOpen={Boolean(statusModal)}
+        title={statusModal?.title ?? ""}
+        message={statusModal?.message ?? ""}
+        type={statusModal?.type ?? "success"}
+        onClose={() => setStatusModal(null)}
+      />
 
-        <header className="requests-header">
-          <h1>Incoming Swap Requests</h1>
-          <p>People who want to exchange skills with you.</p>
-        </header>
-
-        {errorMessage && (
-          <div className="error-banner" role="alert">
-            {errorMessage}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="success-banner" role="status">
-            <span>✅ {successMessage}</span>
-            <Link to="/meetings" className="view-meeting-link">
-              Go to Meetings &rarr;
+      <main className="requests-page">
+        <div className="requests-container">
+          <div className="requests-topbar">
+            <Link to="/dashboard" className="requests-nav-link">
+              &larr; Back to Dashboard
             </Link>
-          </div>
-        )}
 
-        {loading ? (
-          <div className="requests-empty">
-            <p>Loading incoming requests...</p>
+            <span className="requests-brand">SkillMatch</span>
           </div>
-        ) : requests.length === 0 ? (
-          <div className="requests-empty">
-            <h3>No requests yet</h3>
-            <p>When another user requests a skill swap with you, it will appear here.</p>
-            <Link to="/matches" className="browse-matches-btn">
-              Browse Matches
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* Pending Requests */}
-            <section className="requests-group">
-              <h2 className="group-title">
-                Needs Your Response ({pendingRequests.length})
-              </h2>
 
-              {pendingRequests.length === 0 ? (
-                <p className="no-pending-text">All caught up! No pending requests.</p>
-              ) : (
-                <div className="requests-grid">
-                  {pendingRequests.map((req) => (
-                    <RequestCard
-                      key={req.id}
-                      request={req}
-                      isProcessing={processingAction?.id === req.id}
-                      processingAction={
-                        processingAction?.id === req.id
-                          ? processingAction.action
-                          : null
-                      }
-                      onAction={handleAction}
-                      formatSlot={formatSlot}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
+          <header className="requests-header">
+            <h1>Incoming Swap Requests</h1>
 
-            {/* Past Requests */}
-            {pastRequests.length > 0 && (
-              <section className="requests-group past-group">
-                <h2 className="group-title">Previous Requests</h2>
-                <div className="requests-grid">
-                  {pastRequests.map((req) => (
-                    <PastRequestCard key={req.id} request={req} />
-                  ))}
-                </div>
+            <p>People who want to exchange skills with you.</p>
+          </header>
+
+          {loading ? (
+            <div className="requests-empty">
+              <p>Loading incoming requests...</p>
+            </div>
+          ) : requests.length === 0 ? (
+            <div className="requests-empty">
+              <h3>No requests yet</h3>
+
+              <p>
+                When another user requests a skill swap with you, it will appear
+                here.
+              </p>
+<Link to="/skillbrowse" className="browse-skills-btn">
+  Browse Skills
+</Link>
+            </div>
+          ) : (
+            <>
+              <section className="requests-group">
+                <h2 className="group-title">
+                  Needs Your Response ({pendingRequests.length})
+                </h2>
+
+                {pendingRequests.length === 0 ? (
+                  <p className="no-pending-text">
+                    All caught up! No pending requests.
+                  </p>
+                ) : (
+                  <div className="requests-grid">
+                    {pendingRequests.map((request) => (
+                      <RequestCard
+                        key={request.id}
+                        request={request}
+                        isProcessing={processingAction?.id === request.id}
+                        processingAction={
+                          processingAction?.id === request.id
+                            ? processingAction.action
+                            : null
+                        }
+                        onAction={handleAction}
+                        formatSlot={formatSlot}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+
+              {pastRequests.length > 0 && (
+                <section className="requests-group past-group">
+                  <h2 className="group-title">Previous Requests</h2>
+
+                  <div className="requests-grid">
+                    {pastRequests.map((request) => (
+                      <PastRequestCard
+                        key={request.id}
+                        request={request}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+    </>
   );
 }

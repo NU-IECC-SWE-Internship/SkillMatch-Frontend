@@ -1,14 +1,26 @@
 import { apiRequest } from "../lib/api";
 import { getAccessToken } from "../lib/auth";
-import type { Match, SkillItem } from "../types/match";
+import type { Match, SkillItem, TeachersResponse } from "../types/match";
+import type { AvailabilitySlot } from "./profileApi";
 
-export type MatchRequestStatus = "PENDING" | "ACCEPTED" | "REJECTED";
+export type MatchRequestStatus =
+  | "PENDING"
+  | "SCHEDULING"
+  | "ACCEPTED"
+  | "REJECTED";
+export type ScheduleMode = "now" | "later";
+
+// ---------------- CREATE REQUEST ----------------
 
 export interface CreateMatchRequestPayload {
   receiver: number;
   skill: number;
   selected_slot: number;
+  requested_start_time: string;
+  requested_end_time: string;
 }
+
+// ---------------- MATCH REQUEST ----------------
 
 export interface MatchRequest {
   id: number;
@@ -22,25 +34,53 @@ export interface MatchRequest {
   receiver_rating_count?: number;
   skill: number;
   skill_name: string;
+  skill_is_verified?: boolean;
+  sender_teach_skills?: SkillItem[];
   selected_slot: number;
   selected_slot_day: string;
   selected_slot_start_time: string;
   selected_slot_end_time: string;
-  status: MatchRequestStatus;
+  receiver_skill: number | null;
+receiver_skill_name: string | null;
+
+receiver_selected_slot: number | null;
+receiver_selected_slot_day: string | null;
+receiver_selected_slot_start_time: string | null;
+receiver_selected_slot_end_time: string | null;
+
+receiver_requested_start_time: string | null;
+receiver_requested_end_time: string | null;
+
+requested_start_time?: string;
+requested_end_time?: string;
+
+status: MatchRequestStatus;
   rejection_reason: string | null;
 }
 
 export type MatchRequestResponse = MatchRequest;
 export type IncomingRequestItem = MatchRequest;
 
+// ---------------- SESSION SETTINGS ----------------
+
+export interface UserSessionSettings {
+  user: number;
+  username: string;
+  max_session_duration_minutes: number;
+  availability: AvailabilitySlot[];
+}
+
+// ---------------- MATCHES ----------------
+
 export async function getMatches(): Promise<Match[]> {
   const token = getAccessToken();
-
   return apiRequest<Match[]>("/api/matches/", {
     method: "GET",
     token,
   });
 }
+
+// ---------------- SKILLS ----------------
 
 export async function getSkillsList(): Promise<SkillItem[]> {
   const token = getAccessToken();
@@ -49,6 +89,8 @@ export async function getSkillsList(): Promise<SkillItem[]> {
     token,
   });
 }
+
+// ---------------- CREATE REQUEST ----------------
 
 export async function createMatchRequest(
   payload: CreateMatchRequestPayload
@@ -61,6 +103,8 @@ export async function createMatchRequest(
   });
 }
 
+// ---------------- INCOMING REQUESTS ----------------
+
 export async function getIncomingRequests(): Promise<IncomingRequestItem[]> {
   const token = getAccessToken();
   return apiRequest<IncomingRequestItem[]>("/api/requests/incoming/", {
@@ -69,38 +113,111 @@ export async function getIncomingRequests(): Promise<IncomingRequestItem[]> {
   });
 }
 
+// ---------------- SENT REQUESTS ----------------
+
+export async function getSentRequests(): Promise<MatchRequest[]> {
+  const token = getAccessToken();
+  return apiRequest<MatchRequest[]>("/api/requests/sent/", {
+    method: "GET",
+    token,
+  });
+}
+
+// ---------------- RESPOND ----------------
+
 export async function respondToMatchRequest(
   requestId: number,
-  action: "accept" | "reject",
+  action: "accept" | "reject" | "schedule_return",
   rejectionReason?: string,
-  timezone?: string
+  timezone?: string,
+  receiverSkill?: number,
+  scheduleMode?: ScheduleMode,
+  receiverSelectedSlot?: number,
+  receiverRequestedStartTime?: string,
+  receiverRequestedEndTime?: string
 ): Promise<{
   message: string;
   status: MatchRequestStatus;
-  rejection_reason?: string;
+  rejection_reason?: string | null;
+  receiver_skill?: number | null;
+  receiver_skill_name?: string | null;
   meeting_id?: number;
+  return_meeting_id?: number;
+  room_url?: string;
+  return_meeting_error?: string;
 }> {
   const token = getAccessToken();
 
-  return apiRequest(
-    `/api/requests/${requestId}/respond/`,
+  const userTimezone =
+    timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  let body: Record<string, unknown>;
+
+  if (action === "reject") {
+    body = {
+      action,
+      rejection_reason: rejectionReason,
+    };
+  } else if (action === "schedule_return") {
+    body = {
+      action,
+      timezone: userTimezone,
+      receiver_selected_slot: receiverSelectedSlot,
+      receiver_requested_start_time: receiverRequestedStartTime,
+      receiver_requested_end_time: receiverRequestedEndTime,
+    };
+  } else {
+    body = {
+      action,
+      timezone: userTimezone,
+      receiver_skill: receiverSkill,
+      schedule_mode: scheduleMode,
+      receiver_selected_slot: receiverSelectedSlot,
+      receiver_requested_start_time: receiverRequestedStartTime,
+      receiver_requested_end_time: receiverRequestedEndTime,
+    };
+  }
+
+  return apiRequest<{
+    message: string;
+    status: MatchRequestStatus;
+    rejection_reason?: string | null;
+    receiver_skill?: number | null;
+    receiver_skill_name?: string | null;
+    meeting_id?: number;
+    return_meeting_id?: number;
+    room_url?: string;
+    return_meeting_error?: string;
+  }>(`/api/requests/${requestId}/respond/`, {
+    method: "POST",
+    body,
+    token,
+  });
+}
+// ---------------- USER SESSION SETTINGS ----------------
+
+export async function getUserSessionSettings(
+  userId: number
+): Promise<UserSessionSettings> {
+  const token = getAccessToken();
+  return apiRequest<UserSessionSettings>(
+    `/api/users/${userId}/session-settings/`,
     {
-      method: "POST",
-      body: {
-        action,
-        ...(action === "reject"
-          ? { rejection_reason: rejectionReason }
-          : { timezone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone }),
-      },
+      method: "GET",
       token,
     }
   );
 }
 
-export async function getSentRequests(): Promise<MatchRequest[]> {
+export async function getTeachers(
+  skillId?: number
+): Promise<TeachersResponse> {
   const token = getAccessToken();
+  const url = skillId
+    ? `/api/teachers/?skill=${skillId}`
+    : "/api/teachers/";
 
-  return apiRequest<MatchRequest[]>("/api/requests/sent/", {
+  return apiRequest<TeachersResponse>(url, {
     method: "GET",
     token,
   });

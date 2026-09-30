@@ -84,10 +84,10 @@ export default function MyRequests() {
           </Link>
 
           <Link
-            to="/matches"
+            to="/skillbrowse"
             className="requests-nav-link"
           >
-            Find Matches &rarr;
+            Browse Skills &rarr;
           </Link>
         </div>
 
@@ -124,10 +124,10 @@ export default function MyRequests() {
             </p>
 
             <Link
-              to="/matches"
-              className="browse-matches-btn"
+              to="/skillbrowse"
+              className="browse-skills-btn"
             >
-              Browse Matches
+              Browse Skills
             </Link>
           </div>
         ) : (
@@ -150,25 +150,36 @@ export default function MyRequests() {
                       className="incoming-card"
                     >
                       <div className="incoming-card-top">
-                        <div className="sender-avatar">
-                          {request.receiver_username
-                            ? request.receiver_username
-                                .charAt(0)
-                                .toUpperCase()
-                            : "?"}
-                        </div>
+                        <Link
+  to={`/users/${request.receiver}`}
+  className="sender-avatar"
+  style={{ textDecoration: "none" }}
+>
+  {request.receiver_username
+    ? request.receiver_username.charAt(0).toUpperCase()
+    : "?"}
+</Link>
 
-                        <div>
-                          <div className="sender-title-rating">
-                            <h3 className="sender-name">
-                              Request to{" "}
-                              {request.receiver_username}
-                            </h3>
-                            <UserRatingBadge
-                              ratingAverage={request.receiver_rating_average}
-                              ratingCount={request.receiver_rating_count}
-                            />
-                          </div>
+<div>
+  <div className="sender-title-rating">
+    <h3 className="sender-name">
+      Request to{" "}
+      <Link
+        to={`/users/${request.receiver}`}
+        style={{
+          textDecoration: "none",
+          color: "inherit",
+        }}
+      >
+        {request.receiver_username}
+      </Link>
+    </h3>
+
+    <UserRatingBadge
+      ratingAverage={request.receiver_rating_average}
+      ratingCount={request.receiver_rating_count}
+    />
+  </div>
 
                           <span className="skill-pill pill-learn">
                             {request.skill_name ||

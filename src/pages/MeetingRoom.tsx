@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import MeetingSession from '../components/meetings/MeetingSession';
 import RatingModal from '../components/meetings/RatingModal';
-import { getMeetingDetail, type Meeting } from '../api/meetingsApi';
+import { getMeetingDetail, updateMeetingStatus, type Meeting } from '../api/meetingsApi';
 import '../components/meetings/Meetings.css';
 
 const MeetingRoom: React.FC = () => {
@@ -59,8 +59,45 @@ const MeetingRoom: React.FC = () => {
     };
   }, [id]);
 
-  const handleLeaveCall = () => {
-    if (meeting && !meeting.has_user_rated && meeting.status !== 'MISSED' && meeting.status !== 'CANCELLED' && Date.now() > meeting.end_time_ts) {
+  // Poll backend so that if partner ended call, status is automatically updated to COMPLETED
+  useEffect(() => {
+    if (!id || !meeting || meeting.status === 'COMPLETED' || meeting.status === 'CANCELLED') {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const refreshed = await getMeetingDetail(Number(id));
+        if (refreshed.status === 'COMPLETED') {
+          setMeeting(refreshed);
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [id, meeting?.status]);
+
+  const handleLeaveTemporarily = () => {
+    navigate('/meetings');
+  };
+
+  const handleEndCall = async () => {
+    if (!meeting) {
+      navigate('/meetings');
+      return;
+    }
+
+    let currentMeeting = meeting;
+    try {
+      currentMeeting = await updateMeetingStatus(meeting.id, 'COMPLETED');
+      setMeeting(currentMeeting);
+    } catch (err) {
+      console.warn('Failed to update meeting status to COMPLETED:', err);
+    }
+
+    if (!currentMeeting.has_user_rated && currentMeeting.status !== 'CANCELLED' && currentMeeting.status !== 'MISSED') {
       setShowRatingModal(true);
     } else {
       navigate('/meetings');
@@ -124,6 +161,11 @@ const MeetingRoom: React.FC = () => {
     );
   }
 
+  const partnerName =
+    meeting.partner_name ||
+    (meeting.is_requester ? meeting.participant_b_name : meeting.participant_a_name) ||
+    'Partner';
+
   return (
     <>
       <MeetingSession
@@ -131,7 +173,10 @@ const MeetingRoom: React.FC = () => {
         token={meeting.my_token}
         startTs={meeting.start_time_ts}
         endTs={meeting.end_time_ts}
-        onLeave={handleLeaveCall}
+        partnerName={partnerName}
+        meetingStatus={meeting.status}
+        onLeaveTemporarily={handleLeaveTemporarily}
+        onEndCall={handleEndCall}
       />
       {showRatingModal && (
         <RatingModal

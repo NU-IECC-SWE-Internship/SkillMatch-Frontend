@@ -1,0 +1,149 @@
+.admin-skills-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.admin-skills-denied p {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.admin-skills-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.admin-tab {
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text-h);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-tab.active {
+  background: var(--blue-700);
+  border-color: var(--blue-700);
+  color: #ffffff;
+}
+
+.admin-skills-status {
+  color: var(--text);
+  margin: 12px 0;
+}
+
+.admin-skills-message {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 600;
+}
+
+.admin-skills-error {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-skills-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-skill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.admin-skill-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-skill-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.admin-skill-meta {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.admin-skill-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.admin-approve-btn,
+.admin-deny-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.admin-approve-btn {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.admin-approve-btn:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.admin-deny-btn {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.admin-deny-btn:hover:not(:disabled) {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.admin-approve-btn:disabled,
+.admin-deny-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-skill-approved {
+  font-size: 13px;
+  font-weight: 700;
+  color: #15803d;
+}
+
+@media (max-width: 640px) {
+  .admin-skill-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

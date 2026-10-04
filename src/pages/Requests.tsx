@@ -86,13 +86,19 @@ export default function Requests() {
         });
       } else if (action === "schedule_return") {
         setStatusModal({
-          title: "Session scheduled",
+          title: "Time proposed",
           message: response.message,
           type: "success",
         });
       } else if (response.status === "SCHEDULING") {
         setStatusModal({
           title: "Swap accepted",
+          message: response.message,
+          type: "success",
+        });
+      } else if (response.status === "CONFIRMING") {
+        setStatusModal({
+          title: "Waiting for confirmation",
           message: response.message,
           type: "success",
         });
@@ -155,9 +161,13 @@ export default function Requests() {
       request.status === "PENDING" || request.status === "SCHEDULING"
   );
 
+  const waitingRequests = requests.filter(
+    (request) => request.status === "CONFIRMING"
+  );
+
   const pastRequests = requests.filter(
     (request) =>
-      request.status !== "PENDING" && request.status !== "SCHEDULING"
+      request.status === "ACCEPTED" || request.status === "REJECTED"
   );
 
   const formatTime = (value: string) => {
@@ -181,6 +191,28 @@ export default function Requests() {
     return `${day}, ${formatTime(
       request.selected_slot_start_time
     )} – ${formatTime(request.selected_slot_end_time)}`;
+  };
+
+  const formatReturnSlot = (request: IncomingRequestItem) => {
+    const dayValue = request.receiver_selected_slot_day;
+
+    const startTime =
+      request.receiver_requested_start_time ||
+      request.receiver_selected_slot_start_time;
+
+    const endTime =
+      request.receiver_requested_end_time ||
+      request.receiver_selected_slot_end_time;
+
+    if (!dayValue || !startTime || !endTime) {
+      return "Return session time proposed";
+    }
+
+    const day =
+      dayValue.charAt(0).toUpperCase() +
+      dayValue.slice(1);
+
+    return `${day}, ${formatTime(startTime)} – ${formatTime(endTime)}`;
   };
 
   return (
@@ -221,9 +253,10 @@ export default function Requests() {
                 When another user requests a skill swap with you, it will appear
                 here.
               </p>
-<Link to="/skillbrowse" className="browse-skills-btn">
-  Browse Skills
-</Link>
+
+              <Link to="/skillbrowse" className="browse-skills-btn">
+                Browse Skills
+              </Link>
             </div>
           ) : (
             <>
@@ -255,6 +288,39 @@ export default function Requests() {
                   </div>
                 )}
               </section>
+
+              {waitingRequests.length > 0 && (
+                <section className="requests-group">
+                  <h2 className="group-title">
+                    Waiting for Confirmation ({waitingRequests.length})
+                  </h2>
+
+                  <div className="requests-grid">
+                    {waitingRequests.map((request) => (
+                      <div className="requests-empty" key={request.id}>
+                        <h3>
+                          Waiting for {request.sender_username}
+                        </h3>
+
+                        <p>
+                          You proposed a return session for{" "}
+                          <strong>
+                            {request.receiver_skill_name ?? "the return skill"}
+                          </strong>
+                          .
+                        </p>
+
+                        <p>{formatReturnSlot(request)}</p>
+
+                        <p>
+                          The original sender needs to accept this time before
+                          the return session is scheduled.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {pastRequests.length > 0 && (
                 <section className="requests-group past-group">

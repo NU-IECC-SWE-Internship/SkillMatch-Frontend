@@ -45,12 +45,21 @@ export function getRefreshToken(): string | null {
 export function saveTokens(tokens: AuthTokens): void {
   localStorage.setItem(ACCESS_KEY, tokens.access)
   localStorage.setItem(REFRESH_KEY, tokens.refresh)
+  window.dispatchEvent(new Event('skillmatch-auth-change'))
 }
 
 export function clearTokens(): void {
+  const hadAuthData = Boolean(
+    localStorage.getItem(ACCESS_KEY) ||
+    localStorage.getItem(REFRESH_KEY) ||
+    localStorage.getItem(STAFF_KEY),
+  )
   localStorage.removeItem(ACCESS_KEY)
   localStorage.removeItem(REFRESH_KEY)
   localStorage.removeItem(STAFF_KEY)
+  if (hadAuthData) {
+    window.dispatchEvent(new Event('skillmatch-auth-change'))
+  }
 }
 
 export function isStaffUser(): boolean {

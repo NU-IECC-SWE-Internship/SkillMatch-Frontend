@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -18,6 +18,7 @@ import AdminSkills from "./pages/AdminSkills";
 
 import UserProfile from "./pages/UserProfile";
 import Chat from "./pages/Chat";
+import FloatingChatButton from './components/chat/FloatingChatButton'
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -109,7 +110,10 @@ function ProtectedChat() {
 }
 
 export default function App() {
+  // Recheck local-storage auth whenever the route changes (for login/logout).
+  const location = useLocation()
   return (
+    <>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -130,5 +134,7 @@ export default function App() {
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
       <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
+    {isAuthenticated() && location.pathname !== '/login' && location.pathname !== '/register' && <FloatingChatButton />}
+    </>
   );
 }

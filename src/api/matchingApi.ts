@@ -6,6 +6,8 @@ import type { AvailabilitySlot } from "./profileApi";
 export type MatchRequestStatus =
   | "PENDING"
   | "SCHEDULING"
+  | "CONFIRMING"
+
   | "ACCEPTED"
   | "REJECTED";
 export type ScheduleMode = "now" | "later";
@@ -127,8 +129,12 @@ export async function getSentRequests(): Promise<MatchRequest[]> {
 
 export async function respondToMatchRequest(
   requestId: number,
-  action: "accept" | "reject" | "schedule_return",
-  rejectionReason?: string,
+  action:
+  | "accept"
+  | "reject"
+  | "schedule_return"
+  | "confirm_return"
+  | "decline_return",  rejectionReason?: string,
   timezone?: string,
   receiverSkill?: number,
   scheduleMode?: ScheduleMode,
@@ -154,19 +160,27 @@ export async function respondToMatchRequest(
   let body: Record<string, unknown>;
 
   if (action === "reject") {
-    body = {
-      action,
-      rejection_reason: rejectionReason,
-    };
-  } else if (action === "schedule_return") {
-    body = {
-      action,
-      timezone: userTimezone,
-      receiver_selected_slot: receiverSelectedSlot,
-      receiver_requested_start_time: receiverRequestedStartTime,
-      receiver_requested_end_time: receiverRequestedEndTime,
-    };
-  } else {
+  body = {
+    action,
+    rejection_reason: rejectionReason,
+  };
+} else if (action === "schedule_return") {
+  body = {
+    action,
+    timezone: userTimezone,
+    receiver_selected_slot: receiverSelectedSlot,
+    receiver_requested_start_time: receiverRequestedStartTime,
+    receiver_requested_end_time: receiverRequestedEndTime,
+  };
+} else if (
+  action === "confirm_return" ||
+  action === "decline_return"
+) {
+  body = {
+    action,
+    timezone: userTimezone,
+  };
+} else {
     body = {
       action,
       timezone: userTimezone,

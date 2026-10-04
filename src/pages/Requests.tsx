@@ -9,6 +9,7 @@ import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
 import StatusModal from "../components/ui/StatusModal";
+import NotificationBell from "../components/NotificationBell";
 import "./Requests.css";
 
 export default function Requests() {
@@ -200,7 +201,10 @@ export default function Requests() {
               &larr; Back to Dashboard
             </Link>
 
-            <span className="requests-brand">SkillMatch</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <NotificationBell />
+              <span className="requests-brand">SkillMatch</span>
+            </div>
           </div>
 
           <header className="requests-header">

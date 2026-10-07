@@ -14,6 +14,7 @@ import SkillBrowse from "./pages/SkillBrowse";
 import { homePath, isAuthenticated, isStaffUser } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
 import SkillQuiz from "./pages/SkillQuiz";
+import SkillQuizReview from "./pages/SkillQuizReview";
 import AdminSkills from "./pages/AdminSkills";
 import AdminSkillQuestions from "./pages/AdminSkillQuestions";
 import AdminOverview from "./pages/AdminOverview";
@@ -84,6 +85,13 @@ function ProtectedSkillQuiz() {
   return <UserOnly><SkillQuiz /></UserOnly>;
 }
 
+function ProtectedSkillQuizReview() {
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <UserOnly><SkillQuizReview /></UserOnly>;
+}
+
 function AuthOnly({ children }: { children: ReactElement }) {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
@@ -128,6 +136,7 @@ export default function App() {
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
+      <Route path="/skills/:skillId/quiz/review" element={<ProtectedSkillQuizReview />} />
       <Route path="/admin" element={<AuthOnly><AdminOverview /></AuthOnly>} />
       <Route path="/admin/users" element={<AuthOnly><AdminUsers /></AuthOnly>} />
       <Route path="/admin/users/:userId" element={<AuthOnly><AdminUserDetail /></AuthOnly>} />

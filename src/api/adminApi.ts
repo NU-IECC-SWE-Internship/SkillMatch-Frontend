@@ -99,17 +99,34 @@ export async function deleteQuestion(id: number) {
 
 
 export interface AdminOverview {
-  users: { total: number; active: number; staff: number; new_this_week: number }
+  users: {
+    total: number
+    active: number
+    staff: number
+    new_this_week: number
+    logged_in_this_week: number
+    onboarding: number
+  }
+  signups: { date: string; count: number }[]
   skills: { approved: number; pending: number; verified_teachers: number }
+  top_skills: {
+    id: number
+    name: string
+    teachers: number
+    learners: number
+    verified: number
+  }[]
   requests: Partial<Record<'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED', number>>
   meetings: Partial<Record<MeetingStatus, number>>
-  quizzes_this_week: { attempts: number; passed: number }
+  quizzes_this_week: { attempts: number; passed: number; failed: number; abandoned: number }
   recent_users: {
     id: number
     username: string
     name: string
     date_joined: string
     is_staff: boolean
+    is_active: boolean
+    onboarding_completed: boolean
   }[]
 }
 
@@ -133,17 +150,27 @@ export interface AdminUser {
   verified_count: number
 }
 
+export type AdminUserRole = 'staff' | 'member'
+export type AdminUserStatus = 'active' | 'onboarding' | 'inactive'
+export type AdminUserSort = 'newest' | 'oldest' | 'name' | 'last_login' | 'rating'
+
 export interface AdminUserPage {
   count: number
   page: number
   page_size: number
+  counts: {
+    all: number
+    role: Record<AdminUserRole, number>
+    status: Record<AdminUserStatus, number>
+  }
   results: AdminUser[]
 }
 
 export interface AdminUserFilters {
   search?: string
-  role?: 'staff' | 'member' | ''
-  status?: 'active' | 'inactive' | ''
+  role?: AdminUserRole | ''
+  status?: AdminUserStatus | ''
+  sort?: AdminUserSort | ''
   page?: number
 }
 

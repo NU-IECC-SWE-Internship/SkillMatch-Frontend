@@ -8,12 +8,22 @@ import {
 import { getErrorMessage } from "../lib/api";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
+import {
+  PersonHeader,
+  RequestSection,
+  RequestsHeader,
+  StatusChip,
+} from "../components/Matching/RequestsLayout";
 import StatusModal from "../components/ui/StatusModal";
+import { handleCursorGlow } from "../lib/cursorGlow";
 import "./Requests.css";
+
+const PAST_PREVIEW_COUNT = 3;
 
 export default function Requests() {
   const [requests, setRequests] = useState<IncomingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllPast, setShowAllPast] = useState(false);
 
   const [processingAction, setProcessingAction] = useState<{
     id: number;
@@ -225,32 +235,25 @@ export default function Requests() {
         onClose={() => setStatusModal(null)}
       />
 
-      <main className="requests-page">
+      <main className="requests-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="requests-container">
-          <div className="requests-topbar">
-            <Link to="/dashboard" className="requests-nav-link">
-              &larr; Back to Dashboard
-            </Link>
-
-            <span className="requests-brand">SkillMatch</span>
-          </div>
-
-          <header className="requests-header">
-            <h1>Incoming Swap Requests</h1>
-
-            <p>People who want to exchange skills with you.</p>
-          </header>
+          <RequestsHeader
+            title="Swap requests"
+            subtitle="People who want to exchange skills with you."
+          />
 
           {loading ? (
-            <div className="requests-empty">
-              <p>Loading incoming requests...</p>
+            <div className="requests-skeleton-list">
+              {[0, 1].map((n) => (
+                <div className="requests-skeleton" key={n} />
+              ))}
             </div>
           ) : requests.length === 0 ? (
             <div className="requests-empty">
               <h3>No requests yet</h3>
 
               <p>
-                When another user requests a skill swap with you, it will appear
+                When someone asks to swap skills with you, it will show up
                 here.
               </p>
 
@@ -260,14 +263,14 @@ export default function Requests() {
             </div>
           ) : (
             <>
-              <section className="requests-group">
-                <h2 className="group-title">
-                  Needs Your Response ({pendingRequests.length})
-                </h2>
-
+              <RequestSection
+                title="Needs your response"
+                count={pendingRequests.length}
+                highlight
+              >
                 {pendingRequests.length === 0 ? (
                   <p className="no-pending-text">
-                    All caught up! No pending requests.
+                    You&apos;re all caught up.
                   </p>
                 ) : (
                   <div className="requests-grid">
@@ -287,54 +290,75 @@ export default function Requests() {
                     ))}
                   </div>
                 )}
-              </section>
+              </RequestSection>
 
               {waitingRequests.length > 0 && (
-                <section className="requests-group">
-                  <h2 className="group-title">
-                    Waiting for Confirmation ({waitingRequests.length})
-                  </h2>
-
+                <RequestSection
+                  title="Waiting on them"
+                  count={waitingRequests.length}
+                  hint="You proposed a return session time. They need to confirm it."
+                >
                   <div className="requests-grid">
                     {waitingRequests.map((request) => (
-                      <div className="requests-empty" key={request.id}>
-                        <h3>
-                          Waiting for {request.sender_username}
-                        </h3>
+                      <div
+                        className="incoming-card fx-glow fx-accent-top fx-pop fx-theme-amber"
+                        key={request.id}
+                      >
+                        <PersonHeader
+                          userId={request.sender}
+                          username={request.sender_username}
+                          ratingAverage={request.sender_rating_average}
+                          ratingCount={request.sender_rating_count}
+                          subtitle="Waiting for them to confirm your proposed time"
+                          status={
+                            <StatusChip tone="pending">Awaiting reply</StatusChip>
+                          }
+                        />
 
-                        <p>
-                          You proposed a return session for{" "}
-                          <strong>
-                            {request.receiver_skill_name ?? "the return skill"}
-                          </strong>
-                          .
-                        </p>
+                        <div className="swap-details">
+                          <div className="detail-item">
+                            <span className="detail-label">You learn</span>
+                            <span className="slot-pill">
+                              {request.receiver_skill_name ?? "Return skill"}
+                            </span>
+                          </div>
 
-                        <p>{formatReturnSlot(request)}</p>
-
-                        <p>
-                          The original sender needs to accept this time before
-                          the return session is scheduled.
-                        </p>
+                          <div className="detail-item">
+                            <span className="detail-label">Proposed time</span>
+                            <span className="slot-pill">
+                              {formatReturnSlot(request)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </section>
+                </RequestSection>
               )}
 
               {pastRequests.length > 0 && (
-                <section className="requests-group past-group">
-                  <h2 className="group-title">Previous Requests</h2>
-
-                  <div className="requests-grid">
-                    {pastRequests.map((request) => (
-                      <PastRequestCard
-                        key={request.id}
-                        request={request}
-                      />
+                <RequestSection title="History" count={pastRequests.length}>
+                  <div className="requests-grid compact">
+                    {(showAllPast
+                      ? pastRequests
+                      : pastRequests.slice(0, PAST_PREVIEW_COUNT)
+                    ).map((request) => (
+                      <PastRequestCard key={request.id} request={request} />
                     ))}
                   </div>
-                </section>
+
+                  {pastRequests.length > PAST_PREVIEW_COUNT && (
+                    <button
+                      type="button"
+                      className="show-more-btn"
+                      onClick={() => setShowAllPast((current) => !current)}
+                    >
+                      {showAllPast
+                        ? "Show less"
+                        : `Show all ${pastRequests.length}`}
+                    </button>
+                  )}
+                </RequestSection>
               )}
             </>
           )}
@@ -343,3 +367,4 @@ export default function Requests() {
     </>
   );
 }
+

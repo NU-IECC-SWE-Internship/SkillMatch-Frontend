@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { getMatches, getTeachers } from "../api/matchingApi";
@@ -7,6 +7,7 @@ import { getMySkills } from "../api/profileApi";
 import type { Teacher, SkillItem, Match, MatchSkill } from "../types/match";
 import MatchCard from "../components/Matching/MatchCard";
 import StatusModal from "../components/ui/StatusModal";
+import { handleCursorGlow } from "../lib/cursorGlow";
 
 import "./SkillBrowse.css";
 
@@ -17,6 +18,8 @@ interface MySkill {
   skill_type: "teach" | "learn";
   is_verified?: boolean;
 }
+
+const SKILL_PREVIEW_COUNT = 12;
 
 function SkillBrowse() {
   const location = useLocation();
@@ -33,6 +36,8 @@ function SkillBrowse() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [showAllSkills, setShowAllSkills] = useState(false);
 
   const [statusModal, setStatusModal] = useState<{
     title: string;
@@ -164,6 +169,36 @@ function SkillBrowse() {
     })),
   }));
 
+  const showingMatches = activeFilter === "matches";
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const visibleCards = (showingMatches ? formattedMatches : teachersAsMatches)
+    .filter((match) => {
+      if (!normalizedQuery) return true;
+
+      return (
+        match.username.toLowerCase().includes(normalizedQuery) ||
+        match.teach_me.some((skill) =>
+          skill.name.toLowerCase().includes(normalizedQuery)
+        )
+      );
+    });
+
+  const visibleSkills = showAllSkills
+    ? learningSkills
+    : learningSkills.slice(0, SKILL_PREVIEW_COUNT);
+
+  const activeSkillName =
+    typeof activeFilter === "number"
+      ? learningSkills.find((skill) => skill.id === activeFilter)?.name
+      : undefined;
+
+  const listTitle = showingMatches
+    ? "Mutual matches"
+    : activeSkillName
+      ? `People who teach ${activeSkillName}`
+      : "People who can teach you";
+
   return (
     <>
       <StatusModal
@@ -174,129 +209,172 @@ function SkillBrowse() {
         onClose={() => setStatusModal(null)}
       />
 
-      <div className="teachers-page">
+      <div className="teachers-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="teachers-panel">
-          <div className="teachers-topbar">
-            <div>
-              <Link
-                to="/dashboard"
-                className="teachers-back-link"
-              >
-                ← Back to Dashboard
-              </Link>
-
-              <h1 className="teachers-title">
-                Find Someone to Learn From
-              </h1>
-
-              <p className="teachers-subtitle">
-                People who teach the skills you want to learn.
-              </p>
-            </div>
-
-            <Link
-              to="/profile"
-              className="teachers-profile-link"
-            >
-              My Profile →
+          <nav className="teachers-nav">
+            <Link to="/dashboard" className="teachers-nav-link">
+              &larr; Dashboard
             </Link>
-          </div>
 
-          <section className="teachers-filter-section">
-            <div className="section-heading">
-              <h2>What do you want to learn?</h2>
+            <Link to="/profile" className="teachers-nav-link">
+              My Profile &rarr;
+            </Link>
+          </nav>
 
-              <span>{learningSkills.length} skills</span>
+          <header className="teachers-hero fx-hero fx-glow fx-rise">
+            <h1 className="teachers-title">Find someone to learn from</h1>
+            <p className="teachers-subtitle">
+              Browse people who teach the skills you want, or jump straight to
+              mutual matches where you can swap skills both ways.
+            </p>
+
+            <div className="teachers-search">
+              <svg
+                className="teachers-search-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name or skill"
+                aria-label="Search by name or skill"
+              />
             </div>
+          </header>
 
-            <div className="skills-scroll">
+          <section className="teachers-filters fx-glow fx-theme-violet fx-rise fx-d1">
+            <div className="teachers-tabs" role="tablist">
               <button
-                className={
-                  activeFilter === null
-                    ? "skill-filter active"
-                    : "skill-filter"
-                }
+                type="button"
+                role="tab"
+                aria-selected={!showingMatches}
+                className={!showingMatches ? "teachers-tab active" : "teachers-tab"}
                 onClick={() => handleFilterClick(null)}
               >
-                All
+                Everyone
               </button>
 
               <button
-                className={
-                  activeFilter === "matches"
-                    ? "skill-filter active"
-                    : "skill-filter"
-                }
+                type="button"
+                role="tab"
+                aria-selected={showingMatches}
+                className={showingMatches ? "teachers-tab active" : "teachers-tab"}
                 onClick={() => handleFilterClick("matches")}
               >
-                Matches
+                Mutual matches
               </button>
-
-              {learningSkills.map((skill) => (
-                <button
-                  key={skill.id}
-                  className={
-                    activeFilter === skill.id
-                      ? "skill-filter active"
-                      : "skill-filter"
-                  }
-                  onClick={() => handleFilterClick(skill.id)}
-                >
-                  {skill.name}
-                </button>
-              ))}
             </div>
+
+            {!showingMatches && learningSkills.length > 0 && (
+              <div className="skills-filter">
+                <span className="skills-filter-label">
+                  Skills you want to learn
+                </span>
+
+                <div className="skills-wrap">
+                  <button
+                    type="button"
+                    className={
+                      activeFilter === null ? "skill-filter active" : "skill-filter"
+                    }
+                    onClick={() => handleFilterClick(null)}
+                  >
+                    All skills
+                  </button>
+
+                  {visibleSkills.map((skill) => (
+                    <button
+                      type="button"
+                      key={skill.id}
+                      className={
+                        activeFilter === skill.id
+                          ? "skill-filter active"
+                          : "skill-filter"
+                      }
+                      onClick={() => handleFilterClick(skill.id)}
+                    >
+                      {skill.name}
+                    </button>
+                  ))}
+
+                  {learningSkills.length > SKILL_PREVIEW_COUNT && (
+                    <button
+                      type="button"
+                      className="skill-filter more"
+                      onClick={() => setShowAllSkills((current) => !current)}
+                    >
+                      {showAllSkills
+                        ? "Show less"
+                        : `+${learningSkills.length - SKILL_PREVIEW_COUNT} more`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="teachers-list-section">
             <div className="section-heading">
-              <h2>
-                {activeFilter === "matches"
-                  ? "Mutual Matches"
-                  : "People who can teach you"}
-              </h2>
-
-              <span>
-                {activeFilter === "matches"
-                  ? `${formattedMatches.length} matches`
-                  : `${teachers.length} people`}
-              </span>
+              <h2>{listTitle}</h2>
+              {!loading && !error && (
+                <span className="section-count">
+                  {visibleCards.length}{" "}
+                  {showingMatches
+                    ? visibleCards.length === 1
+                      ? "match"
+                      : "matches"
+                    : visibleCards.length === 1
+                      ? "person"
+                      : "people"}
+                </span>
+              )}
             </div>
 
             {loading && (
-              <div className="teachers-message">Loading...</div>
+              <div className="matches-list">
+                {[0, 1, 2, 3].map((n) => (
+                  <div className="teachers-skeleton" key={n} />
+                ))}
+              </div>
             )}
 
             {!loading && error && (
               <div className="teachers-message error">{error}</div>
             )}
 
-            {!loading &&
-              !error &&
-              activeFilter === "matches" &&
-              formattedMatches.length === 0 && (
-                <div className="teachers-message">
-                  No mutual matches found. Add skills you can teach and want to
-                  learn to find a match.
-                </div>
-              )}
+            {!loading && !error && visibleCards.length === 0 && (
+              <div className="teachers-message">
+                <h3>
+                  {normalizedQuery
+                    ? "No results"
+                    : showingMatches
+                      ? "No mutual matches yet"
+                      : "Nobody teaches this yet"}
+                </h3>
+                <p>
+                  {normalizedQuery
+                    ? `Nothing matches "${query.trim()}". Try a different name or skill.`
+                    : showingMatches
+                      ? "Add skills you can teach and want to learn on your profile to find people to swap with."
+                      : "Check back later or pick another skill."}
+                </p>
+              </div>
+            )}
 
-            {!loading &&
-              !error &&
-              activeFilter !== "matches" &&
-              teachersAsMatches.length === 0 && (
-                <div className="teachers-message">
-                  No one currently teaches this skill.
-                </div>
-              )}
-
-            {!loading && !error && (
+            {!loading && !error && visibleCards.length > 0 && (
               <div className="matches-list">
-                {(activeFilter === "matches"
-                  ? formattedMatches
-                  : teachersAsMatches
-                ).map((match) => (
-                  <MatchCard key={match.user_id} match={match} />
+                {visibleCards.map((match) => (
+                  <MatchCard
+                    key={match.user_id}
+                    match={match}
+                    mutual={showingMatches}
+                  />
                 ))}
               </div>
             )}
@@ -308,3 +386,4 @@ function SkillBrowse() {
 }
 
 export default SkillBrowse;
+

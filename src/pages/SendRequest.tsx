@@ -24,6 +24,7 @@ import type {
   Teacher,
 } from "../types/match";
 
+import { handleCursorGlow } from "../lib/cursorGlow";
 import "./SendRequest.css";
 
 interface MySkill {
@@ -415,7 +416,7 @@ function SendRequest() {
 
   if (loading) {
     return (
-      <main className="send-request-page">
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="send-request-panel">
           <button
             type="button"
@@ -434,7 +435,7 @@ function SendRequest() {
 
   if (!partnerId) {
     return (
-      <main className="send-request-page">
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="send-request-panel">
           <button
             type="button"
@@ -466,7 +467,7 @@ function SendRequest() {
         onClose={() => setStatusModal(null)}
       />
 
-      <main className="send-request-page">
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="send-request-panel">
           <div className="send-request-nav">
             <button
@@ -479,7 +480,7 @@ function SendRequest() {
             <span className="send-request-brand">SkillMatch</span>
           </div>
 
-          <header className="send-request-header">
+          <header className="send-request-header fx-hero fx-glow fx-rise">
             <div className="partner-profile-lockup">
               <div className="partner-avatar">{initial}</div>
               <div>
@@ -495,7 +496,7 @@ function SendRequest() {
           <section className="swap-overview-section">
             <div className="swap-grid">
               {/* Skill to Learn */}
-              <div className="swap-box learn-box">
+              <div className="swap-box learn-box fx-glow fx-lift fx-accent-top fx-theme-blue fx-rise fx-d1">
                 <div className="swap-box-header">
                   <span className="swap-direction-icon">📥</span>
                   <div>
@@ -542,7 +543,7 @@ function SendRequest() {
               </div>
 
               {/* Skills You Offer */}
-              <div className="swap-box teach-box">
+              <div className="swap-box teach-box fx-glow fx-lift fx-accent-top fx-theme-teal fx-rise fx-d2">
                 <div className="swap-box-header">
                   <span className="swap-direction-icon">📤</span>
                   <div>
@@ -598,7 +599,7 @@ function SendRequest() {
           </section>
 
           {/* Session Planner */}
-          <section className="request-section">
+          <section className="request-section fx-glow fx-accent-top fx-theme-amber fx-rise fx-d3">
             <div className="section-heading">
               <span className="step-number">02</span>
               <div>
@@ -732,7 +733,7 @@ function SendRequest() {
 
             <button
               type="button"
-              className="send-request-button"
+              className="send-request-button fx-btn"
               disabled={
                 !selectedSkill ||
                 !selectedSlot ||

@@ -8,6 +8,9 @@ import {
 } from "../api/adminApi";
 import AdminLayout from "../components/admin/AdminLayout";
 import { formatDate, formatDateTime, initials, timeAgo } from "../components/admin/adminFormat";
+import type { ConfirmOptions } from "../components/admin/ConfirmDialog";
+import { useConfirm } from "../components/admin/useConfirm";
+import { useFlash } from "../components/admin/useFlash";
 import { getErrorMessage } from "../lib/api";
 import "./AdminSkills.css";
 
@@ -29,9 +32,10 @@ function UserDetailContent({
   user: UserDetail;
   onChange: (user: UserDetail) => void;
 }) {
+  const { confirm, dialog } = useConfirm();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useFlash();
 
   const name = user.full_name || user.username;
   const teach = user.skills.filter((s) => s.type === "teach");
@@ -39,10 +43,10 @@ function UserDetailContent({
 
   async function apply(
     changes: Partial<Pick<UserDetail, "is_active" | "is_staff">>,
-    confirmText: string,
+    confirmOptions: ConfirmOptions,
     doneText: string,
   ) {
-    if (!window.confirm(confirmText)) return;
+    if (!(await confirm(confirmOptions))) return;
     try {
       setBusy(true);
       setError(null);
@@ -57,6 +61,7 @@ function UserDetailContent({
 
   return (
     <>
+      {dialog}
       <Link to="/admin/users" className="admin-back-link">
         &larr; All users
       </Link>
@@ -113,7 +118,12 @@ function UserDetailContent({
                 onClick={() =>
                   apply(
                     { is_active: false },
-                    `Deactivate ${name}? They won't be able to log in.`,
+                    {
+                      title: `Deactivate ${name}?`,
+                      message: "They won't be able to sign in until you reactivate the account. Their data is kept.",
+                      confirmLabel: "Deactivate account",
+                      danger: true,
+                    },
                     "Account deactivated.",
                   )
                 }
@@ -126,7 +136,15 @@ function UserDetailContent({
                 className="admin-approve-btn"
                 disabled={busy}
                 onClick={() =>
-                  apply({ is_active: true }, `Reactivate ${name}?`, "Account reactivated.")
+                  apply(
+                    { is_active: true },
+                    {
+                      title: `Reactivate ${name}?`,
+                      message: "They will be able to sign in again.",
+                      confirmLabel: "Reactivate",
+                    },
+                    "Account reactivated.",
+                  )
                 }
               >
                 Reactivate
@@ -140,12 +158,21 @@ function UserDetailContent({
                 user.is_staff
                   ? apply(
                       { is_staff: false },
-                      `Remove admin access from ${name}?`,
+                      {
+                        title: `Remove admin access from ${name}?`,
+                        message: "They will lose access to this admin panel.",
+                        confirmLabel: "Remove admin",
+                        danger: true,
+                      },
                       "Admin access removed.",
                     )
                   : apply(
                       { is_staff: true },
-                      `Give ${name} full admin access?`,
+                      {
+                        title: `Make ${name} an admin?`,
+                        message: "They will be able to manage users, approve skills and edit quiz questions.",
+                        confirmLabel: "Make admin",
+                      },
                       "User is now an admin.",
                     )
               }

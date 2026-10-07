@@ -5,6 +5,7 @@ import {
 
 import {
   Link,
+  useLocation,
   useParams,
 } from 'react-router-dom';
 
@@ -20,6 +21,21 @@ import './profile.css';
 
 export default function UserProfile() {
   const { userId } = useParams();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const fromPath = from?.split(/[?#]/, 1)[0];
+  const backTo = from?.startsWith('/') && !from.startsWith('//')
+    ? from
+    : '/skillbrowse';
+  const backLabel = fromPath === '/requests'
+    ? 'Requests'
+    : fromPath === '/my-requests'
+      ? 'My Requests'
+      : fromPath === '/dashboard'
+        ? 'Dashboard'
+        : fromPath === '/skillbrowse'
+          ? 'Browse Skills'
+          : 'Browse Skills';
 
   const [profile, setProfile] =
     useState<PublicUserProfile | null>(null);
@@ -119,14 +135,14 @@ export default function UserProfile() {
           }}
         >
           <Link
-            to="/skillbrowse"
+            to={backTo}
             style={{
               textDecoration: 'none',
               color: '#4f46e5',
               fontWeight: 600,
             }}
           >
-            &larr; Back to Browse Skills
+            &larr; Back to {backLabel}
           </Link>
 
           <Link

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import type { IncomingRequestItem } from "../../api/matchingApi";
 import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
@@ -30,6 +31,7 @@ export default function PendingRequestCard({
   onAction,
   formatSlot,
 }: PendingRequestCardProps) {
+  const location = useLocation();
   const initial = request.sender_username
     ? request.sender_username.charAt(0).toUpperCase()
     : "?";
@@ -167,7 +169,15 @@ export default function PendingRequestCard({
 
         <div>
           <div className="sender-title-rating">
-            <h3 className="sender-name">{request.sender_username}</h3>
+            <h3 className="sender-name">
+              <Link
+                className="sender-name-link"
+                to={`/users/${request.sender}`}
+                state={{ from: `${location.pathname}${location.search}` }}
+              >
+                {request.sender_username}
+              </Link>
+            </h3>
 
             <UserRatingBadge
               ratingAverage={request.sender_rating_average}

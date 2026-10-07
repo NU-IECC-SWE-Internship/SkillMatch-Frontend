@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
 import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
@@ -12,6 +12,7 @@ export default function PastRequestCard({
   request,
   sentByMe = false,
 }: PastRequestCardProps) {
+  const location = useLocation();
   const username = sentByMe
     ? request.receiver_username
     : request.sender_username;
@@ -43,6 +44,7 @@ export default function PastRequestCard({
       <div className="incoming-card-top">
         <Link
           to={`/users/${userId}`}
+          state={{ from: `${location.pathname}${location.search}` }}
           className="sender-avatar muted"
           style={{ textDecoration: "none" }}
         >
@@ -56,6 +58,7 @@ export default function PastRequestCard({
 
               <Link
                 to={`/users/${userId}`}
+                state={{ from: `${location.pathname}${location.search}` }}
                 style={{
                   textDecoration: "none",
                   color: "inherit",

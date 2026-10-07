@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import {
   getSentRequests,
@@ -15,6 +15,7 @@ import StatusModal from "../components/ui/StatusModal";
 import "./Requests.css";
 
 export default function MyRequests() {
+  const location = useLocation();
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -242,6 +243,7 @@ export default function MyRequests() {
                         <div className="incoming-card-top">
                           <Link
                             to={`/users/${request.receiver}`}
+                            state={{ from: `${location.pathname}${location.search}` }}
                             className="sender-avatar"
                             style={{ textDecoration: "none" }}
                           >
@@ -258,6 +260,7 @@ export default function MyRequests() {
                                 Request to{" "}
                                 <Link
                                   to={`/users/${request.receiver}`}
+                                  state={{ from: `${location.pathname}${location.search}` }}
                                   style={{
                                     textDecoration: "none",
                                     color: "inherit",
@@ -323,6 +326,7 @@ export default function MyRequests() {
                         <div className="incoming-card-top">
                           <Link
                             to={`/users/${request.receiver}`}
+                            state={{ from: `${location.pathname}${location.search}` }}
                             className="sender-avatar"
                             style={{ textDecoration: "none" }}
                           >
@@ -339,6 +343,7 @@ export default function MyRequests() {
                                 Swap with{" "}
                                 <Link
                                   to={`/users/${request.receiver}`}
+                                  state={{ from: `${location.pathname}${location.search}` }}
                                   style={{
                                     textDecoration: "none",
                                     color: "inherit",
@@ -405,6 +410,7 @@ export default function MyRequests() {
                         <div className="incoming-card-top">
                           <Link
                             to={`/users/${request.receiver}`}
+                            state={{ from: `${location.pathname}${location.search}` }}
                             className="sender-avatar"
                             style={{ textDecoration: "none" }}
                           >

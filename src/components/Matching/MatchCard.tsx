@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Match } from "../../types/match";
 import VerifiedBadge from "../VerifiedBadge";
 import UserRatingBadge from "./UserRatingBadge";
@@ -10,6 +10,7 @@ interface MatchCardProps {
 
 function MatchCard({ match }: MatchCardProps) {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleRequest = () => {
     navigate(`/matches/${match.user_id}/request`, {
@@ -18,7 +19,9 @@ function MatchCard({ match }: MatchCardProps) {
   };
 
   const handleProfile = () => {
-    navigate(`/users/${match.user_id}`);
+    navigate(`/users/${match.user_id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
   };
 
   const initial = match.username

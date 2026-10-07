@@ -329,6 +329,9 @@ export default function SkillQuiz() {
             <div className="skill-quiz-progress">
               <span>
                 Question {index + 1} of {questions.length}
+                <span className={`skill-quiz-difficulty ${current.difficulty}`}>
+                  {current.difficulty}
+                </span>
               </span>
               <span
                 className={

@@ -16,6 +16,10 @@ import { homePath, isAuthenticated, isStaffUser } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
 import SkillQuiz from "./pages/SkillQuiz";
 import AdminSkills from "./pages/AdminSkills";
+import AdminSkillQuestions from "./pages/AdminSkillQuestions";
+import AdminOverview from "./pages/AdminOverview";
+import AdminUsers from "./pages/AdminUsers";
+import AdminUserDetail from "./pages/AdminUserDetail";
 
 import UserProfile from "./pages/UserProfile";
 
@@ -33,7 +37,7 @@ import UserProfile from "./pages/UserProfile";
 // Admin accounts only use the admin dashboard.
 function UserOnly({ children }: { children: ReactElement }) {
   if (isStaffUser()) {
-    return <Navigate to="/admin/skills" replace />;
+    return <Navigate to="/admin" replace />;
   }
   return children;
 }
@@ -80,11 +84,11 @@ function ProtectedSkillQuiz() {
   return <UserOnly><SkillQuiz /></UserOnly>;
 }
 
-function ProtectedAdminSkills() {
+function AuthOnly({ children }: { children: ReactElement }) {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-  return <AdminSkills />;
+  return children;
 }
 
 function RootRedirect() {
@@ -113,7 +117,11 @@ export default function App() {
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
-      <Route path="/admin/skills" element={<ProtectedAdminSkills />} />
+      <Route path="/admin" element={<AuthOnly><AdminOverview /></AuthOnly>} />
+      <Route path="/admin/users" element={<AuthOnly><AdminUsers /></AuthOnly>} />
+      <Route path="/admin/users/:userId" element={<AuthOnly><AdminUserDetail /></AuthOnly>} />
+      <Route path="/admin/skills" element={<AuthOnly><AdminSkills /></AuthOnly>} />
+      <Route path="/admin/skills/:skillId/questions" element={<AuthOnly><AdminSkillQuestions /></AuthOnly>} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="/matches" element={<UserOnly><Matches /></UserOnly>} />
       <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />

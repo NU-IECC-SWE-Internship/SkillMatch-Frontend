@@ -49,6 +49,7 @@ export interface QuizQuestion {
   option_c: string
   option_d: string
   order: number
+  difficulty: 'easy' | 'medium' | 'hard'
 }
 
 export interface SkillQuiz {

@@ -22,7 +22,7 @@ export default function Login() {
       await login({ username: username.trim(), password })
       const isStaff = await loadStaffRole().catch(() => false)
       // Admins go to their dashboard; others to Dashboard (which handles onboarding)
-      navigate(isStaff ? '/admin/skills' : '/dashboard', { replace: true })
+      navigate(isStaff ? '/admin' : '/dashboard', { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
       setLoading(false)

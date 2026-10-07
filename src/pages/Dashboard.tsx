@@ -15,7 +15,7 @@ export default function Dashboard() {
       const isStaff = await loadStaffRole().catch(() => false);
       if (cancelled) return;
       if (isStaff) {
-        navigate("/admin/skills", { replace: true });
+        navigate("/admin", { replace: true });
         return;
       }
 

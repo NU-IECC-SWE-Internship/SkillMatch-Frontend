@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -17,7 +17,6 @@ import SkillQuiz from "./pages/SkillQuiz";
 import AdminSkills from "./pages/AdminSkills";
 
 import UserProfile from "./pages/UserProfile";
-import Chat from "./pages/Chat";
 import FloatingChatButton from './components/chat/FloatingChatButton'
 
 // function ProtectedHome() {
@@ -103,10 +102,12 @@ function ProtectedUserProfile() {
   return <UserOnly><UserProfile /></UserOnly>;
 }
 function ProtectedChat() {
+  const { userId } = useParams()
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-  return <UserOnly><Chat /></UserOnly>;
+  if (isStaffUser()) return <Navigate to="/admin/skills" replace />
+  return <Navigate to="/dashboard" replace state={{ openChatUserId: Number(userId) }} />
 }
 
 export default function App() {

@@ -52,6 +52,13 @@
   background: white;
   box-shadow: 0 14px 38px rgba(15, 23, 42, .2);
 }
+.floating-chat-panel.is-expanded {
+  width: min(700px, calc(100vw - 32px));
+  height: min(680px, calc(100vh - 110px));
+  max-height: calc(100vh - 110px);
+}
+.floating-chat-panel.has-conversation { height: min(440px, calc(100vh - 120px)); }
+.floating-chat-panel.is-expanded.has-conversation { height: min(680px, calc(100vh - 110px)); }
 
 .floating-chat-header {
   display: flex;
@@ -62,6 +69,16 @@
 }
 .floating-chat-header h2 { margin: 0; color: #172554; font-size: 1rem; }
 .floating-chat-header button { border: 0; background: transparent; color: #64748b; font-size: 24px; cursor: pointer; }
+.floating-chat-title, .floating-chat-actions { display: flex; align-items: center; gap: 8px; }
+.floating-chat-title { min-width: 0; }
+.floating-chat-title h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.floating-chat-header .floating-chat-actions button, .floating-chat-back {
+  display: grid; width: 30px; height: 30px; place-items: center; border: 0; border-radius: 6px;
+  background: transparent; color: #64748b; font-size: 20px; cursor: pointer;
+}
+.floating-chat-header .floating-chat-actions button:hover, .floating-chat-back:hover { background: #f1f5f9; }
+.floating-chat-panel .chat-messages { min-height: 180px; padding: 14px; }
+.floating-chat-panel .chat-compose { flex-shrink: 0; padding: 10px; }
 .floating-chat-list { overflow-y: auto; }
 .floating-chat-item {
   display: flex;
@@ -87,5 +104,6 @@
 
 @media (max-width: 480px) {
   .floating-chat-root { right: 14px; bottom: 14px; }
-  .floating-chat-panel { right: 0; }
+  .floating-chat-panel, .floating-chat-panel.is-expanded { right: 0; width: calc(100vw - 28px); max-height: calc(100vh - 100px); }
+  .floating-chat-panel.has-conversation { height: min(600px, calc(100vh - 100px)); }
 }

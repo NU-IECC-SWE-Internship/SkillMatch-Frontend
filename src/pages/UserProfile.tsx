@@ -413,13 +413,14 @@ export default function UserProfile() {
 >
   Send a Request
 </Link>
-          <Link
-            to={`/chat/${profile.user}`}
+          <button
+            type="button"
             className="primary-button"
-            style={{ textDecoration: 'none', display: 'inline-block', marginLeft: '12px' }}
+            style={{ marginLeft: '12px' }}
+            onClick={() => window.dispatchEvent(new CustomEvent('skillmatch-open-chat', { detail: profile.user }))}
           >
             Message
-          </Link>
+          </button>
         </div>
 
       </div>

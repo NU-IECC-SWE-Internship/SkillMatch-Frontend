@@ -39,6 +39,7 @@ export interface UserSkill {
   quiz_score?: number | null
   can_take_quiz?: boolean
   quiz_available_at?: string | null
+  has_quiz_review?: boolean
 }
 
 export interface QuizQuestion {
@@ -49,6 +50,24 @@ export interface QuizQuestion {
   option_c: string
   option_d: string
   order: number
+  difficulty: 'easy' | 'medium' | 'hard'
+}
+
+export type QuizOption = 'A' | 'B' | 'C' | 'D'
+
+export interface QuizReviewItem {
+  order: number
+  question_text: string
+  option_a: string
+  option_b: string
+  option_c: string
+  option_d: string
+  difficulty?: 'easy' | 'medium' | 'hard'
+  /** null when the question timed out without an answer. */
+  selected: QuizOption | null
+  /** null when the admin has turned off revealing answers to missed questions. */
+  correct_option: QuizOption | null
+  is_correct: boolean
 }
 
 export interface SkillQuiz {
@@ -65,6 +84,7 @@ export interface SkillQuiz {
     passed: boolean
     abandoned?: boolean
     created_at: string
+    review?: QuizReviewItem[]
   } | null
   questions: QuizQuestion[]
 }
@@ -76,6 +96,7 @@ export interface QuizSubmitResult {
   is_verified: boolean
   pass_score: number
   can_retry?: boolean
+  review?: QuizReviewItem[]
 }
 
 
@@ -118,6 +139,17 @@ export async function updateProfile(bio: string) {
   return apiRequest<Profile>('/api/profile/', {
     method: 'PATCH',
     body: { bio },
+  })
+}
+
+
+export async function updateProfileSettings(settings: {
+  bio: string
+  max_session_duration_minutes: number
+}) {
+  return apiRequest<Profile>('/api/profile/', {
+    method: 'PATCH',
+    body: settings,
   })
 }
 
@@ -192,6 +224,26 @@ export async function deleteUserSkill(id: number) {
   })
 }
 
+export interface SkillQuizReview {
+  skill_id: number
+  skill_name: string
+  score: number
+  total: number
+  /** false for attempts taken before per-question answers were saved. */
+  has_details: boolean
+  passed: boolean
+  created_at: string
+  pass_score: number
+  is_verified: boolean
+  can_take: boolean
+  available_at: string | null
+  review: QuizReviewItem[]
+}
+
+export async function getSkillQuizReview(skillId: number): Promise<SkillQuizReview> {
+  return apiRequest<SkillQuizReview>(`/api/skills/${skillId}/quiz/review/`)
+}
+
 export async function getSkillQuiz(
   skillId: number,
 ): Promise<SkillQuiz> {
@@ -208,7 +260,7 @@ export async function startSkillQuiz(
 
 export async function submitSkillQuiz(
   skillId: number,
-  answers: { question_id: number; selected: 'A' | 'B' | 'C' | 'D' }[],
+  answers: { question_id: number; selected: QuizOption | null }[],
 ): Promise<QuizSubmitResult> {
   return apiRequest<QuizSubmitResult>(
     `/api/skills/${skillId}/quiz/submit/`,

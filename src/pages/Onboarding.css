@@ -8,11 +8,6 @@
   justify-content: center;
   align-items: center;
   padding: 40px 20px;
-
-  background:
-    radial-gradient(circle at top left, #dbeafe, transparent 35%),
-    radial-gradient(circle at bottom right, #e0e7ff, transparent 35%),
-    #f8fafc;
 }
 
 .onboarding-wrapper {
@@ -29,10 +24,14 @@
 
 .onboarding-logo {
   margin: 0;
-  font-size: 34px;
+  font-family: var(--display);
+  font-size: 36px;
   font-weight: 800;
-  color: #1e3a8a;
   letter-spacing: -1px;
+  background: linear-gradient(120deg, #1d4ed8, #4f46e5 50%, #7c3aed);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .onboarding-header p {
@@ -56,8 +55,21 @@
   top: 19px;
   left: 10%;
   right: 10%;
-  height: 2px;
+  height: 3px;
+  border-radius: 999px;
   background: #dbe3ef;
+}
+
+.progress-steps::after {
+  content: "";
+  position: absolute;
+  top: 19px;
+  left: 10%;
+  width: var(--progress, 0%);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .progress-step {
@@ -87,6 +99,12 @@
   background: white;
 
   font-weight: 700;
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.35s ease;
 }
 
 .progress-step.active {
@@ -95,9 +113,11 @@
 }
 
 .progress-step.active .progress-circle {
-  background: #4f46e5;
-  border-color: #4f46e5;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border-color: transparent;
   color: white;
+  transform: scale(1.12);
+  box-shadow: 0 0 0 5px rgba(124, 58, 237, 0.15);
 }
 
 .progress-step.completed {
@@ -105,9 +125,9 @@
 }
 
 .progress-step.completed .progress-circle {
-  background: #eef2ff;
-  border-color: #6366f1;
-  color: #4f46e5;
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #059669;
 }
 
 /* Main card */
@@ -119,14 +139,19 @@
   border-radius: 22px;
 
   box-shadow:
-    0 18px 45px rgba(15, 23, 42, 0.08);
+    0 18px 45px var(--accent-glow, rgba(15, 23, 42, 0.08));
 
   border: 1px solid #eef2f7;
+  border-top: 4px solid var(--accent, #6366f1);
 }
 
 .step-label {
-  margin: 0 0 12px;
-  color: #6366f1;
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft, #eef2ff);
+  color: var(--accent, #6366f1);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -170,6 +195,9 @@
 
   outline: none;
   background: white;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.25s ease;
 }
 
 .onboarding-card textarea {
@@ -177,11 +205,17 @@
   resize: vertical;
 }
 
+.onboarding-card textarea:hover:not(:focus),
+.onboarding-card input:hover:not(:focus),
+.onboarding-card select:hover:not(:focus) {
+  border-color: var(--accent-border, #c7d2fe);
+}
+
 .onboarding-card textarea:focus,
 .onboarding-card input:focus,
 .onboarding-card select:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 0 0 4px var(--accent-glow, rgba(99, 102, 241, 0.12));
 }
 
 /* Continue / Finish */
@@ -195,17 +229,27 @@
   border: none;
   border-radius: 10px;
 
-  background: #4f46e5;
+  background: linear-gradient(120deg, #2563eb, #4f46e5);
   color: white;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
 
   font-size: 15px;
   font-weight: 600;
 
   cursor: pointer;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s ease;
 }
 
-.onboarding-card form > button:hover {
-  background: #4338ca;
+.onboarding-card form > button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.35);
+}
+
+.onboarding-card form > button:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
 }
 
 .onboarding-card form > button:disabled {
@@ -242,6 +286,54 @@
   background: #4f46e5;
   border-color: #4f46e5;
   color: white;
+}
+
+.onboarding-card .skill-chip {
+  font-weight: 600;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.onboarding-card .skill-chip:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.onboarding-card .skill-chip:active {
+  transform: translateY(0) scale(0.96);
+}
+
+.onboarding-card .skill-chip.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 6px 14px var(--accent-glow);
+}
+
+.onboarding-card .add-skill-button {
+  background: var(--accent-soft);
+  color: var(--accent);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.onboarding-card .add-skill-button:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-steps::after,
+  .progress-circle,
+  .onboarding-card .skill-chip,
+  .onboarding-card form > button {
+    transition: none;
+  }
 }
 
 @media (max-width: 650px) {

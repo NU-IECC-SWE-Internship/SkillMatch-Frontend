@@ -5,9 +5,12 @@ import {
   startSkillQuiz,
   submitSkillQuiz,
   type QuizQuestion,
+  type QuizReviewItem,
   type QuizSubmitResult,
 } from "../api/profileApi";
+import QuizReview from "../components/quiz/QuizReview";
 import { getErrorMessage } from "../lib/api";
+import { handleCursorGlow } from "../lib/cursorGlow";
 import "./SkillQuiz.css";
 
 type OptionKey = "A" | "B" | "C" | "D";
@@ -44,7 +47,9 @@ export default function SkillQuiz() {
     passed: boolean;
     abandoned: boolean;
     availableAt: string | null;
+    review: QuizReviewItem[];
   } | null>(null);
+  const [showLastReview, setShowLastReview] = useState(false);
   const advancingRef = useRef(false);
   const answersRef = useRef(answers);
   answersRef.current = answers;
@@ -86,12 +91,14 @@ export default function SkillQuiz() {
                   passed: quiz.attempt.passed,
                   abandoned: Boolean(quiz.attempt.abandoned),
                   availableAt: quiz.available_at ?? null,
+                  review: quiz.attempt.review ?? [],
                 }
               : {
                   score: 0,
                   passed: false,
                   abandoned: false,
                   availableAt: quiz.available_at ?? null,
+                  review: [],
                 },
           );
         } else {
@@ -118,10 +125,10 @@ export default function SkillQuiz() {
         setSubmitting(true);
         setError(null);
 
-        // Unanswered (timed out) count as wrong; filler choice for the API.
+        // Unanswered (timed out) questions are sent as null and count as wrong.
         const payload = questions.map((q) => ({
           question_id: q.id,
-          selected: finalAnswers[q.id] ?? ("B" as OptionKey),
+          selected: finalAnswers[q.id] ?? null,
         }));
 
         const data = await submitSkillQuiz(skillId, payload);
@@ -210,7 +217,7 @@ export default function SkillQuiz() {
   }
 
   return (
-    <main className="skill-quiz-page">
+    <main className="skill-quiz-page fx-backdrop" onPointerMove={handleCursorGlow}>
       <div className="skill-quiz-shell">
         <div className="skill-quiz-topbar">
           <Link to="/profile" className="skill-quiz-back">
@@ -219,7 +226,7 @@ export default function SkillQuiz() {
           <span className="skill-quiz-brand">SkillMatch</span>
         </div>
 
-        <header className="skill-quiz-header">
+        <header className="skill-quiz-header fx-hero fx-glow fx-rise">
           <h1>Verify {skillName || "skill"}</h1>
           <p>
             One question at a time. You have {QUESTION_SECONDS} seconds each.
@@ -230,14 +237,14 @@ export default function SkillQuiz() {
         {loading ? (
           <p className="skill-quiz-status">Loading quiz...</p>
         ) : error && !result ? (
-          <div className="skill-quiz-error-card" role="alert">
+          <div className="skill-quiz-error-card fx-glow fx-accent-top fx-theme-rose fx-rise fx-d1" role="alert">
             <p>{error}</p>
             <Link to="/profile" className="skill-quiz-secondary">
               Back to Profile
             </Link>
           </div>
         ) : blockedAttempt ? (
-          <section className="skill-quiz-result">
+          <section className="skill-quiz-result fx-glow fx-accent-top fx-theme-amber fx-rise fx-d1">
             <h2>Quiz on cooldown</h2>
             <p>
               {blockedAttempt.abandoned
@@ -256,17 +263,32 @@ export default function SkillQuiz() {
                 : "You can try again in 24 hours."}
             </p>
             <div className="skill-quiz-actions">
+              {blockedAttempt.review.length > 0 ? (
+                <button
+                  type="button"
+                  className="skill-quiz-secondary"
+                  onClick={() => setShowLastReview((shown) => !shown)}
+                  aria-expanded={showLastReview}
+                >
+                  {showLastReview ? "Hide answers" : "Review your answers"}
+                </button>
+              ) : null}
               <button
                 type="button"
-                className="skill-quiz-primary"
+                className="skill-quiz-primary fx-btn"
                 onClick={() => navigate("/profile", { replace: true })}
               >
                 Back to Profile
               </button>
             </div>
+            {showLastReview ? <QuizReview items={blockedAttempt.review} /> : null}
           </section>
         ) : result ? (
-          <section className="skill-quiz-result">
+          <section
+            className={`skill-quiz-result fx-glow fx-accent-top fx-pop ${
+              result.passed ? "fx-theme-teal" : "fx-theme-rose"
+            }`}
+          >
             <h2>{result.passed ? "You passed!" : "Not quite yet"}</h2>
             <p>
               Score: {result.score}/{result.total}
@@ -277,15 +299,16 @@ export default function SkillQuiz() {
             <div className="skill-quiz-actions">
               <button
                 type="button"
-                className="skill-quiz-primary"
+                className="skill-quiz-primary fx-btn"
                 onClick={() => navigate("/profile", { replace: true })}
               >
                 Back to Profile
               </button>
             </div>
+            {result.review?.length ? <QuizReview items={result.review} /> : null}
           </section>
         ) : !started ? (
-          <section className="skill-quiz-ready" role="dialog" aria-modal="true">
+          <section className="skill-quiz-ready fx-glow fx-accent-top fx-theme-violet fx-rise fx-d1" role="dialog" aria-modal="true">
             <h2>Are you ready to take the quiz now?</h2>
             <p>
               When you start, we generate {questionCount} fresh questions about{" "}
@@ -314,7 +337,7 @@ export default function SkillQuiz() {
               </button>
               <button
                 type="button"
-                className="skill-quiz-primary"
+                className="skill-quiz-primary fx-btn"
                 onClick={startQuiz}
                 disabled={generating}
               >
@@ -325,10 +348,13 @@ export default function SkillQuiz() {
             </div>
           </section>
         ) : current ? (
-          <section className="skill-quiz-card">
+          <section key={current.id} className="skill-quiz-card fx-glow fx-accent-top fx-theme-violet fx-pop">
             <div className="skill-quiz-progress">
               <span>
                 Question {index + 1} of {questions.length}
+                <span className={`skill-quiz-difficulty ${current.difficulty}`}>
+                  {current.difficulty}
+                </span>
               </span>
               <span
                 className={
@@ -387,7 +413,7 @@ export default function SkillQuiz() {
             <div className="skill-quiz-actions">
               <button
                 type="button"
-                className="skill-quiz-primary"
+                className="skill-quiz-primary fx-btn"
                 onClick={goNext}
                 disabled={submitting || !answers[current.id]}
               >

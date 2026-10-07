@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
 import type { IncomingRequestItem } from "../../api/matchingApi";
 import VerifiedBadge from "../VerifiedBadge";
-import UserRatingBadge from "./UserRatingBadge";
+import { PersonHeader, StatusChip } from "./RequestsLayout";
 import ReturnSessionScheduler, {
   type ReturnScheduleSelection,
 } from "./ReturnSessionScheduler";
@@ -31,11 +30,6 @@ export default function PendingRequestCard({
   onAction,
   formatSlot,
 }: PendingRequestCardProps) {
-  const location = useLocation();
-  const initial = request.sender_username
-    ? request.sender_username.charAt(0).toUpperCase()
-    : "?";
-
   const [selectedSkill, setSelectedSkill] = useState<number | null>(null);
   const [showSkillSelector, setShowSkillSelector] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
@@ -163,39 +157,33 @@ export default function PendingRequestCard({
       !returnSchedule);
 
   return (
-    <div className="incoming-card">
-      <div className="incoming-card-top">
-        <div className="sender-avatar">{initial}</div>
-
-        <div>
-          <div className="sender-title-rating">
-            <h3 className="sender-name">
-              <Link
-                className="sender-name-link"
-                to={`/users/${request.sender}`}
-                state={{ from: `${location.pathname}${location.search}` }}
-              >
-                {request.sender_username}
-              </Link>
-            </h3>
-
-            <UserRatingBadge
-              ratingAverage={request.sender_rating_average}
-              ratingCount={request.sender_rating_count}
-            />
-          </div>
-
-          <span className="request-tag">
-            {request.status === "SCHEDULING"
-              ? "Swap accepted · return session needs a time"
-              : "Wants to learn from you"}
-          </span>
-        </div>
-      </div>
+    <div
+      className={`incoming-card fx-glow fx-accent-top fx-pop ${
+        request.status === "SCHEDULING" ? "fx-theme-amber" : "fx-theme-blue"
+      }`}
+    >
+      <PersonHeader
+        userId={request.sender}
+        username={request.sender_username}
+        ratingAverage={request.sender_rating_average}
+        ratingCount={request.sender_rating_count}
+        subtitle={
+          request.status === "SCHEDULING"
+            ? "You accepted. Pick a time for your return session."
+            : "Wants to learn from you"
+        }
+        status={
+          request.status === "SCHEDULING" ? (
+            <StatusChip tone="action">Pick a time</StatusChip>
+          ) : (
+            <StatusChip tone="action">New request</StatusChip>
+          )
+        }
+      />
 
       <div className="swap-details">
         <div className="detail-item">
-          <span className="detail-label">Requested Skill</span>
+          <span className="detail-label">They want to learn</span>
 
           <span
             className={
@@ -214,7 +202,7 @@ export default function PendingRequestCard({
         </div>
 
         <div className="detail-item">
-          <span className="detail-label">Preferred Time Slot</span>
+          <span className="detail-label">Preferred time</span>
 
           <span className="slot-pill">{formatSlot(request)}</span>
         </div>
@@ -223,9 +211,11 @@ export default function PendingRequestCard({
       {request.status === "PENDING" && showSkillSelector && (
         <div className="choose-skill-section">
           <span className="detail-label">
-            Choose a skill you want to learn from {request.sender_username} or
-            select None if you are not interested
+            What do you want to learn from {request.sender_username} in return?
           </span>
+          <p className="choose-skill-hint">
+            Pick a skill, or choose None if you just want to teach.
+          </p>
 
           <div className="skill-selector-list">
             {senderTeachSkills.length === 0 ? (
@@ -263,7 +253,7 @@ export default function PendingRequestCard({
           {selectedSkill !== null && selectedSkill !== -1 && (
             <div className="schedule-choice-section">
               <span className="detail-label">
-                When do you want to choose the time for your session?
+                When should we schedule your session?
               </span>
 
               <div className="schedule-choice-actions">

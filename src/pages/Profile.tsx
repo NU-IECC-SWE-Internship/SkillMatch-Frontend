@@ -4,8 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   getProfile,
-  updateProfile,
-  updateMaxSessionDuration,
+  updateProfileSettings,
   getSkills,
   createSkill,
   getMySkills,
@@ -24,8 +23,9 @@ import type {
 } from "../api/profileApi";
 
 import VerifiedBadge from "../components/VerifiedBadge";
+import { handleCursorGlow } from "../lib/cursorGlow";
 
-import "./Profile.css";
+import "./MyProfile.css";
 
 
 const defaultSkills = [
@@ -39,6 +39,15 @@ const defaultSkills = [
   "UI/UX",
 ];
 
+const DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 const sessionDurationOptions = [
   { value: 15, label: "15 minutes" },
@@ -63,24 +72,46 @@ const sessionDurationOptions = [
   { value: 240, label: "4 hours" },
 ];
 
+function retryLabel(availableAt: string | null | undefined) {
+  if (!availableAt) return "Retry later";
+  const minutes = Math.ceil((new Date(availableAt).getTime() - Date.now()) / 60000);
+  if (minutes <= 0) return "Retry now";
+  if (minutes < 60) return `Retry in ${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `Retry in ${hours}h ${rest}m` : `Retry in ${hours}h`;
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatTime(value: string) {
+  const [hours, minutes] = value.split(":").map(Number);
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const displayHours = ((hours + 11) % 12) + 1;
+  return `${displayHours}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
 
 function Profile() {
   const navigate = useNavigate();
 
   // ---------------- PROFILE ----------------
 
+  const [userId, setUserId] = useState<number | null>(null);
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [savedBio, setSavedBio] = useState("");
 
-  const [profileSaving, setProfileSaving] =
-    useState(false);
+  const [maxSessionDuration, setMaxSessionDuration] = useState(120);
+  const [savedDuration, setSavedDuration] = useState(120);
 
-  const [message, setMessage] = useState("");
-
-  const [
-    maxSessionDuration,
-    setMaxSessionDuration,
-  ] = useState(120);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [message, setMessage] = useState<{
+    text: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [ratingAverage, setRatingAverage] = useState(0);
   const [ratingCount, setRatingCount] = useState(0);
@@ -88,26 +119,18 @@ function Profile() {
 
   // ---------------- SKILLS ----------------
 
-  const [skills, setSkills] =
-    useState<Skill[]>([]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [mySkills, setMySkills] = useState<UserSkill[]>([]);
 
-  const [mySkills, setMySkills] =
-    useState<UserSkill[]>([]);
-
-  const [otherTeach, setOtherTeach] =
-    useState("");
-
-  const [otherLearn, setOtherLearn] =
-    useState("");
+  const [otherTeach, setOtherTeach] = useState("");
+  const [otherLearn, setOtherLearn] = useState("");
 
 
   // ---------------- AVAILABILITY ----------------
 
-  const [slots, setSlots] =
-    useState<AvailabilitySlot[]>([]);
-
-  const [editingId, setEditingId] =
-    useState<number | null>(null);
+  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [slotError, setSlotError] = useState("");
 
   const [slotForm, setSlotForm] = useState({
     day: "monday",
@@ -133,70 +156,59 @@ function Profile() {
           getAvailability(),
         ]);
 
-        setUsername(
-          profileData.username || ""
-        );
+        const duration = profileData.max_session_duration_minutes || 120;
 
-        setBio(
-          profileData.bio || ""
-        );
-
-        setMaxSessionDuration(
-          profileData.max_session_duration_minutes || 120
-        );
-
-        setRatingAverage(
-          profileData.rating_average || 0
-        );
-
-        setRatingCount(
-          profileData.rating_count || 0
-        );
-
+        setUserId(profileData.user);
+        setUsername(profileData.username || "");
+        setBio(profileData.bio || "");
+        setSavedBio(profileData.bio || "");
+        setMaxSessionDuration(duration);
+        setSavedDuration(duration);
+        setRatingAverage(profileData.rating_average || 0);
+        setRatingCount(profileData.rating_count || 0);
         setSkills(skillsData);
-
         setMySkills(mySkillsData);
-
         setSlots(availabilityData);
-
       } catch (error) {
         console.error(error);
       }
     }
 
     loadData();
-
   }, []);
 
 
   // ---------------- SAVE PROFILE ----------------
 
+  const isDirty = bio !== savedBio || maxSessionDuration !== savedDuration;
+
   const saveProfile = async () => {
     try {
       setProfileSaving(true);
-      setMessage("");
+      setMessage(null);
 
-      await Promise.all([
-        updateProfile(bio),
-        updateMaxSessionDuration(
-          maxSessionDuration
-        ),
-      ]);
+      const saved = await updateProfileSettings({
+        bio,
+        max_session_duration_minutes: maxSessionDuration,
+      });
 
-      setMessage(
-        "Profile saved successfully."
-      );
-
+      setBio(saved.bio || "");
+      setSavedBio(saved.bio || "");
+      setMaxSessionDuration(saved.max_session_duration_minutes);
+      setSavedDuration(saved.max_session_duration_minutes);
+      setMessage({ text: "Changes saved.", type: "success" });
     } catch (error) {
       console.error(error);
-
-      setMessage(
-        "Could not save profile."
-      );
-
+      setMessage({ text: "Could not save your changes.", type: "error" });
     } finally {
       setProfileSaving(false);
     }
+  };
+
+  const discardChanges = () => {
+    setBio(savedBio);
+    setMaxSessionDuration(savedDuration);
+    setMessage(null);
   };
 
 
@@ -205,133 +217,68 @@ function Profile() {
   const findOrCreateSkill = async (
     skillName: string
   ): Promise<Skill> => {
-
     const existingSkill = skills.find(
-      (skill) =>
-        skill.name.toLowerCase() ===
-        skillName.toLowerCase()
+      (skill) => skill.name.toLowerCase() === skillName.toLowerCase()
     );
 
     if (existingSkill) {
       return existingSkill;
     }
 
-    const newSkill =
-      await createSkill(skillName);
+    const newSkill = await createSkill(skillName);
 
-    setSkills((current) => [
-      ...current,
-      newSkill,
-    ]);
+    setSkills((current) => [...current, newSkill]);
 
     return newSkill;
   };
 
-
-  const hasSkill = (
-    skillName: string,
-    type: "teach" | "learn"
-  ) => {
-
-    return mySkills.some(
+  const hasSkill = (skillName: string, type: "teach" | "learn") =>
+    mySkills.some(
       (item) =>
-        item.skill_name.toLowerCase() ===
-          skillName.toLowerCase() &&
+        item.skill_name.toLowerCase() === skillName.toLowerCase() &&
         item.skill_type === type
     );
-  };
-
 
   const toggleSkill = async (
     skillName: string,
     type: "teach" | "learn"
   ) => {
-
     try {
-      const existingUserSkill =
-        mySkills.find(
-          (item) =>
-            item.skill_name.toLowerCase() ===
-              skillName.toLowerCase() &&
-            item.skill_type === type
-        );
-
-
-      // DELETE
+      const existingUserSkill = mySkills.find(
+        (item) =>
+          item.skill_name.toLowerCase() === skillName.toLowerCase() &&
+          item.skill_type === type
+      );
 
       if (existingUserSkill) {
-
-        await deleteUserSkill(
-          existingUserSkill.id
-        );
+        await deleteUserSkill(existingUserSkill.id);
 
         setMySkills((current) =>
-          current.filter(
-            (item) =>
-              item.id !==
-              existingUserSkill.id
-          )
+          current.filter((item) => item.id !== existingUserSkill.id)
         );
 
         return;
       }
 
+      const skill = await findOrCreateSkill(skillName);
+      const newUserSkill = await addUserSkill(skill.id, type);
 
-      // ADD
-
-      const skill =
-        await findOrCreateSkill(
-          skillName
-        );
-
-      const newUserSkill =
-        await addUserSkill(
-          skill.id,
-          type
-        );
-
-      setMySkills((current) => [
-        ...current,
-        newUserSkill,
-      ]);
-
+      setMySkills((current) => [...current, newUserSkill]);
     } catch (error) {
       console.error(error);
     }
   };
 
-
-  const addOtherSkill = async (
-    type: "teach" | "learn"
-  ) => {
-
-    const value =
-      type === "teach"
-        ? otherTeach.trim()
-        : otherLearn.trim();
+  const addOtherSkill = async (type: "teach" | "learn") => {
+    const value = type === "teach" ? otherTeach.trim() : otherLearn.trim();
 
     if (!value) {
       return;
     }
 
-
-    if (hasSkill(value, type)) {
-
-      if (type === "teach") {
-        setOtherTeach("");
-      } else {
-        setOtherLearn("");
-      }
-
-      return;
+    if (!hasSkill(value, type)) {
+      await toggleSkill(value, type);
     }
-
-
-    await toggleSkill(
-      value,
-      type
-    );
-
 
     if (type === "teach") {
       setOtherTeach("");
@@ -340,158 +287,15 @@ function Profile() {
     }
   };
 
-
-  const teachSkills =
-    mySkills.filter(
-      (skill) =>
-        skill.skill_type === "teach"
-    );
-
-
-  const learnSkills =
-    mySkills.filter(
-      (skill) =>
-        skill.skill_type === "learn"
-    );
+  const teachSkills = mySkills.filter((skill) => skill.skill_type === "teach");
+  const learnSkills = mySkills.filter((skill) => skill.skill_type === "learn");
 
 
   // ---------------- AVAILABILITY ----------------
 
-  const handleSlotSubmit = async (
-    e: FormEvent
-  ) => {
-
-    e.preventDefault();
-
-
-    if (
-      !slotForm.start_time ||
-      !slotForm.end_time
-    ) {
-
-      alert(
-        "Please enter the start and end time."
-      );
-
-      return;
-    }
-
-
-    if (
-      slotForm.start_time >=
-      slotForm.end_time
-    ) {
-
-      alert(
-        "End time must be after start time."
-      );
-
-      return;
-    }
-
-
-    try {
-
-      // EDIT
-
-      if (editingId !== null) {
-
-        const updatedSlot =
-          await updateAvailability(
-            editingId,
-            slotForm.day,
-            slotForm.start_time,
-            slotForm.end_time
-          );
-
-        setSlots((current) =>
-          current.map((slot) =>
-            slot.id === editingId
-              ? updatedSlot
-              : slot
-          )
-        );
-
-        setEditingId(null);
-      }
-
-
-      // ADD
-
-      else {
-
-        const newSlot =
-          await addAvailability(
-            slotForm.day,
-            slotForm.start_time,
-            slotForm.end_time
-          );
-
-        setSlots((current) => [
-          ...current,
-          newSlot,
-        ]);
-      }
-
-
-      setSlotForm({
-        day: "monday",
-        start_time: "",
-        end_time: "",
-      });
-
-
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
-  const startEditingSlot = (
-    slot: AvailabilitySlot
-  ) => {
-
-    setEditingId(slot.id);
-
-    setSlotForm({
-      day: slot.day,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-    });
-  };
-
-
-  const removeSlot = async (
-    id: number
-  ) => {
-
-    try {
-
-      await deleteAvailability(id);
-
-      setSlots((current) =>
-        current.filter(
-          (slot) =>
-            slot.id !== id
-        )
-      );
-
-
-      if (editingId === id) {
-        cancelEdit();
-      }
-
-
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
-  const cancelEdit = () => {
-
+  const resetSlotForm = () => {
     setEditingId(null);
-
+    setSlotError("");
     setSlotForm({
       day: "monday",
       start_time: "",
@@ -499,757 +303,479 @@ function Profile() {
     });
   };
 
+  const handleSlotSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!slotForm.start_time || !slotForm.end_time) {
+      setSlotError("Please enter a start and end time.");
+      return;
+    }
+
+    if (slotForm.start_time >= slotForm.end_time) {
+      setSlotError("End time must be after start time.");
+      return;
+    }
+
+    try {
+      if (editingId !== null) {
+        const updatedSlot = await updateAvailability(
+          editingId,
+          slotForm.day,
+          slotForm.start_time,
+          slotForm.end_time
+        );
+
+        setSlots((current) =>
+          current.map((slot) => (slot.id === editingId ? updatedSlot : slot))
+        );
+      } else {
+        const newSlot = await addAvailability(
+          slotForm.day,
+          slotForm.start_time,
+          slotForm.end_time
+        );
+
+        setSlots((current) => [...current, newSlot]);
+      }
+
+      resetSlotForm();
+    } catch (error) {
+      console.error(error);
+      setSlotError("Could not save this time slot.");
+    }
+  };
+
+  const startEditingSlot = (slot: AvailabilitySlot) => {
+    setEditingId(slot.id);
+    setSlotError("");
+    setSlotForm({
+      day: slot.day,
+      start_time: slot.start_time.slice(0, 5),
+      end_time: slot.end_time.slice(0, 5),
+    });
+  };
+
+  const removeSlot = async (id: number) => {
+    try {
+      await deleteAvailability(id);
+
+      setSlots((current) => current.filter((slot) => slot.id !== id));
+
+      if (editingId === id) {
+        resetSlotForm();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const sortedSlots = [...slots].sort(
+    (a, b) =>
+      DAYS.indexOf(a.day) - DAYS.indexOf(b.day) ||
+      a.start_time.localeCompare(b.start_time)
+  );
+
+
+  // ---------------- RENDER HELPERS ----------------
+
+  const renderTeachActions = (skill: UserSkill) => (
+    <>
+      {!skill.is_verified && skill.can_take_quiz ? (
+        <button
+          type="button"
+          className="mp-btn mp-btn-quiz"
+          onClick={() => navigate(`/skills/${skill.skill}/quiz`)}
+        >
+          Verify with quiz
+        </button>
+      ) : null}
+
+      {!skill.is_verified && !skill.can_take_quiz && skill.has_quiz_attempt ? (
+        <span
+          className="mp-tag mp-tag-warn"
+          title={
+            skill.quiz_available_at
+              ? `Available ${new Date(skill.quiz_available_at).toLocaleString()}`
+              : undefined
+          }
+        >
+          {retryLabel(skill.quiz_available_at)}
+          {typeof skill.quiz_score === "number"
+            ? ` · ${skill.quiz_score}/10`
+            : ""}
+        </span>
+      ) : null}
+
+      {skill.has_quiz_review ? (
+        <Link
+          to={`/skills/${skill.skill}/quiz/review`}
+          className="mp-tag mp-tag-link"
+          title="See which questions you got right or wrong"
+        >
+          Review answers
+        </Link>
+      ) : null}
+    </>
+  );
+
+  const renderSkillSection = (type: "teach" | "learn") => {
+    const selected = type === "teach" ? teachSkills : learnSkills;
+    const otherValue = type === "teach" ? otherTeach : otherLearn;
+    const setOtherValue = type === "teach" ? setOtherTeach : setOtherLearn;
+    const suggestions = defaultSkills.filter((skill) => !hasSkill(skill, type));
+
+    return (
+      <section className={`mp-card fx-glow mp-theme-${type}`}>
+        <div className="mp-card-head">
+          <span className="mp-icon" aria-hidden="true">
+            {type === "teach" ? "🎓" : "🌱"}
+          </span>
+          <div className="mp-card-title">
+            <h2>{type === "teach" ? "Skills I can teach" : "Skills I want to learn"}</h2>
+            <p>
+              {type === "teach"
+                ? "Verified skills stand out to other learners."
+                : "We use these to find people who can teach you."}
+            </p>
+          </div>
+          <span className="mp-count">{selected.length}</span>
+        </div>
+
+        {selected.length === 0 ? (
+          <p className="mp-empty">
+            No skills yet. Pick one below or type your own.
+          </p>
+        ) : (
+          <ul className="mp-skill-list">
+            {selected.map((skill) => (
+              <li
+                key={skill.id}
+                className={skill.is_verified ? "mp-skill-row verified" : "mp-skill-row"}
+              >
+                <div className="mp-skill-main">
+                  <span className="mp-skill-name">{skill.skill_name}</span>
+                  {type === "teach" && (
+                    <VerifiedBadge verified={skill.is_verified} />
+                  )}
+                  {skill.skill_is_approved === false ? (
+                    <span
+                      className="mp-tag"
+                      title="An admin needs to approve this skill before it shows in matches."
+                    >
+                      Pending approval
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mp-skill-actions">
+                  {type === "teach" && renderTeachActions(skill)}
+
+                  <button
+                    type="button"
+                    className="mp-remove"
+                    aria-label={`Remove ${skill.skill_name}`}
+                    title="Remove"
+                    onClick={() => toggleSkill(skill.skill_name, type)}
+                  >
+                    ×
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mp-add">
+          {suggestions.length > 0 && (
+            <div className="mp-suggestions">
+              <span className="mp-label">Suggestions</span>
+              <div className="mp-chips">
+                {suggestions.map((skill) => (
+                  <button
+                    key={skill}
+                    type="button"
+                    className="mp-chip"
+                    onClick={() => toggleSkill(skill, type)}
+                  >
+                    + {skill}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <form
+            className="mp-add-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              addOtherSkill(type);
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Add another skill..."
+              value={otherValue}
+              onChange={(e) => setOtherValue(e.target.value)}
+            />
+            <button
+              type="submit"
+              className="mp-btn mp-btn-soft"
+              disabled={!otherValue.trim()}
+            >
+              Add
+            </button>
+          </form>
+        </div>
+      </section>
+    );
+  };
+
 
   // ---------------- PAGE ----------------
 
+  const initial = username ? username.charAt(0).toUpperCase() : "?";
+
   return (
-    <main className="profile-page">
-
-      <div className="profile-container">
-
-
-        {/* TOP LINKS */}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-
-          <Link
-            to="/dashboard"
-            style={{
-              textDecoration: "none",
-              color: "#4f46e5",
-              fontWeight: 600,
-            }}
-          >
-            ← Back to Dashboard
-          </Link>
-
-
-          <Link
-            to="/meetings"
-            style={{
-              textDecoration: "none",
-              color: "#2563eb",
-              fontWeight: 600,
-            }}
-          >
-            🎥 Meetings →
-          </Link>
-
-        </div>
-
-
-        {/* HEADER */}
-
-        <header className="profile-header">
-
-          <div>
-
-            <p className="small-title">
-              SKILLMATCH
-            </p>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <h1>
-                {username || "Profile"}
-              </h1>
-
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  padding: '0.35rem 0.85rem',
-                  borderRadius: '20px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '0.9rem',
-                  fontWeight: 650,
-                  margin: '0.25rem 0',
-                }}
-              >
-                {ratingCount > 0 ? (
-                  <>
-                    <span style={{ color: '#f59e0b', fontSize: '1.1rem' }}>★</span>
-                    <span style={{ color: '#1e293b', fontWeight: 700 }}>{ratingAverage.toFixed(1)}</span>
-                    <span style={{ color: '#64748b', fontSize: '0.8rem' }}>({ratingCount} review{ratingCount === 1 ? '' : 's'})</span>
-                  </>
-                ) : (
-                  <span style={{ color: '#2563eb', fontSize: '0.82rem' }}>★ New Member</span>
-                )}
-              </div>
-            </div>
-
-            <p>
-              Manage your skills and
-              availability.
-            </p>
-
-          </div>
-
-        </header>
-
-
-        {/* ABOUT */}
-
-        <section className="profile-card">
-
-          <div className="section-heading">
-
-            <h2>
-              About Me
-            </h2>
-
-            <p>
-              Write a short introduction
-              about yourself.
-            </p>
-
-          </div>
-
-
-          <textarea
-            className="bio-input"
-            value={bio}
-            onChange={(e) =>
-              setBio(e.target.value)
-            }
-            placeholder="Tell others about yourself..."
-          />
-
-        </section>
-
-
-        {/* TEACH */}
-
-        <section className="profile-card">
-
-          <div className="section-heading">
-
-            <h2>
-              Skills I Can Teach
-            </h2>
-
-            <p>
-              Choose the skills you can teach.
-            </p>
-
-          </div>
-
-
-          <div className="skills-grid">
-
-            {defaultSkills.map(
-              (skill) => (
-
-                <button
-                  key={skill}
-                  type="button"
-                  className={
-                    hasSkill(
-                      skill,
-                      "teach"
-                    )
-                      ? "skill-chip selected"
-                      : "skill-chip"
-                  }
-                  onClick={() =>
-                    toggleSkill(
-                      skill,
-                      "teach"
-                    )
-                  }
-                >
-
-                  {hasSkill(
-                    skill,
-                    "teach"
-                  )
-                    ? "✓ "
-                    : ""}
-
-                  {skill}
-
-                </button>
-
-              )
-            )}
-
-          </div>
-
-
-          <div className="other-skill">
-
-            <input
-              type="text"
-              placeholder="Other skill..."
-              value={otherTeach}
-              onChange={(e) =>
-                setOtherTeach(
-                  e.target.value
-                )
-              }
-            />
-
-
-            <button
-              type="button"
-              onClick={() =>
-                addOtherSkill("teach")
-              }
-            >
-              + Add
-            </button>
-
-          </div>
-
-
-          {teachSkills.length > 0 && (
-
-            <div className="selected-area">
-
-              <p>
-                Selected:
-              </p>
-
-
-              <div className="selected-list">
-
-                {teachSkills.map(
-                  (skill) => (
-
-                    <span
-                      key={skill.id}
-                      className={
-                        skill.is_verified
-                          ? "selected-tag teach-skill-tag is-verified-tag"
-                          : "selected-tag teach-skill-tag"
-                      }
-                    >
-
-                      <span className="teach-skill-meta">
-                        <span className="teach-skill-name">
-                          {skill.skill_name}
-                        </span>
-                        <VerifiedBadge verified={skill.is_verified} />
-                        {skill.skill_is_approved === false ? (
-                          <span
-                            className="pending-approval-tag"
-                            title="An admin needs to approve this skill before it shows in matches."
-                          >
-                            Pending approval
-                          </span>
-                        ) : null}
-                      </span>
-
-                      {!skill.is_verified && skill.can_take_quiz ? (
-                        <button
-                          type="button"
-                          className="quiz-launch-btn"
-                          onClick={() =>
-                            navigate(`/skills/${skill.skill}/quiz`)
-                          }
-                        >
-                          Take quiz
-                        </button>
-                      ) : null}
-
-                      {!skill.is_verified &&
-                      !skill.can_take_quiz &&
-                      skill.has_quiz_attempt ? (
-                        <span className="verify-cooldown">
-                          Retry in 24h
-                          {typeof skill.quiz_score === "number"
-                            ? ` · ${skill.quiz_score}/10`
-                            : ""}
-                        </span>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleSkill(
-                            skill.skill_name,
-                            "teach"
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-
-                    </span>
-
-                  )
-                )}
-
-              </div>
-
-            </div>
-
-          )}
-
-        </section>
-
-
-        {/* LEARN */}
-
-        <section className="profile-card">
-
-          <div className="section-heading">
-
-            <h2>
-              Skills I Want to Learn
-            </h2>
-
-            <p>
-              Choose the skills you want
-              to learn.
-            </p>
-
-          </div>
-
-
-          <div className="skills-grid">
-
-            {defaultSkills.map(
-              (skill) => (
-
-                <button
-                  key={skill}
-                  type="button"
-                  className={
-                    hasSkill(
-                      skill,
-                      "learn"
-                    )
-                      ? "skill-chip selected"
-                      : "skill-chip"
-                  }
-                  onClick={() =>
-                    toggleSkill(
-                      skill,
-                      "learn"
-                    )
-                  }
-                >
-
-                  {hasSkill(
-                    skill,
-                    "learn"
-                  )
-                    ? "✓ "
-                    : ""}
-
-                  {skill}
-
-                </button>
-
-              )
-            )}
-
-          </div>
-
-
-          <div className="other-skill">
-
-            <input
-              type="text"
-              placeholder="Other skill..."
-              value={otherLearn}
-              onChange={(e) =>
-                setOtherLearn(
-                  e.target.value
-                )
-              }
-            />
-
-
-            <button
-              type="button"
-              onClick={() =>
-                addOtherSkill("learn")
-              }
-            >
-              + Add
-            </button>
-
-          </div>
-
-
-          {learnSkills.length > 0 && (
-
-            <div className="selected-area">
-
-              <p>
-                Selected:
-              </p>
-
-
-              <div className="selected-list">
-
-                {learnSkills.map(
-                  (skill) => (
-
-                    <span
-                      key={skill.id}
-                      className="selected-tag"
-                    >
-
-                      {skill.skill_name}
-
-                      {skill.skill_is_approved === false ? (
-                        <span
-                          className="pending-approval-tag"
-                          title="An admin needs to approve this skill before it shows in matches."
-                        >
-                          Pending approval
-                        </span>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleSkill(
-                            skill.skill_name,
-                            "learn"
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-
-                    </span>
-
-                  )
-                )}
-
-              </div>
-
-            </div>
-
-          )}
-
-        </section>
-
-
-        {/* AVAILABILITY */}
-
-        <section className="profile-card">
-
-          <div className="section-heading">
-
-            <h2>
-              Available Slots
-            </h2>
-
-            <p>
-              Add the time slots when
-              you are available.
-            </p>
-
-          </div>
-
-
-          {/* MAX SESSION */}
-
-          <div className="session-duration-box">
-
-            <div>
-
-              <h3>
-                Maximum Session Duration
-              </h3>
-
-              <p>
-                Sessions can be shorter,
-                but cannot be longer than
-                this duration.
-              </p>
-
-            </div>
-
-
-            <div className="session-duration-control">
-
-              <select
-                value={maxSessionDuration}
-                onChange={(e) =>
-                  setMaxSessionDuration(
-                    Number(
-                      e.target.value
-                    )
-                  )
-                }
-              >
-
-                {sessionDurationOptions.map(
-                  (option) => (
-
-                    <option
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </option>
-
-                  )
-                )}
-
-              </select>
-
-            </div>
-
-          </div>
-
-
-          {/* AVAILABILITY FORM */}
-
-          <form
-            className="availability-form"
-            onSubmit={handleSlotSubmit}
-          >
-
-            <div className="form-group">
-
-              <label>
-                Day
-              </label>
-
-              <select
-                value={slotForm.day}
-                onChange={(e) =>
-                  setSlotForm({
-                    ...slotForm,
-                    day: e.target.value,
-                  })
-                }
-              >
-
-                <option value="monday">
-                  Monday
-                </option>
-
-                <option value="tuesday">
-                  Tuesday
-                </option>
-
-                <option value="wednesday">
-                  Wednesday
-                </option>
-
-                <option value="thursday">
-                  Thursday
-                </option>
-
-                <option value="friday">
-                  Friday
-                </option>
-
-                <option value="saturday">
-                  Saturday
-                </option>
-
-                <option value="sunday">
-                  Sunday
-                </option>
-
-              </select>
-
-            </div>
-
-
-            <div className="form-group">
-
-              <label>
-                Start Time
-              </label>
-
-              <input
-                type="time"
-                value={
-                  slotForm.start_time
-                }
-                onChange={(e) =>
-                  setSlotForm({
-                    ...slotForm,
-                    start_time:
-                      e.target.value,
-                  })
-                }
-              />
-
-            </div>
-
-
-            <div className="form-group">
-
-              <label>
-                End Time
-              </label>
-
-              <input
-                type="time"
-                value={
-                  slotForm.end_time
-                }
-                onChange={(e) =>
-                  setSlotForm({
-                    ...slotForm,
-                    end_time:
-                      e.target.value,
-                  })
-                }
-              />
-
-            </div>
-
-
-            <div className="availability-actions">
-
-              <button
-                type="submit"
-                className="primary-button"
-              >
-
-                {editingId !== null
-                  ? "Save Changes"
-                  : "+ Add Slot"}
-
-              </button>
-
-
-              {editingId !== null && (
-
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={cancelEdit}
-                >
-                  Cancel
-                </button>
-
+    <main className="mp-page" onPointerMove={handleCursorGlow}>
+      <div className="mp-container">
+        <nav className="mp-nav">
+          <Link to="/dashboard">&larr; Dashboard</Link>
+          <Link to="/meetings">Meetings &rarr;</Link>
+        </nav>
+
+        <header className="mp-hero fx-glow">
+          <div className="mp-avatar">{initial}</div>
+
+          <div className="mp-hero-info">
+            <h1>{username || "My profile"}</h1>
+
+            <div className="mp-hero-meta">
+              {ratingCount > 0 ? (
+                <span className="mp-rating">
+                  <span className="mp-star">★</span>
+                  <strong>{ratingAverage.toFixed(1)}</strong>
+                  <span>
+                    ({ratingCount} review{ratingCount === 1 ? "" : "s"})
+                  </span>
+                </span>
+              ) : (
+                <span className="mp-rating new">★ New member</span>
               )}
 
+              <span className="mp-dot" />
+              <span>{teachSkills.length} teaching</span>
+              <span className="mp-dot" />
+              <span>{learnSkills.length} learning</span>
+              <span className="mp-dot" />
+              <span>
+                {slots.length} time slot{slots.length === 1 ? "" : "s"}
+              </span>
+            </div>
+          </div>
+
+          {userId !== null && (
+            <Link to={`/users/${userId}`} className="mp-btn mp-btn-ghost">
+              View public profile
+            </Link>
+          )}
+        </header>
+
+        <section className="mp-card fx-glow mp-theme-about">
+          <div className="mp-card-head">
+            <span className="mp-icon" aria-hidden="true">👋</span>
+            <div className="mp-card-title">
+              <h2>About me</h2>
+              <p>A short intro helps people decide to swap with you.</p>
+            </div>
+          </div>
+
+          <textarea
+            className="mp-textarea"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            placeholder="e.g. Frontend developer who loves teaching React. Looking to learn data analysis."
+          />
+        </section>
+
+        <div className="mp-grid">
+          {renderSkillSection("teach")}
+          {renderSkillSection("learn")}
+        </div>
+
+        <section className="mp-card fx-glow mp-theme-avail">
+          <div className="mp-card-head">
+            <span className="mp-icon" aria-hidden="true">🗓️</span>
+            <div className="mp-card-title">
+              <h2>Weekly availability</h2>
+              <p>People can request sessions during these times.</p>
+            </div>
+          </div>
+
+          <div className="mp-setting">
+            <div>
+              <strong>Maximum session length</strong>
+              <span>Sessions can be shorter, but never longer than this.</span>
             </div>
 
-          </form>
+            <select
+              value={maxSessionDuration}
+              onChange={(e) => setMaxSessionDuration(Number(e.target.value))}
+            >
+              {sessionDurationOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-
-          {/* SAVED SLOTS */}
-
-          <div className="slots-list">
-
-            {slots.length === 0 ? (
-
-              <div className="empty-state">
-                No available slots yet.
-              </div>
-
-            ) : (
-
-              slots.map((slot) => (
-
-                <div
-                  className="slot-card"
+          {sortedSlots.length === 0 ? (
+            <p className="mp-empty">No time slots yet. Add your first one below.</p>
+          ) : (
+            <ul className="mp-slot-list">
+              {sortedSlots.map((slot) => (
+                <li
                   key={slot.id}
+                  className={editingId === slot.id ? "mp-slot editing" : "mp-slot"}
                 >
+                  <span className="mp-slot-day">{capitalize(slot.day)}</span>
+                  <span className="mp-slot-time">
+                    {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                  </span>
 
-                  <div>
-
-                    <strong>
-
-                      {slot.day
-                        .charAt(0)
-                        .toUpperCase() +
-                        slot.day.slice(1)}
-
-                    </strong>
-
-                    <span>
-                      {slot.start_time}
-                      {" - "}
-                      {slot.end_time}
-                    </span>
-
-                  </div>
-
-
-                  <div className="slot-buttons">
-
+                  <div className="mp-slot-actions">
                     <button
                       type="button"
-                      className="edit-button"
-                      onClick={() =>
-                        startEditingSlot(
-                          slot
-                        )
-                      }
+                      className="mp-link-btn"
+                      onClick={() => startEditingSlot(slot)}
                     >
                       Edit
                     </button>
-
-
                     <button
                       type="button"
-                      className="delete-button"
-                      onClick={() =>
-                        removeSlot(
-                          slot.id
-                        )
-                      }
+                      className="mp-link-btn danger"
+                      onClick={() => removeSlot(slot.id)}
                     >
                       Delete
                     </button>
-
                   </div>
-
-                </div>
-
-              ))
-
-            )}
-
-          </div>
-
-        </section>
-
-
-        {/* SAVE PROFILE AT BOTTOM */}
-
-        <div className="profile-save-footer">
-
-          {message && (
-            <p className="profile-message">
-              {message}
-            </p>
+                </li>
+              ))}
+            </ul>
           )}
 
+          <form className="mp-slot-form" onSubmit={handleSlotSubmit}>
+            <span className="mp-label">
+              {editingId !== null ? "Edit time slot" : "Add a time slot"}
+            </span>
 
-          <button
-            type="button"
-            className="primary-button save-profile-button"
-            onClick={saveProfile}
-            disabled={profileSaving}
-          >
+            <div className="mp-slot-fields">
+              <label>
+                <span>Day</span>
+                <select
+                  value={slotForm.day}
+                  onChange={(e) =>
+                    setSlotForm({ ...slotForm, day: e.target.value })
+                  }
+                >
+                  {DAYS.map((day) => (
+                    <option key={day} value={day}>
+                      {capitalize(day)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            {profileSaving
-              ? "Saving..."
-              : "Save Profile"}
+              <label>
+                <span>From</span>
+                <input
+                  type="time"
+                  value={slotForm.start_time}
+                  onChange={(e) =>
+                    setSlotForm({ ...slotForm, start_time: e.target.value })
+                  }
+                />
+              </label>
 
-          </button>
+              <label>
+                <span>To</span>
+                <input
+                  type="time"
+                  value={slotForm.end_time}
+                  onChange={(e) =>
+                    setSlotForm({ ...slotForm, end_time: e.target.value })
+                  }
+                />
+              </label>
 
-        </div>
+              <div className="mp-slot-submit">
+                <button type="submit" className="mp-btn mp-btn-primary">
+                  {editingId !== null ? "Save" : "Add slot"}
+                </button>
 
+                {editingId !== null && (
+                  <button
+                    type="button"
+                    className="mp-btn mp-btn-ghost"
+                    onClick={resetSlotForm}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
 
+            {slotError && <p className="mp-error">{slotError}</p>}
+          </form>
+        </section>
+
+        {(isDirty || message) && (
+          <div className="mp-savebar">
+            <span
+              className={
+                message && !isDirty
+                  ? `mp-savebar-text ${message.type}`
+                  : "mp-savebar-text"
+              }
+            >
+              {isDirty
+                ? "You have unsaved changes to your bio or session length."
+                : message?.text}
+            </span>
+
+            <div className="mp-savebar-actions">
+              {isDirty ? (
+                <>
+                  <button
+                    type="button"
+                    className="mp-btn mp-btn-ghost"
+                    onClick={discardChanges}
+                    disabled={profileSaving}
+                  >
+                    Discard
+                  </button>
+                  <button
+                    type="button"
+                    className="mp-btn mp-btn-primary"
+                    onClick={saveProfile}
+                    disabled={profileSaving}
+                  >
+                    {profileSaving ? "Saving..." : "Save changes"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="mp-btn mp-btn-ghost"
+                  onClick={() => setMessage(null)}
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-
     </main>
   );
 }

@@ -119,14 +119,14 @@ export default function UserProfile() {
           }}
         >
           <Link
-            to="/matches"
+            to="/skillbrowse"
             style={{
               textDecoration: 'none',
               color: '#4f46e5',
               fontWeight: 600,
             }}
           >
-            ← Back to Matches
+            &larr; Back to Browse Skills
           </Link>
 
           <Link
@@ -413,6 +413,14 @@ export default function UserProfile() {
 >
   Send a Request
 </Link>
+          <button
+            type="button"
+            className="primary-button"
+            style={{ marginLeft: '12px' }}
+            onClick={() => window.dispatchEvent(new CustomEvent('skillmatch-open-chat', { detail: profile.user }))}
+          >
+            Message
+          </button>
         </div>
 
       </div>

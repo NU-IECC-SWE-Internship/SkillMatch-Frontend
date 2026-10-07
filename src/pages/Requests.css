@@ -1,8 +1,16 @@
 .requests-page {
   min-height: 100svh;
   background:
-    radial-gradient(circle at 12% 18%, rgba(125, 191, 255, 0.35), transparent 42%),
-    radial-gradient(circle at 88% 12%, rgba(186, 224, 255, 0.4), transparent 38%),
+    radial-gradient(
+      circle at 12% 18%,
+      rgba(125, 191, 255, 0.35),
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 88% 12%,
+      rgba(186, 224, 255, 0.4),
+      transparent 38%
+    ),
     linear-gradient(160deg, #f7fbff 0%, #eef6ff 48%, #ffffff 100%);
   color: var(--text);
   font-family: var(--sans);
@@ -174,7 +182,6 @@
   margin-bottom: 4px;
 }
 
-/* Partner Rating Badge in Request Cards */
 .partner-rating-badge {
   display: inline-flex;
   align-items: center;
@@ -428,7 +435,7 @@
   display: none;
 }
 
-.browse-matches-btn {
+.browse-skills-btn {
   display: inline-block;
   margin-top: 16px;
   background: var(--blue-600);
@@ -482,20 +489,15 @@
   min-height: 100px;
   padding: 12px 13px;
   box-sizing: border-box;
-
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-
   background: #ffffff;
   color: #1e293b;
-
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
-
   resize: vertical;
   outline: none;
-
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
@@ -522,11 +524,9 @@
   border: none;
   border-radius: 9px;
   padding: 9px 15px;
-
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -566,7 +566,7 @@
   opacity: 0.9;
   transform: none;
 }
-.browse-matches-btn:hover {
+.browse-skills-btn:hover {
   background: var(--blue-700);
 }
 
@@ -578,4 +578,231 @@
   background: rgba(254, 242, 242, 0.95);
   color: #b91c1c;
   font-size: 0.92rem;
+}
+
+.schedule-choice-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #dbeafe;
+}
+
+.schedule-choice-section .detail-label {
+  margin-bottom: 10px;
+}
+
+.schedule-choice-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.schedule-choice-btn {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--text-h);
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.schedule-choice-btn:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.schedule-choice-btn.selected {
+  border-color: var(--blue-600);
+  background: #eff6ff;
+  color: var(--blue-700);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.schedule-choice-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.schedule-later-message {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.return-scheduler {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.return-scheduler-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.return-scheduler-header p {
+  margin: 5px 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.scheduler-max-duration {
+  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: var(--blue-700);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.return-scheduler-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.return-scheduler-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.return-scheduler-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.return-scheduler-field select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1e293b;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+.return-scheduler-field select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.return-scheduler-field select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.return-session-preview {
+  margin-top: 14px;
+  padding: 11px 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.return-session-preview span {
+  color: #166534;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.return-session-preview strong {
+  color: #166534;
+  font-size: 0.88rem;
+}
+
+.schedule-message {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.schedule-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.88rem;
+}
+
+.scheduling-section {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.scheduling-section-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.scheduling-section-top > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.scheduling-section-top strong {
+  color: var(--text-h);
+  font-size: 0.95rem;
+}
+
+.schedule-return-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 650px) {
+  .return-scheduler-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .return-scheduler-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .scheduling-section-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .return-session-preview {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .schedule-return-actions {
+    flex-wrap: wrap;
+  }
 }

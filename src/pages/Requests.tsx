@@ -14,10 +14,12 @@ import "./Requests.css";
 export default function Requests() {
   const [requests, setRequests] = useState<IncomingRequestItem[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [processingAction, setProcessingAction] = useState<{
     id: number;
-    action: "accept" | "reject";
+    action: "accept" | "reject" | "schedule_return";
   } | null>(null);
+
   const [statusModal, setStatusModal] = useState<{
     title: string;
     message: string;
@@ -27,7 +29,9 @@ export default function Requests() {
   const loadRequests = async () => {
     try {
       setLoading(true);
+
       const data = await getIncomingRequests();
+
       setRequests(data);
     } catch (err) {
       setStatusModal({
@@ -46,15 +50,20 @@ export default function Requests() {
 
   const handleAction = async (
     requestId: number,
-    action: "accept" | "reject",
+    action: "accept" | "reject" | "schedule_return",
     rejectionReason?: string,
-    receiverSkill?: number
+    receiverSkill?: number,
+    scheduleMode?: "now" | "later",
+    receiverSelectedSlot?: number,
+    receiverRequestedStartTime?: string,
+    receiverRequestedEndTime?: string
   ) => {
     try {
       setProcessingAction({
         id: requestId,
         action,
       });
+
       setStatusModal(null);
 
       const response = await respondToMatchRequest(
@@ -62,20 +71,41 @@ export default function Requests() {
         action,
         rejectionReason,
         undefined,
-        receiverSkill
+        receiverSkill,
+        scheduleMode,
+        receiverSelectedSlot,
+        receiverRequestedStartTime,
+        receiverRequestedEndTime
       );
 
-      if (action === "accept") {
+      if (action === "reject") {
+        setStatusModal({
+          title: "Request declined",
+          message: response.message,
+          type: "success",
+        });
+      } else if (action === "schedule_return") {
+        setStatusModal({
+          title: "Time proposed",
+          message: response.message,
+          type: "success",
+        });
+      } else if (response.status === "SCHEDULING") {
         setStatusModal({
           title: "Swap accepted",
-          message:
-            "Meeting scheduled successfully. You can join it in the Meetings tab.",
+          message: response.message,
+          type: "success",
+        });
+      } else if (response.status === "CONFIRMING") {
+        setStatusModal({
+          title: "Waiting for confirmation",
+          message: response.message,
           type: "success",
         });
       } else {
         setStatusModal({
-          title: "Request declined",
-          message: "This swap request has been declined.",
+          title: "Swap scheduled",
+          message: response.message,
           type: "success",
         });
       }
@@ -85,20 +115,20 @@ export default function Requests() {
           req.id === requestId
             ? {
                 ...req,
-                status: action === "accept" ? "ACCEPTED" : "REJECTED",
+                status: response.status,
                 rejection_reason:
                   action === "reject"
-                    ? response.rejection_reason ?? rejectionReason ?? null
+                    ? response.rejection_reason ??
+                      rejectionReason ??
+                      null
                     : null,
                 receiver_skill:
-                  action === "accept"
-                    ? response.receiver_skill ?? req.receiver_skill ?? null
+                  response.receiver_skill !== undefined
+                    ? response.receiver_skill
                     : req.receiver_skill,
                 receiver_skill_name:
-                  action === "accept"
-                    ? response.receiver_skill_name ??
-                      req.receiver_skill_name ??
-                      null
+                  response.receiver_skill_name !== undefined
+                    ? response.receiver_skill_name
                     : req.receiver_skill_name,
               }
             : req
@@ -106,8 +136,14 @@ export default function Requests() {
       );
     } catch (err) {
       const message = getErrorMessage(err);
+
       setStatusModal({
-        title: action === "accept" ? "Accept failed" : "Decline failed",
+        title:
+          action === "reject"
+            ? "Decline failed"
+            : action === "schedule_return"
+              ? "Scheduling failed"
+              : "Accept failed",
         message,
         type: "error",
       });
@@ -120,24 +156,63 @@ export default function Requests() {
     }
   };
 
-  const pendingRequests = requests.filter((r) => r.status === "PENDING");
-  const pastRequests = requests.filter((r) => r.status !== "PENDING");
+  const pendingRequests = requests.filter(
+    (request) =>
+      request.status === "PENDING" || request.status === "SCHEDULING"
+  );
+
+  const waitingRequests = requests.filter(
+    (request) => request.status === "CONFIRMING"
+  );
+
+  const pastRequests = requests.filter(
+    (request) =>
+      request.status === "ACCEPTED" || request.status === "REJECTED"
+  );
 
   const formatTime = (value: string) => {
     const [hours, minutes] = value.split(":").map(Number);
+
     const suffix = hours >= 12 ? "PM" : "AM";
     const displayHours = ((hours + 11) % 12) + 1;
+
     return `${displayHours}:${String(minutes).padStart(2, "0")} ${suffix}`;
   };
 
   const formatSlot = (request: IncomingRequestItem) => {
-    if (!request.selected_slot_day) return `Slot #${request.selected_slot}`;
+    if (!request.selected_slot_day) {
+      return `Slot #${request.selected_slot}`;
+    }
+
     const day =
       request.selected_slot_day.charAt(0).toUpperCase() +
       request.selected_slot_day.slice(1);
-    return `${day}, ${formatTime(request.selected_slot_start_time)} – ${formatTime(
-      request.selected_slot_end_time
-    )}`;
+
+    return `${day}, ${formatTime(
+      request.selected_slot_start_time
+    )} – ${formatTime(request.selected_slot_end_time)}`;
+  };
+
+  const formatReturnSlot = (request: IncomingRequestItem) => {
+    const dayValue = request.receiver_selected_slot_day;
+
+    const startTime =
+      request.receiver_requested_start_time ||
+      request.receiver_selected_slot_start_time;
+
+    const endTime =
+      request.receiver_requested_end_time ||
+      request.receiver_selected_slot_end_time;
+
+    if (!dayValue || !startTime || !endTime) {
+      return "Return session time proposed";
+    }
+
+    const day =
+      dayValue.charAt(0).toUpperCase() +
+      dayValue.slice(1);
+
+    return `${day}, ${formatTime(startTime)} – ${formatTime(endTime)}`;
   };
 
   return (
@@ -156,11 +231,13 @@ export default function Requests() {
             <Link to="/dashboard" className="requests-nav-link">
               &larr; Back to Dashboard
             </Link>
+
             <span className="requests-brand">SkillMatch</span>
           </div>
 
           <header className="requests-header">
             <h1>Incoming Swap Requests</h1>
+
             <p>People who want to exchange skills with you.</p>
           </header>
 
@@ -171,12 +248,14 @@ export default function Requests() {
           ) : requests.length === 0 ? (
             <div className="requests-empty">
               <h3>No requests yet</h3>
+
               <p>
                 When another user requests a skill swap with you, it will appear
                 here.
               </p>
-              <Link to="/matches" className="browse-matches-btn">
-                Browse Matches
+
+              <Link to="/skillbrowse" className="browse-skills-btn">
+                Browse Skills
               </Link>
             </div>
           ) : (
@@ -192,13 +271,13 @@ export default function Requests() {
                   </p>
                 ) : (
                   <div className="requests-grid">
-                    {pendingRequests.map((req) => (
+                    {pendingRequests.map((request) => (
                       <RequestCard
-                        key={req.id}
-                        request={req}
-                        isProcessing={processingAction?.id === req.id}
+                        key={request.id}
+                        request={request}
+                        isProcessing={processingAction?.id === request.id}
                         processingAction={
-                          processingAction?.id === req.id
+                          processingAction?.id === request.id
                             ? processingAction.action
                             : null
                         }
@@ -210,12 +289,49 @@ export default function Requests() {
                 )}
               </section>
 
+              {waitingRequests.length > 0 && (
+                <section className="requests-group">
+                  <h2 className="group-title">
+                    Waiting for Confirmation ({waitingRequests.length})
+                  </h2>
+
+                  <div className="requests-grid">
+                    {waitingRequests.map((request) => (
+                      <div className="requests-empty" key={request.id}>
+                        <h3>
+                          Waiting for {request.sender_username}
+                        </h3>
+
+                        <p>
+                          You proposed a return session for{" "}
+                          <strong>
+                            {request.receiver_skill_name ?? "the return skill"}
+                          </strong>
+                          .
+                        </p>
+
+                        <p>{formatReturnSlot(request)}</p>
+
+                        <p>
+                          The original sender needs to accept this time before
+                          the return session is scheduled.
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {pastRequests.length > 0 && (
                 <section className="requests-group past-group">
                   <h2 className="group-title">Previous Requests</h2>
+
                   <div className="requests-grid">
-                    {pastRequests.map((req) => (
-                      <PastRequestCard key={req.id} request={req} />
+                    {pastRequests.map((request) => (
+                      <PastRequestCard
+                        key={request.id}
+                        request={request}
+                      />
                     ))}
                   </div>
                 </section>

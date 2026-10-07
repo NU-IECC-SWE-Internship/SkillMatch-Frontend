@@ -1,9 +1,8 @@
 import type { ReactElement } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Matches from "./pages/Matches";
 import SendRequest from "./pages/SendRequest";
 import Profile from "./pages/Profile";
 import Onboarding from './pages/Onboarding';
@@ -22,6 +21,7 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminUserDetail from "./pages/AdminUserDetail";
 
 import UserProfile from "./pages/UserProfile";
+import FloatingChatButton from './components/chat/FloatingChatButton'
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -105,9 +105,20 @@ function ProtectedUserProfile() {
 
   return <UserOnly><UserProfile /></UserOnly>;
 }
+function ProtectedChat() {
+  const { userId } = useParams()
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  if (isStaffUser()) return <Navigate to="/admin/skills" replace />
+  return <Navigate to="/dashboard" replace state={{ openChatUserId: Number(userId) }} />
+}
 
 export default function App() {
+  // Recheck local-storage auth whenever the route changes (for login/logout).
+  const location = useLocation()
   return (
+    <>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -123,13 +134,16 @@ export default function App() {
       <Route path="/admin/skills" element={<AuthOnly><AdminSkills /></AuthOnly>} />
       <Route path="/admin/skills/:skillId/questions" element={<AuthOnly><AdminSkillQuestions /></AuthOnly>} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
-      <Route path="/matches" element={<UserOnly><Matches /></UserOnly>} />
+      <Route path="/matches" element={<Navigate to="/skillbrowse" replace />} />
       <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
       <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
       <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
       <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
+      <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
+    {isAuthenticated() && location.pathname !== '/login' && location.pathname !== '/register' && <FloatingChatButton />}
+    </>
   );
 }

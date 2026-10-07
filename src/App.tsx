@@ -110,7 +110,7 @@ function ProtectedChat() {
   if (!isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
-  if (isStaffUser()) return <Navigate to="/admin/skills" replace />
+  if (isStaffUser()) return <Navigate to="/admin" replace />
   return <Navigate to="/dashboard" replace state={{ openChatUserId: Number(userId) }} />
 }
 
@@ -143,7 +143,10 @@ export default function App() {
       <Route path="/users/:userId" element={<ProtectedUserProfile />} />
       <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
-    {isAuthenticated() && location.pathname !== '/login' && location.pathname !== '/register' && <FloatingChatButton />}
+    {isAuthenticated() &&
+      location.pathname !== '/login' &&
+      location.pathname !== '/register' &&
+      !location.pathname.startsWith('/admin') && <FloatingChatButton />}
     </>
   );
 }

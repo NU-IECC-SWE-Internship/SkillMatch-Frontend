@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 
 import {
   getUserProfile,
@@ -14,6 +14,19 @@ import './MyProfile.css';
 
 export default function UserProfile() {
   const { userId } = useParams();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const fromPath = from?.split(/[?#]/, 1)[0];
+  const backTo = from?.startsWith('/') && !from.startsWith('//')
+    ? from
+    : '/skillbrowse';
+  const backLabel = fromPath === '/requests'
+    ? 'Requests'
+    : fromPath === '/my-requests'
+      ? 'My Requests'
+      : fromPath === '/dashboard'
+        ? 'Dashboard'
+        : 'Browse Skills';
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +66,7 @@ export default function UserProfile() {
 
   const nav = (
     <nav className="mp-nav">
-      <Link to="/skillbrowse">&larr; Browse Skills</Link>
+      <Link to={backTo}>&larr; {backLabel}</Link>
       <Link to="/dashboard">Dashboard &rarr;</Link>
     </nav>
   );

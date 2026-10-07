@@ -336,6 +336,12 @@ a.sender-name:hover {
   color: var(--blue-700);
 }
 
+.sender-name-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+
 .sender-title-rating {
   display: flex;
   align-items: center;

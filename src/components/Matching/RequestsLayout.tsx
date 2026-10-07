@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import UserRatingBadge from "./UserRatingBadge";
 
 export function RequestsHeader({
@@ -109,12 +109,15 @@ export function PersonHeader({
   status?: ReactNode;
   muted?: boolean;
 }) {
+  const location = useLocation();
   const initial = username ? username.charAt(0).toUpperCase() : "?";
+  const profileState = { from: `${location.pathname}${location.search}` };
 
   return (
     <div className="incoming-card-top">
       <Link
         to={`/users/${userId}`}
+        state={profileState}
         className={muted ? "sender-avatar muted" : "sender-avatar"}
       >
         {initial}
@@ -122,7 +125,11 @@ export function PersonHeader({
 
       <div className="sender-info">
         <div className="sender-title-rating">
-          <Link to={`/users/${userId}`} className="sender-name">
+          <Link
+            to={`/users/${userId}`}
+            state={profileState}
+            className="sender-name"
+          >
             {username}
           </Link>
 

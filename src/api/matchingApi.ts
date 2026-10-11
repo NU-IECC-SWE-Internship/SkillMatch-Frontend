@@ -65,11 +65,17 @@ export type IncomingRequestItem = MatchRequest;
 
 // ---------------- SESSION SETTINGS ----------------
 
+export interface BusyInterval {
+  start_time: string;
+  end_time: string;
+}
+
 export interface UserSessionSettings {
   user: number;
   username: string;
   max_session_duration_minutes: number;
   availability: AvailabilitySlot[];
+  busy_intervals: BusyInterval[];
 }
 
 // ---------------- MATCHES ----------------

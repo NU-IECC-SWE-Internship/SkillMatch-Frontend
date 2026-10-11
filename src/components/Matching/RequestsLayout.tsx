@@ -5,9 +5,11 @@ import UserRatingBadge from "./UserRatingBadge";
 export function RequestsHeader({
   title,
   subtitle,
+  actions,
 }: {
   title: string;
   subtitle: string;
+  actions?: ReactNode;
 }) {
   return (
     <>
@@ -16,9 +18,12 @@ export function RequestsHeader({
           &larr; Dashboard
         </Link>
 
-        <Link to="/skillbrowse" className="requests-nav-link">
-          Browse Skills &rarr;
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {actions}
+          <Link to="/skillbrowse" className="requests-nav-link">
+            Browse Skills &rarr;
+          </Link>
+        </div>
       </div>
 
       <header className="requests-header fx-hero fx-glow fx-rise">

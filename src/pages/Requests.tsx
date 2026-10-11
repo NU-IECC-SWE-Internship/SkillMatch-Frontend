@@ -15,6 +15,7 @@ import {
   StatusChip,
 } from "../components/Matching/RequestsLayout";
 import StatusModal from "../components/ui/StatusModal";
+import NotificationBell from "../components/NotificationBell";
 import { handleCursorGlow } from "../lib/cursorGlow";
 import "./Requests.css";
 
@@ -240,6 +241,7 @@ export default function Requests() {
           <RequestsHeader
             title="Swap requests"
             subtitle="People who want to exchange skills with you."
+            actions={<NotificationBell />}
           />
 
           {loading ? (

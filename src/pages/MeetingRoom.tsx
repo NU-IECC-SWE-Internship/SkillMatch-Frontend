@@ -97,7 +97,7 @@ const MeetingRoom: React.FC = () => {
       console.warn('Failed to update meeting status to COMPLETED:', err);
     }
 
-    if (!currentMeeting.has_user_rated && currentMeeting.status !== 'CANCELLED') {
+    if (!currentMeeting.has_user_rated && currentMeeting.status !== 'CANCELLED' && currentMeeting.status !== 'MISSED') {
       setShowRatingModal(true);
     } else {
       navigate('/meetings');

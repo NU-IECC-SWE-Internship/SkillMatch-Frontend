@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "../api/profileApi";
 import { loadStaffRole, logout } from "../lib/auth";
+import NotificationBell from "../components/NotificationBell";
 import { handleCursorGlow } from "../lib/cursorGlow";
 import "./Dashboard.css";
 
@@ -80,6 +81,7 @@ export default function Dashboard() {
         </div>
 
         <div className="dashboard-user-menu">
+          <NotificationBell />
           <button className="profile-chip" onClick={() => navigate("/requests")}>
             Incoming Requests
           </button>

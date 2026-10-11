@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   getProfile,
+  updateEmailNotifications,
   updateProfileSettings,
   getSkills,
   createSkill,
@@ -120,6 +121,9 @@ function Profile() {
   } | null>(null);
 
   const [ratingAverage, setRatingAverage] = useState(0);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationFeedback, setNotificationFeedback] = useState("");
 
   const [ratingCount, setRatingCount] = useState(0);
 
@@ -186,6 +190,10 @@ function Profile() {
         setRatingAverage(profileData.rating_average || 0);
 
         setRatingCount(profileData.rating_count || 0);
+
+        setEmailNotifications(
+          profileData.email_notifications_enabled ?? true
+        );
 
         setSkills(skillsData);
 
@@ -892,6 +900,58 @@ function Profile() {
 
           {renderSkillSection("learn")}
         </div>
+
+        {/* NOTIFICATIONS PREFERENCE */}
+        <section className="mp-card fx-glow mp-theme-bio">
+          <div className="mp-card-head">
+            <span className="mp-icon" aria-hidden="true">🔔</span>
+            <div className="mp-card-title">
+              <h2>Email notifications</h2>
+              <p>Get notified by email when you receive match requests, updates, or meeting cancellations.</p>
+            </div>
+          </div>
+          <div className="mp-setting">
+            <div>
+              <strong>Email updates</strong>
+              <span>Turn email notifications on or off.</span>
+            </div>
+            <label style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", gap: "10px" }}>
+              <input
+                type="checkbox"
+                checked={emailNotifications}
+                disabled={notificationsLoading}
+                onChange={async () => {
+                  const nextVal = !emailNotifications;
+                  setEmailNotifications(nextVal);
+                  setNotificationsLoading(true);
+                  setNotificationFeedback("");
+                  try {
+                    await updateEmailNotifications(nextVal);
+                    setNotificationFeedback(
+                      nextVal ? "Email notifications turned ON" : "Email notifications paused"
+                    );
+                    setTimeout(() => setNotificationFeedback(""), 3500);
+                  } catch (err) {
+                    console.error(err);
+                    setEmailNotifications(!nextVal);
+                    setNotificationFeedback("Failed to update setting");
+                  } finally {
+                    setNotificationsLoading(false);
+                  }
+                }}
+                style={{ width: "18px", height: "18px", accentColor: "#4f46e5", cursor: "pointer" }}
+              />
+              <span style={{ fontWeight: 600, fontSize: "0.92rem", color: emailNotifications ? "#4f46e5" : "#64748b" }}>
+                {emailNotifications ? "Notifications Enabled" : "Notifications Disabled"}
+              </span>
+            </label>
+          </div>
+          {notificationFeedback && (
+            <p style={{ marginTop: "12px", fontSize: "0.85rem", color: "#4f46e5", fontWeight: 600 }}>
+              ✓ {notificationFeedback}
+            </p>
+          )}
+        </section>
 
         <section className="mp-card fx-glow mp-theme-avail">
           <div className="mp-card-head">

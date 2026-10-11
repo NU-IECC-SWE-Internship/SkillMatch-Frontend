@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
@@ -8,16 +8,7 @@ import {
   addUserSkill,
 } from "../../api/profileApi";
 
-const suggestedSkills = [
-  "Python",
-  "JavaScript",
-  "React",
-  "Django",
-  "Machine Learning",
-  "Data Analysis",
-  "Figma",
-  "UI/UX",
-];
+import type { Skill } from "../../api/profileApi";
 
 interface Props {
   type: "teach" | "learn";
@@ -25,19 +16,62 @@ interface Props {
 }
 
 export default function SkillsStep({ type, onNext }: Props) {
+  const [skills, setSkills] = useState<Skill[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedSkillId, setSelectedSkillId] = useState("");
   const [otherSkill, setOtherSkill] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [skillsLoading, setSkillsLoading] = useState(true);
 
-  function toggleSkill(skill: string) {
-    if (selectedSkills.includes(skill)) {
-      setSelectedSkills(
-        selectedSkills.filter((item) => item !== skill)
-      );
-    } else {
-      setSelectedSkills([...selectedSkills, skill]);
+  useEffect(() => {
+    async function loadSkills() {
+      try {
+        const data = await getSkills();
+
+        setSkills(
+          data.filter((skill) => skill.is_approved !== false)
+        );
+      } catch {
+        setError("Could not load skills.");
+      } finally {
+        setSkillsLoading(false);
+      }
     }
+
+    loadSkills();
+  }, []);
+
+  function addExistingSkill() {
+    if (!selectedSkillId) {
+      return;
+    }
+
+    const skill = skills.find(
+      (item) => item.id === Number(selectedSkillId)
+    );
+
+    if (!skill) {
+      return;
+    }
+
+    const alreadySelected = selectedSkills.some(
+      (item) =>
+        item.toLowerCase() === skill.name.toLowerCase()
+    );
+
+    if (alreadySelected) {
+      setError("This skill is already selected.");
+      return;
+    }
+
+    setSelectedSkills([
+      ...selectedSkills,
+      skill.name,
+    ]);
+
+    setSelectedSkillId("");
+    setError("");
   }
 
   function addOtherSkill() {
@@ -57,12 +91,38 @@ export default function SkillsStep({ type, onNext }: Props) {
       return;
     }
 
-    setSelectedSkills([...selectedSkills, newSkill]);
+    const existingSkill = skills.find(
+      (skill) =>
+        skill.name.toLowerCase() === newSkill.toLowerCase()
+    );
+
+    if (existingSkill) {
+      setError(
+        `"${existingSkill.name}" already exists. Please select it from the dropdown.`
+      );
+      return;
+    }
+
+    setSelectedSkills([
+      ...selectedSkills,
+      newSkill,
+    ]);
+
     setOtherSkill("");
     setError("");
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function removeSkill(skillName: string) {
+    setSelectedSkills(
+      selectedSkills.filter(
+        (skill) => skill !== skillName
+      )
+    );
+  }
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
     event.preventDefault();
 
     if (selectedSkills.length === 0) {
@@ -80,10 +140,15 @@ export default function SkillsStep({ type, onNext }: Props) {
       for (const skillName of selectedSkills) {
         let skill = allSkills.find(
           (item) =>
-            item.name.toLowerCase() === skillName.toLowerCase()
+            item.name.toLowerCase() ===
+            skillName.toLowerCase()
         );
 
         if (!skill) {
+          if (type === "learn") {
+            continue;
+          }
+
           skill = await createSkill(skillName);
         }
 
@@ -94,7 +159,10 @@ export default function SkillsStep({ type, onNext }: Props) {
         );
 
         if (!alreadyAdded) {
-          await addUserSkill(skill.id, type);
+          await addUserSkill(
+            skill.id,
+            type
+          );
         }
       }
 
@@ -105,6 +173,15 @@ export default function SkillsStep({ type, onNext }: Props) {
       setLoading(false);
     }
   }
+
+  const availableSkills = skills.filter(
+    (skill) =>
+      !selectedSkills.some(
+        (selected) =>
+          selected.toLowerCase() ===
+          skill.name.toLowerCase()
+      )
+  );
 
   const title =
     type === "teach"
@@ -123,64 +200,96 @@ export default function SkillsStep({ type, onNext }: Props) {
       <p>{description}</p>
 
       <form onSubmit={handleSubmit}>
-        <div className="skills-list">
-          {suggestedSkills.map((skill) => (
-            <button
-              key={skill}
-              type="button"
-              className={`skill-chip ${
-                selectedSkills.includes(skill)
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() => toggleSkill(skill)}
-            >
-              {selectedSkills.includes(skill) ? "✓ " : ""}
-              {skill}
-            </button>
-          ))}
-
-          {selectedSkills
-            .filter(
-              (skill) => !suggestedSkills.includes(skill)
-            )
-            .map((skill) => (
+        {selectedSkills.length > 0 && (
+          <div className="skills-list">
+            {selectedSkills.map((skill) => (
               <button
                 key={skill}
                 type="button"
                 className="skill-chip selected"
-                onClick={() => toggleSkill(skill)}
+                onClick={() =>
+                  removeSkill(skill)
+                }
               >
-                ✓ {skill}
+                ✓ {skill} ×
               </button>
             ))}
-        </div>
+          </div>
+        )}
 
         <div className="other-skill-row">
-          <input
-            type="text"
-            value={otherSkill}
+          <select
+            value={selectedSkillId}
             onChange={(event) =>
-              setOtherSkill(event.target.value)
+              setSelectedSkillId(
+                event.target.value
+              )
             }
-            placeholder="Other skill"
-          />
+            disabled={skillsLoading}
+          >
+            <option value="">
+              {skillsLoading
+                ? "Loading skills..."
+                : "Select a skill..."}
+            </option>
+
+            {availableSkills.map((skill) => (
+              <option
+                key={skill.id}
+                value={skill.id}
+              >
+                {skill.name}
+              </option>
+            ))}
+          </select>
 
           <button
             type="button"
             className="add-skill-button"
-            onClick={addOtherSkill}
+            onClick={addExistingSkill}
+            disabled={!selectedSkillId}
           >
             Add
           </button>
         </div>
 
-        {error && (
-          <p className="form-error">{error}</p>
+        {type === "teach" && (
+          <div className="other-skill-row">
+            <input
+              type="text"
+              value={otherSkill}
+              onChange={(event) =>
+                setOtherSkill(
+                  event.target.value
+                )
+              }
+              placeholder="Request a new skill"
+            />
+
+            <button
+              type="button"
+              className="add-skill-button"
+              onClick={addOtherSkill}
+              disabled={!otherSkill.trim()}
+            >
+              Request
+            </button>
+          </div>
         )}
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Saving..." : "Continue"}
+        {error && (
+          <p className="form-error">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Saving..."
+            : "Continue"}
         </button>
       </form>
     </div>

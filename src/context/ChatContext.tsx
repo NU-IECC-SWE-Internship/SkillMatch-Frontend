@@ -55,6 +55,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('skillmatch-auth-change', updateAuth)
   }, [])
 
+  useEffect(() => {
+    const updateActiveChat = (event: Event) => {
+      activeUserIdRef.current = (event as CustomEvent<number | null>).detail
+    }
+    window.addEventListener('skillmatch-active-chat', updateActiveChat)
+    return () => window.removeEventListener('skillmatch-active-chat', updateActiveChat)
+  }, [])
+
   const markChatAsRead = useCallback(async (userId: number) => {
     await markChatReadApi(userId)
     setRecentChats((chats) => chats.map((chat) =>

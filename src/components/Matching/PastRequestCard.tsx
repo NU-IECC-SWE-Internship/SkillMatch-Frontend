@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
 import VerifiedBadge from "../VerifiedBadge";
-import UserRatingBadge from "./UserRatingBadge";
+import { PersonHeader, StatusChip } from "./RequestsLayout";
 
 interface PastRequestCardProps {
   request: MatchRequest;
@@ -28,49 +28,27 @@ export default function PastRequestCard({
     ? request.receiver_rating_count
     : request.sender_rating_count;
 
-  const initial = username
-    ? username.charAt(0).toUpperCase()
-    : "?";
-
   const selectedSkillName =
     request.receiver_skill_name === null ||
     request.receiver_skill_name === undefined
       ? "None"
       : request.receiver_skill_name || request.skill_name;
 
+  const accepted = request.status === "ACCEPTED";
+
   return (
-    <div className="incoming-card past-card">
-      <div className="incoming-card-top">
-        <Link
-          to={`/users/${userId}`}
-          className="sender-avatar muted"
-          style={{ textDecoration: "none" }}
-        >
-          {initial}
-        </Link>
-
-        <div>
-          <div className="sender-title-rating">
-            <h3 className="sender-name">
-              {sentByMe && "Request to "}
-
-              <Link
-                to={`/users/${userId}`}
-                style={{
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                {username}
-              </Link>
-            </h3>
-
-            <UserRatingBadge
-              ratingAverage={ratingAvg}
-              ratingCount={ratingCount}
-            />
-          </div>
-
+    <div
+      className={`incoming-card past-card fx-glow fx-lift fx-pop ${
+        accepted ? "fx-theme-teal" : "fx-theme-rose"
+      }`}
+    >
+      <PersonHeader
+        userId={userId}
+        username={username}
+        ratingAverage={ratingAvg}
+        ratingCount={ratingCount}
+        muted
+        subtitle={
           <span
             className={
               request.skill_is_verified
@@ -79,65 +57,37 @@ export default function PastRequestCard({
             }
           >
             {request.skill_name || `Skill #${request.skill}`}
-
-            <VerifiedBadge
-              verified={!!request.skill_is_verified}
-              compact
-            />
+            <VerifiedBadge verified={!!request.skill_is_verified} compact />
           </span>
-        </div>
-      </div>
+        }
+        status={
+          accepted ? (
+            <StatusChip tone="success">Accepted</StatusChip>
+          ) : (
+            <StatusChip tone="danger">Declined</StatusChip>
+          )
+        }
+      />
 
-      {request.status === "ACCEPTED" && (
-        <div className="rejection-reason">
-          <span className="detail-label">
-            Selected skill
-          </span>
+      {(accepted || request.rejection_reason) && (
+        <div className="past-card-footer">
+          {accepted ? (
+            <>
+              <span className="past-card-note">
+                Return skill: <strong>{selectedSkillName}</strong>
+              </span>
 
-          <p>{selectedSkillName}</p>
+              <Link to="/meetings" className="view-meeting-link">
+                View meeting &rarr;
+              </Link>
+            </>
+          ) : (
+            <span className="past-card-note">
+              Reason: <em>{request.rejection_reason}</em>
+            </span>
+          )}
         </div>
       )}
-
-      {request.status === "REJECTED" &&
-        request.rejection_reason && (
-          <div className="rejection-reason">
-            <span className="detail-label">
-              Reason for rejection
-            </span>
-
-            <p>{request.rejection_reason}</p>
-          </div>
-        )}
-
-      <div
-        className="status-badge-container"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-        }}
-      >
-        <span
-          className={`status-tag status-${request.status.toLowerCase()}`}
-        >
-          {request.status}
-        </span>
-
-        {request.status === "ACCEPTED" && (
-          <Link
-            to="/meetings"
-            className="view-meeting-link"
-            style={{
-              fontSize: "0.85rem",
-              color: "#2563eb",
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            View Meeting &rarr;
-          </Link>
-        )}
-      </div>
     </div>
   );
 }

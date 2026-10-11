@@ -1,12 +1,16 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
 
 import AboutMeStep from "../components/onboarding/AboutMeStep";
 import SkillsStep from "../components/onboarding/SkillsStep";
 import AvailabilityStep from "../components/onboarding/AvailabilityStep";
 import { completeOnboarding } from "../api/profileApi";
+import { handleCursorGlow } from "../lib/cursorGlow";
 
 import "./Onboarding.css";
+
+const STEP_THEMES = ["violet", "teal", "blue", "amber"];
 
 export default function Onboarding() {
   const [step, setStep] = useState(1);
@@ -29,15 +33,22 @@ export default function Onboarding() {
   }
 
   return (
-    <main className="onboarding-page">
+    <main className="onboarding-page fx-backdrop" onPointerMove={handleCursorGlow}>
       <div className="onboarding-wrapper">
 
-        <div className="onboarding-header">
+        <div className="onboarding-header fx-rise">
           <h1 className="onboarding-logo">SkillMatch</h1>
           <p>Let&apos;s build your profile</p>
         </div>
 
-        <div className="progress-steps">
+        <div
+          className="progress-steps fx-rise fx-d1"
+          style={
+            {
+              "--progress": `${((step - 1) / (steps.length - 1)) * 80}%`,
+            } as CSSProperties
+          }
+        >
           {steps.map((name, index) => {
             const number = index + 1;
 
@@ -60,7 +71,10 @@ export default function Onboarding() {
           })}
         </div>
 
-        <section className="onboarding-card">
+        <section
+          key={step}
+          className={`onboarding-card fx-glow fx-accent-top fx-pop fx-theme-${STEP_THEMES[step - 1]}`}
+        >
           <p className="step-label">
             STEP {step} OF 4
           </p>

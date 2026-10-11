@@ -1,0 +1,213 @@
+/* Shared colour themes and motion used across pages.
+   Pair .fx-glow with the handleCursorGlow pointer handler. */
+
+.fx-theme-blue {
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --accent-border: #bfdbfe;
+  --accent-glow: rgba(59, 130, 246, 0.14);
+}
+
+.fx-theme-violet {
+  --accent: #7c3aed;
+  --accent-soft: #f5f3ff;
+  --accent-border: #ddd6fe;
+  --accent-glow: rgba(139, 92, 246, 0.14);
+}
+
+.fx-theme-teal {
+  --accent: #0d9488;
+  --accent-soft: #f0fdfa;
+  --accent-border: #99f6e4;
+  --accent-glow: rgba(20, 184, 166, 0.14);
+}
+
+.fx-theme-amber {
+  --accent: #d97706;
+  --accent-soft: #fffbeb;
+  --accent-border: #fde68a;
+  --accent-glow: rgba(245, 158, 11, 0.14);
+}
+
+.fx-theme-rose {
+  --accent: #e11d48;
+  --accent-soft: #fff1f2;
+  --accent-border: #fecdd3;
+  --accent-glow: rgba(244, 63, 94, 0.13);
+}
+
+/* Colourful page backdrop */
+
+.fx-backdrop {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(96, 165, 250, 0.28) 0%, transparent 38%),
+    radial-gradient(circle at 92% 8%, rgba(167, 139, 250, 0.22) 0%, transparent 36%),
+    radial-gradient(circle at 50% 100%, rgba(45, 212, 191, 0.16) 0%, transparent 45%),
+    linear-gradient(180deg, #f5f9ff, #ffffff);
+}
+
+/* Gradient banner */
+
+.fx-hero {
+  --accent-glow: rgba(255, 255, 255, 0.22);
+  border: 0;
+  background:
+    radial-gradient(circle at 85% -20%, rgba(255, 255, 255, 0.25), transparent 45%),
+    linear-gradient(120deg, #1d4ed8 0%, #4f46e5 50%, #7c3aed 100%);
+  color: #ffffff;
+  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
+}
+
+/* Cursor spotlight */
+
+.fx-glow {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.fx-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 0%),
+    var(--accent-glow, rgba(59, 130, 246, 0.14)),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.fx-glow:hover::before {
+  opacity: 1;
+}
+
+/* Hover lift */
+
+.fx-lift {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.fx-lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-border, #bfdbfe);
+  box-shadow: 0 18px 40px var(--accent-glow, rgba(37, 99, 235, 0.12));
+}
+
+.fx-accent-top {
+  border-top: 3px solid var(--accent, #e2e8f0);
+}
+
+.fx-accent-top.fx-lift:hover {
+  border-top-color: var(--accent, #2563eb);
+}
+
+/* Bouncy icon that tilts when its card is hovered */
+
+.fx-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--accent-border, #e2e8f0);
+  border-radius: 13px;
+  background: var(--accent-soft, #f8fafc);
+  font-size: 21px;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fx-glow:hover .fx-icon,
+.fx-lift:hover .fx-icon {
+  transform: scale(1.1) rotate(-6deg);
+}
+
+/* Gradient button with press feedback */
+
+.fx-btn {
+  border: 0;
+  background: linear-gradient(120deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s ease;
+}
+
+.fx-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.35);
+}
+
+.fx-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+}
+
+.fx-btn:disabled {
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+/* Entrance animations */
+
+@keyframes fx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fx-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fx-rise {
+  animation: fx-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.fx-pop {
+  animation: fx-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.fx-d1 { animation-delay: 0.06s; }
+.fx-d2 { animation-delay: 0.12s; }
+.fx-d3 { animation-delay: 0.18s; }
+.fx-d4 { animation-delay: 0.24s; }
+.fx-d5 { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-rise,
+  .fx-pop,
+  .fx-glow::before,
+  .fx-lift,
+  .fx-icon,
+  .fx-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .fx-lift:hover,
+  .fx-btn:hover:not(:disabled),
+  .fx-glow:hover .fx-icon,
+  .fx-lift:hover .fx-icon {
+    transform: none;
+  }
+}

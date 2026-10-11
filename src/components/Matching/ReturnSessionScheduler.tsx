@@ -25,6 +25,49 @@ interface ReturnSessionSchedulerProps {
   onChange: (selection: ReturnScheduleSelection | null) => void;
 }
 
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+function getCandidateDateTime(day: string, time: string) {
+  const now = new Date();
+  const targetDay = DAY_INDEX[day.toLowerCase()];
+
+  const [hours, minutes] = time
+    .split(":")
+    .map(Number);
+
+  const daysAhead =
+    (targetDay - now.getDay() + 7) % 7;
+
+  const candidate = new Date(now);
+
+  candidate.setDate(
+    now.getDate() + daysAhead
+  );
+
+  candidate.setHours(
+    hours,
+    minutes,
+    0,
+    0
+  );
+
+  if (candidate <= now) {
+    candidate.setDate(
+      candidate.getDate() + 7
+    );
+  }
+
+  return candidate;
+}
+
 export default function ReturnSessionScheduler({
   userId,
   username,
@@ -37,9 +80,14 @@ export default function ReturnSessionScheduler({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
-  const [selectedStartTime, setSelectedStartTime] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [selectedSlot, setSelectedSlot] =
+    useState<number | null>(null);
+
+  const [selectedStartTime, setSelectedStartTime] =
+    useState("");
+
+  const [selectedDuration, setSelectedDuration] =
+    useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -49,7 +97,8 @@ export default function ReturnSessionScheduler({
         setLoading(true);
         setError("");
 
-        const data = await getUserSessionSettings(userId);
+        const data =
+          await getUserSessionSettings(userId);
 
         if (active) {
           setSessionSettings(data);
@@ -73,20 +122,75 @@ export default function ReturnSessionScheduler({
     };
   }, [userId]);
 
-  const availableSlots = sessionSettings?.availability ?? [];
+  const availableSlots =
+    sessionSettings?.availability ?? [];
+
+  const busyIntervals =
+    sessionSettings?.busy_intervals ?? [];
 
   const selectedSlotObject = useMemo(() => {
-    return availableSlots.find((slot) => slot.id === selectedSlot) ?? null;
-  }, [availableSlots, selectedSlot]);
+    return (
+      availableSlots.find(
+        (slot) =>
+          slot.id === selectedSlot
+      ) ?? null
+    );
+  }, [
+    availableSlots,
+    selectedSlot,
+  ]);
+
+  const overlapsBusyInterval = (
+    day: string,
+    startTime: string,
+    duration: number
+  ) => {
+    const start =
+      getCandidateDateTime(
+        day,
+        startTime
+      );
+
+    const end = new Date(
+      start.getTime() +
+        duration * 60 * 1000
+    );
+
+    return busyIntervals.some(
+      (busy) => {
+        const busyStart = new Date(
+          busy.start_time
+        );
+
+        const busyEnd = new Date(
+          busy.end_time
+        );
+
+        return (
+          start < busyEnd &&
+          end > busyStart
+        );
+      }
+    );
+  };
 
   const startTimeOptions = useMemo(() => {
     if (!selectedSlotObject) {
       return [];
     }
 
-    const slotStart = timeToMinutes(selectedSlotObject.start_time);
-    const slotEnd = timeToMinutes(selectedSlotObject.end_time);
-    const firstStart = Math.ceil(slotStart / 15) * 15;
+    const slotStart =
+      timeToMinutes(
+        selectedSlotObject.start_time
+      );
+
+    const slotEnd =
+      timeToMinutes(
+        selectedSlotObject.end_time
+      );
+
+    const firstStart =
+      Math.ceil(slotStart / 15) * 15;
 
     const options: string[] = [];
 
@@ -95,44 +199,99 @@ export default function ReturnSessionScheduler({
       current + 15 <= slotEnd;
       current += 15
     ) {
-      options.push(minutesToTime(current));
+      const time =
+        minutesToTime(current);
+
+      const isBusy =
+        overlapsBusyInterval(
+          selectedSlotObject.day,
+          time,
+          15
+        );
+
+      if (!isBusy) {
+        options.push(time);
+      }
     }
 
     return options;
-  }, [selectedSlotObject]);
+  }, [
+    selectedSlotObject,
+    busyIntervals,
+  ]);
 
   const durationOptions = useMemo(() => {
-    if (!selectedSlotObject || !selectedStartTime || !sessionSettings) {
+    if (
+      !selectedSlotObject ||
+      !selectedStartTime ||
+      !sessionSettings
+    ) {
       return [];
     }
 
-    const start = timeToMinutes(selectedStartTime);
-    const slotEnd = timeToMinutes(selectedSlotObject.end_time);
-    const remainingMinutes = slotEnd - start;
+    const start =
+      timeToMinutes(
+        selectedStartTime
+      );
 
-    const maximumDuration = Math.min(
-      remainingMinutes,
-      sessionSettings.max_session_duration_minutes
-    );
+    const slotEnd =
+      timeToMinutes(
+        selectedSlotObject.end_time
+      );
+
+    const remainingMinutes =
+      slotEnd - start;
+
+    const maximumDuration =
+      Math.min(
+        remainingMinutes,
+        sessionSettings.max_session_duration_minutes
+      );
 
     const options: number[] = [];
 
-    for (let duration = 15; duration <= maximumDuration; duration += 15) {
-      options.push(duration);
+    for (
+      let duration = 15;
+      duration <= maximumDuration;
+      duration += 15
+    ) {
+      const isBusy =
+        overlapsBusyInterval(
+          selectedSlotObject.day,
+          selectedStartTime,
+          duration
+        );
+
+      if (!isBusy) {
+        options.push(duration);
+      }
     }
 
     return options;
-  }, [selectedSlotObject, selectedStartTime, sessionSettings]);
+  }, [
+    selectedSlotObject,
+    selectedStartTime,
+    sessionSettings,
+    busyIntervals,
+  ]);
 
   const requestedEndTime = useMemo(() => {
-    if (!selectedStartTime || selectedDuration === null) {
+    if (
+      !selectedStartTime ||
+      selectedDuration === null
+    ) {
       return null;
     }
 
     return minutesToTime(
-      timeToMinutes(selectedStartTime) + selectedDuration
+      timeToMinutes(
+        selectedStartTime
+      ) + selectedDuration
     );
-  }, [selectedStartTime, selectedDuration]);
+  }, [
+    selectedStartTime,
+    selectedDuration,
+  ]);
 
   useEffect(() => {
     if (
@@ -143,8 +302,10 @@ export default function ReturnSessionScheduler({
     ) {
       onChange({
         slotId: selectedSlot,
-        startTime: selectedStartTime,
-        endTime: requestedEndTime,
+        startTime:
+          selectedStartTime,
+        endTime:
+          requestedEndTime,
       });
     } else {
       onChange(null);
@@ -157,13 +318,17 @@ export default function ReturnSessionScheduler({
     onChange,
   ]);
 
-  const handleSlotChange = (slotId: number) => {
+  const handleSlotChange = (
+    slotId: number
+  ) => {
     setSelectedSlot(slotId);
     setSelectedStartTime("");
     setSelectedDuration(null);
   };
 
-  const handleStartTimeChange = (time: string) => {
+  const handleStartTimeChange = (
+    time: string
+  ) => {
     setSelectedStartTime(time);
     setSelectedDuration(null);
   };
@@ -173,111 +338,204 @@ export default function ReturnSessionScheduler({
       <div className="return-scheduler-header">
         <div>
           <span className="detail-label">
-            {username}&apos;s availability
+            {username}&apos;s
+            availability
           </span>
 
-          <p>Choose a time when they are available to teach you.</p>
+          <p>
+            Choose a time when they
+            are available to teach
+            you.
+          </p>
         </div>
 
         {sessionSettings && (
           <span className="scheduler-max-duration">
-            Max {formatDuration(sessionSettings.max_session_duration_minutes)}
+            Max{" "}
+            {formatDuration(
+              sessionSettings.max_session_duration_minutes
+            )}
           </span>
         )}
       </div>
 
       {loading ? (
-        <p className="schedule-message">Loading availability...</p>
-      ) : error ? (
-        <p className="schedule-error">{error}</p>
-      ) : availableSlots.length === 0 ? (
         <p className="schedule-message">
-          {username} has no availability added yet.
+          Loading availability...
+        </p>
+      ) : error ? (
+        <p className="schedule-error">
+          {error}
+        </p>
+      ) : availableSlots.length ===
+        0 ? (
+        <p className="schedule-message">
+          {username} has no
+          availability added yet.
         </p>
       ) : (
         <>
           <div className="return-scheduler-grid">
             <div className="return-scheduler-field">
-              <label>Availability</label>
+              <label>
+                Availability
+              </label>
 
               <select
-                value={selectedSlot ?? ""}
+                value={
+                  selectedSlot ?? ""
+                }
                 disabled={isProcessing}
                 onChange={(event) =>
-                  handleSlotChange(Number(event.target.value))
+                  handleSlotChange(
+                    Number(
+                      event.target
+                        .value
+                    )
+                  )
                 }
               >
-                <option value="">Choose availability</option>
+                <option value="">
+                  Choose availability
+                </option>
 
-                {availableSlots.map((slot) => (
-                  <option key={slot.id} value={slot.id}>
-                    {formatDayLabel(slot.day)} · {formatTime(slot.start_time)} –{" "}
-                    {formatTime(slot.end_time)}
-                  </option>
-                ))}
+                {availableSlots.map(
+                  (slot) => (
+                    <option
+                      key={slot.id}
+                      value={slot.id}
+                    >
+                      {formatDayLabel(
+                        slot.day
+                      )}{" "}
+                      ·{" "}
+                      {formatTime(
+                        slot.start_time
+                      )}{" "}
+                      –{" "}
+                      {formatTime(
+                        slot.end_time
+                      )}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             <div className="return-scheduler-field">
-              <label>Start time</label>
+              <label>
+                Start time
+              </label>
 
               <select
-                value={selectedStartTime}
-                disabled={!selectedSlot || isProcessing}
+                value={
+                  selectedStartTime
+                }
+                disabled={
+                  !selectedSlot ||
+                  isProcessing
+                }
                 onChange={(event) =>
-                  handleStartTimeChange(event.target.value)
+                  handleStartTimeChange(
+                    event.target
+                      .value
+                  )
                 }
               >
                 <option value="">
                   {selectedSlot
-                    ? "Choose start time"
+                    ? startTimeOptions.length >
+                      0
+                      ? "Choose start time"
+                      : "No available times"
                     : "Select availability first"}
                 </option>
 
-                {startTimeOptions.map((time) => (
-                  <option key={time} value={time}>
-                    {formatTime(time)}
-                  </option>
-                ))}
+                {startTimeOptions.map(
+                  (time) => (
+                    <option
+                      key={time}
+                      value={time}
+                    >
+                      {formatTime(
+                        time
+                      )}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             <div className="return-scheduler-field">
-              <label>Duration</label>
+              <label>
+                Duration
+              </label>
 
               <select
-                value={selectedDuration ?? ""}
-                disabled={!selectedStartTime || isProcessing}
+                value={
+                  selectedDuration ??
+                  ""
+                }
+                disabled={
+                  !selectedStartTime ||
+                  isProcessing
+                }
                 onChange={(event) =>
-                  setSelectedDuration(Number(event.target.value))
+                  setSelectedDuration(
+                    Number(
+                      event.target
+                        .value
+                    )
+                  )
                 }
               >
                 <option value="">
                   {selectedStartTime
-                    ? "Choose duration"
+                    ? durationOptions.length >
+                      0
+                      ? "Choose duration"
+                      : "No duration available"
                     : "Choose start time first"}
                 </option>
 
-                {durationOptions.map((duration) => (
-                  <option key={duration} value={duration}>
-                    {formatDuration(duration)}
-                  </option>
-                ))}
+                {durationOptions.map(
+                  (duration) => (
+                    <option
+                      key={duration}
+                      value={duration}
+                    >
+                      {formatDuration(
+                        duration
+                      )}
+                    </option>
+                  )
+                )}
               </select>
             </div>
           </div>
 
           {selectedSlotObject &&
             selectedStartTime &&
-            selectedDuration !== null &&
+            selectedDuration !==
+              null &&
             requestedEndTime && (
               <div className="return-session-preview">
-                <span>Return session</span>
+                <span>
+                  Return session
+                </span>
 
                 <strong>
-                  {formatDayLabel(selectedSlotObject.day)} ·{" "}
-                  {formatTime(selectedStartTime)} –{" "}
-                  {formatTime(requestedEndTime)}
+                  {formatDayLabel(
+                    selectedSlotObject.day
+                  )}{" "}
+                  ·{" "}
+                  {formatTime(
+                    selectedStartTime
+                  )}{" "}
+                  –{" "}
+                  {formatTime(
+                    requestedEndTime
+                  )}
                 </strong>
               </div>
             )}

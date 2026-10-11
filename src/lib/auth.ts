@@ -78,7 +78,7 @@ export async function loadStaffRole(): Promise<boolean> {
 }
 
 export function homePath(): string {
-  return isStaffUser() ? '/admin/skills' : '/dashboard'
+  return isStaffUser() ? '/admin' : '/dashboard'
 }
 
 // Logged in if access still works, OR refresh can still get a new access.

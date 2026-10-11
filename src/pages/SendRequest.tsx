@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-
 import {
   getMySkills,
   type AvailabilitySlot,
 } from "../api/profileApi";
-
 import {
   createMatchRequest,
   getMatches,
@@ -13,19 +11,16 @@ import {
   getUserSessionSettings,
   type UserSessionSettings,
 } from "../api/matchingApi";
-
 import { getErrorMessage } from "../lib/api";
 import StatusModal from "../components/ui/StatusModal";
 import VerifiedBadge from "../components/VerifiedBadge";
-
 import type {
   Match,
   SkillItem,
   Teacher,
 } from "../types/match";
-
+import { handleCursorGlow } from "../lib/cursorGlow";
 import "./SendRequest.css";
-
 interface MySkill {
   id: number;
   skill: number;
@@ -33,12 +28,10 @@ interface MySkill {
   skill_type: "teach" | "learn";
   is_verified?: boolean;
 }
-
 function timeToMinutes(value: string) {
   const [hours, minutes] = value.split(":").map(Number);
   return hours * 60 + minutes;
 }
-
 function minutesToTime(totalMinutes: number) {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -53,7 +46,6 @@ function formatTime(value: string) {
   const displayHours = ((hours + 11) % 12) + 1;
   return `${displayHours}:${String(minutes).padStart(2, "0")} ${suffix}`;
 }
-
 function formatDuration(minutes: number) {
   if (minutes < 60) {
     return `${minutes} minutes`;
@@ -64,541 +56,1295 @@ function formatDuration(minutes: number) {
     return hours === 1 ? "1 hour" : `${hours} hours`;
   }
   return `${hours}h ${remainingMinutes}m`;
+
 }
+
+
 
 function formatDayLabel(day: string) {
+
   return day.charAt(0).toUpperCase() + day.slice(1);
+
 }
 
+
+
+const DAY_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
+
+
+
+function getCandidateDateTime(day: string, time: string) {
+  const now = new Date();
+  const targetDay = DAY_INDEX[day.toLowerCase()];
+
+  if (targetDay === undefined) {
+    return null;
+  }
+
+  const [hours, minutes] = time.split(":").map(Number);
+  const daysAhead = (targetDay - now.getDay() + 7) % 7;
+
+  const candidate = new Date(now);
+  candidate.setDate(now.getDate() + daysAhead);
+  candidate.setHours(hours, minutes, 0, 0);
+
+  if (candidate <= now) {
+    candidate.setDate(candidate.getDate() + 7);
+  }
+
+  return candidate;
+}
+
+
+
 function SendRequest() {
+
   const { userId } = useParams();
+
   const navigate = useNavigate();
+
   const location = useLocation();
 
+
+
   const navigationState = location.state as {
+
     match?: Match;
+
     teacher?: Teacher;
+
   } | null;
 
+
+
   const matchFromState = navigationState?.match;
+
   const teacherFromState = navigationState?.teacher;
 
+
+
   const [match, setMatch] = useState<Match | null>(matchFromState ?? null);
+
   const [teacher, setTeacher] = useState<Teacher | null>(teacherFromState ?? null);
 
+
+
   const [skillsCatalog, setSkillsCatalog] = useState<SkillItem[]>([]);
+
   const [sessionSettings, setSessionSettings] = useState<UserSessionSettings | null>(null);
 
+
+
   const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+
   const [selectedStartTime, setSelectedStartTime] = useState<string>("");
+
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
 
+
+
   const [mySkills, setMySkills] = useState<MySkill[]>([]);
+
   const [partnerWantsToLearn, setPartnerWantsToLearn] = useState<string[]>([]);
 
+
+
   const [loading, setLoading] = useState(!matchFromState && !teacherFromState);
+
   const [submitting, setSubmitting] = useState(false);
 
+
+
   const [statusModal, setStatusModal] = useState<{
+
     title: string;
+
     message: string;
+
     type: "success" | "error";
+
   } | null>(null);
 
+
+
   /*
+
    * Initialize profile, catalog, and matching context
+
    */
+
   useEffect(() => {
+
     let isMounted = true;
 
+
+
     async function initialize() {
+
       try {
+
         if (teacherFromState && isMounted) {
+
           setTeacher(teacherFromState);
+
         } else if (matchFromState && isMounted) {
+
           setMatch(matchFromState);
+
           setPartnerWantsToLearn(
+
             (matchFromState.teach_them ?? []).map((skill) => skill.name)
+
           );
+
         }
 
+
+
         const resolvedId =
+
           teacherFromState?.user_id ??
+
           matchFromState?.user_id ??
+
           (userId ? Number(userId) : null);
 
+
+
         const [skillsData, matchesData] = await Promise.all([
+
           getSkillsList(),
+
           resolvedId ? getMatches() : Promise.resolve([]),
+
         ]);
+
+
 
         if (!isMounted) return;
 
+
+
         setSkillsCatalog(skillsData);
 
+
+
         if (resolvedId) {
+
           const matchedUser = matchesData.find(
+
             (item) => item.user_id === resolvedId
+
           );
 
+
+
           if (matchedUser) {
+
             setMatch(matchedUser);
+
             setPartnerWantsToLearn(
+
               (matchedUser.teach_them ?? []).map((skill) => skill.name)
+
             );
+
           }
+
         }
+
       } catch (error) {
+
         console.error("Failed to load initial data:", error);
+
       } finally {
+
         if (isMounted) {
+
           setLoading(false);
+
         }
+
       }
+
     }
+
+
 
     initialize();
 
+
+
     return () => {
+
       isMounted = false;
+
     };
+
   }, [matchFromState, teacherFromState, userId]);
 
+
+
   /*
+
    * Load current user's skills
+
    */
+
   useEffect(() => {
+
     let isMounted = true;
 
+
+
     async function loadMySkills() {
+
       try {
+
         const data = await getMySkills();
+
         if (isMounted) {
+
           setMySkills(data);
+
         }
+
       } catch (error) {
+
         console.error("Failed to load my skills:", error);
+
         if (isMounted) {
+
           setMySkills([]);
+
         }
+
       }
+
     }
+
+
 
     loadMySkills();
 
+
+
     return () => {
+
       isMounted = false;
+
     };
+
   }, []);
 
+
+
   const partnerId = teacher?.user_id ?? match?.user_id ?? (userId ? Number(userId) : null);
+
   const partnerUsername = teacher?.username ?? match?.username ?? "";
+
   const targetPath = "/skillbrowse";
 
+
+
   /*
+
    * Load partner session settings and availability
+
    */
+
   useEffect(() => {
+
     if (!partnerId) {
+
       setSessionSettings(null);
+
       return;
+
     }
+
+
 
     let isMounted = true;
 
+
+
     async function loadSettings() {
+
       try {
+
         const data = await getUserSessionSettings(partnerId!);
+
         if (isMounted) {
+
           setSessionSettings(data);
+
         }
+
       } catch (error) {
+
         console.error("Failed to load session settings:", error);
+
         if (isMounted) {
+
           setSessionSettings(null);
+
         }
+
       }
+
     }
+
+
 
     loadSettings();
 
+
+
     return () => {
+
       isMounted = false;
+
     };
+
   }, [partnerId]);
+
+
 
   const availableSlots: AvailabilitySlot[] = sessionSettings?.availability ?? [];
 
+  const busyIntervals = sessionSettings?.busy_intervals ?? [];
+
+
+
   const skillsToLearn =
+
     teacher?.skills.map((skill) => ({
+
       id: skill.id,
+
       name: skill.name,
+
       is_verified: skill.is_verified ?? false,
+
     })) ??
+
     (match
+
       ? match.teach_me.map((skill, index) => ({
+
           id: match.teach_me_ids?.[index] ?? index + 1,
+
           name: skill.name,
+
           is_verified: skill.is_verified,
+
         }))
+
       : []) ??
+
     [];
+
+
 
   const skillsYouOffer = mySkills.filter((skill) => skill.skill_type === "teach");
 
+
+
   const matchingSkillNames = new Set<string>(
+
     partnerWantsToLearn.map((s) => s.toLowerCase().trim())
+
   );
 
+
+
   const selectedSlotObject = useMemo(() => {
+
     return availableSlots.find((slot) => slot.id === selectedSlot) ?? null;
+
   }, [availableSlots, selectedSlot]);
 
-  const startTimeOptions = useMemo(() => {
-    if (!selectedSlotObject) {
-      return [];
+
+
+  const overlapsBusyInterval = (
+
+    day: string,
+
+    startTime: string,
+
+    duration: number
+
+  ) => {
+
+    const start = getCandidateDateTime(day, startTime);
+
+    if (!start) {
+
+      return false;
+
     }
+
+    const end = new Date(start.getTime() + duration * 60 * 1000);
+
+
+
+    return busyIntervals.some((busy) => {
+
+      const busyStart = new Date(busy.start_time);
+
+      const busyEnd = new Date(busy.end_time);
+
+
+
+      return start < busyEnd && end > busyStart;
+
+    });
+
+  };
+
+
+
+  const startTimeOptions = useMemo(() => {
+
+    if (!selectedSlotObject) {
+
+      return [];
+
+    }
+
+
 
     const slotStart = timeToMinutes(selectedSlotObject.start_time);
+
     const slotEnd = timeToMinutes(selectedSlotObject.end_time);
+
+
 
     const firstStart = Math.ceil(slotStart / 15) * 15;
+
     const options: string[] = [];
 
+
+
     for (let current = firstStart; current + 15 <= slotEnd; current += 15) {
-      options.push(minutesToTime(current));
+
+      const time = minutesToTime(current);
+
+      if (!overlapsBusyInterval(selectedSlotObject.day, time, 15)) {
+
+        options.push(time);
+
+      }
+
     }
 
+
+
     return options;
-  }, [selectedSlotObject]);
+
+  }, [selectedSlotObject, busyIntervals]);
+
+
 
   const durationOptions = useMemo(() => {
+
     if (!selectedSlotObject || !selectedStartTime || !sessionSettings) {
+
       return [];
+
     }
+
+
 
     const start = timeToMinutes(selectedStartTime);
+
     const slotEnd = timeToMinutes(selectedSlotObject.end_time);
+
     const remainingMinutes = slotEnd - start;
 
+
+
     const maximumDuration = Math.min(
+
       remainingMinutes,
+
       sessionSettings.max_session_duration_minutes
+
     );
+
+
 
     const options: number[] = [];
+
     for (let duration = 15; duration <= maximumDuration; duration += 15) {
-      options.push(duration);
+
+      if (!overlapsBusyInterval(selectedSlotObject.day, selectedStartTime, duration)) {
+
+        options.push(duration);
+
+      }
+
     }
+
+
 
     return options;
-  }, [selectedSlotObject, selectedStartTime, sessionSettings]);
+
+  }, [
+
+    selectedSlotObject,
+
+    selectedStartTime,
+
+    sessionSettings,
+
+    busyIntervals,
+
+  ]);
+
+
 
   const requestedEndTime = useMemo(() => {
+
     if (!selectedStartTime || selectedDuration === null) {
+
       return null;
+
     }
+
     return minutesToTime(timeToMinutes(selectedStartTime) + selectedDuration);
+
   }, [selectedStartTime, selectedDuration]);
 
+
+
   const handleSlotChange = (slotId: number) => {
+
     setSelectedSlot(slotId);
+
     setSelectedStartTime("");
+
     setSelectedDuration(null);
+
   };
+
+
 
   const handleStartTimeChange = (time: string) => {
+
     setSelectedStartTime(time);
+
     setSelectedDuration(null);
+
   };
+
+
 
   const handleBack = () => {
+
     navigate(targetPath);
+
   };
+
+
 
   const handleSendRequest = async () => {
+
     setStatusModal(null);
 
+
+
     if (!partnerId) {
+
       setStatusModal({
+
         title: "Unable to send request",
+
         message: "Unable to load the selected user's details.",
+
         type: "error",
+
       });
+
       return;
+
     }
+
+
 
     if (!selectedSkill) {
+
       setStatusModal({
+
         title: "Choose a skill",
+
         message: "Please select a skill you want to learn.",
+
         type: "error",
+
       });
+
       return;
+
     }
+
+
 
     if (!selectedSlot) {
+
       setStatusModal({
+
         title: "Choose an available period",
+
         message: "Please choose an availability period.",
+
         type: "error",
+
       });
+
       return;
+
     }
+
+
 
     if (!selectedStartTime) {
+
       setStatusModal({
+
         title: "Choose a start time",
+
         message: "Please choose a session start time.",
+
         type: "error",
+
       });
+
       return;
+
     }
+
+
 
     if (selectedDuration === null || !requestedEndTime) {
+
       setStatusModal({
+
         title: "Choose duration",
+
         message: "Please select your session duration.",
+
         type: "error",
+
       });
+
       return;
+
     }
+
+
 
     const selectedSkillObject =
+
       skillsToLearn.find((skill) => skill.name === selectedSkill) ||
+
       skillsCatalog.find(
+
         (skill) =>
+
           skill.name.trim().toLowerCase() === selectedSkill.trim().toLowerCase()
+
       );
 
+
+
     if (!selectedSkillObject) {
+
       setStatusModal({
+
         title: "Skill not found",
+
         message: "The selected skill could not be found.",
+
         type: "error",
+
       });
+
       return;
+
     }
 
-    try {
-      setSubmitting(true);
 
-      await createMatchRequest({
-        receiver: partnerId,
-        skill: selectedSkillObject.id,
-        selected_slot: selectedSlot,
-        requested_start_time: selectedStartTime,
-        requested_end_time: requestedEndTime,
-      });
 
-      navigate(targetPath, {
-        state: {
-          statusModal: {
-            title: "Request sent",
-            message: "Your skill swap request was sent successfully.",
-            type: "success",
-          },
-        },
-      });
+   try {
+
+  setSubmitting(true);
+
+
+
+  const latestSettings = await getUserSessionSettings(partnerId);
+
+
+
+  const latestBusyIntervals =
+
+    latestSettings.busy_intervals ?? [];
+
+
+
+  if (!selectedSlotObject) {
+
+    setStatusModal({
+
+      title: "Availability changed",
+
+      message:
+
+        "This availability is no longer available. Please choose another time.",
+
+      type: "error",
+
+    });
+
+
+
+    setSubmitting(false);
+
+    return;
+
+  }
+
+
+
+  const requestedStart = getCandidateDateTime(
+
+    selectedSlotObject.day,
+
+    selectedStartTime
+
+  );
+
+
+
+  if (!requestedStart) {
+
+    setStatusModal({
+
+      title: "Invalid time",
+
+      message:
+
+        "The selected session time could not be checked.",
+
+      type: "error",
+
+    });
+
+
+
+    setSubmitting(false);
+
+    return;
+
+  }
+
+
+
+  const requestedEnd = new Date(
+
+    requestedStart.getTime() +
+
+      selectedDuration * 60 * 1000
+
+  );
+
+
+
+  const isNowBooked =
+
+    latestBusyIntervals.some((busy) => {
+
+      const busyStart = new Date(
+
+        busy.start_time
+
+      );
+
+
+
+      const busyEnd = new Date(
+
+        busy.end_time
+
+      );
+
+
+
+      return (
+
+        requestedStart < busyEnd &&
+
+        requestedEnd > busyStart
+
+      );
+
+    });
+
+
+
+  if (isNowBooked) {
+
+    setSessionSettings(latestSettings);
+
+
+
+    setSelectedStartTime("");
+
+    setSelectedDuration(null);
+
+
+
+    setStatusModal({
+
+      title: "Time no longer available",
+
+      message:
+
+        "This time was booked by another user. Please choose another available time.",
+
+      type: "error",
+
+    });
+
+
+
+    setSubmitting(false);
+
+    return;
+
+  }
+
+
+
+  setSessionSettings(latestSettings);
+
+
+
+  await createMatchRequest({
+
+    receiver: partnerId,
+
+    skill: selectedSkillObject.id,
+
+    selected_slot: selectedSlot,
+
+    requested_start_time: selectedStartTime,
+
+    requested_end_time: requestedEndTime,
+
+  });
+
     } catch (error) {
+
       const message = getErrorMessage(error);
+
       setStatusModal({
+
         title: "Request failed",
+
         message,
+
         type: "error",
+
       });
+
     } finally {
+
       setSubmitting(false);
+
     }
+
   };
 
+
+
   if (loading) {
+
     return (
-      <main className="send-request-page">
+
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
+
         <div className="send-request-panel">
+
           <button
+
             type="button"
+
             className="send-request-back-btn"
+
             onClick={handleBack}
+
           >
+
             &larr; Back
+
           </button>
+
           <div className="empty-state">
+
             <h2>Loading session details...</h2>
+
           </div>
+
         </div>
+
       </main>
+
     );
+
   }
+
+
 
   if (!partnerId) {
+
     return (
-      <main className="send-request-page">
+
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
+
         <div className="send-request-panel">
+
           <button
+
             type="button"
+
             className="send-request-back-btn"
+
             onClick={handleBack}
+
           >
+
             &larr; Back
+
           </button>
+
           <div className="empty-state">
+
             <h2>User not found</h2>
+
             <p>This profile could not be loaded.</p>
+
           </div>
+
         </div>
+
       </main>
+
     );
+
   }
 
+
+
   const initial = partnerUsername
+
     ? partnerUsername.charAt(0).toUpperCase()
+
     : "?";
 
+
+
   return (
+
     <>
+
       <StatusModal
+
         isOpen={Boolean(statusModal)}
+
         title={statusModal?.title ?? ""}
+
         message={statusModal?.message ?? ""}
+
         type={statusModal?.type ?? "success"}
+
         onClose={() => setStatusModal(null)}
+
       />
 
-      <main className="send-request-page">
+
+
+      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
+
         <div className="send-request-panel">
+
           <div className="send-request-nav">
+
             <button
+
               type="button"
+
               className="send-request-back-btn"
+
               onClick={handleBack}
+
             >
+
               &larr; Back
+
             </button>
+
             <span className="send-request-brand">SkillMatch</span>
+
           </div>
 
-          <header className="send-request-header">
+
+
+          <header className="send-request-header fx-hero fx-glow fx-rise">
+
             <div className="partner-profile-lockup">
+
               <div className="partner-avatar">{initial}</div>
+
               <div>
+
                 <span className="step-tag">PROPOSE A SESSION</span>
+
                 <h1 className="request-title">
+
                   Skill Swap with {partnerUsername}
+
                 </h1>
+
               </div>
+
             </div>
+
           </header>
 
+
+
           {/* Skill Selection & Offer Grid */}
+
           <section className="swap-overview-section">
+
             <div className="swap-grid">
+
               {/* Skill to Learn */}
-              <div className="swap-box learn-box">
+
+              <div className="swap-box learn-box fx-glow fx-lift fx-accent-top fx-theme-blue fx-rise fx-d1">
+
                 <div className="swap-box-header">
+
                   <span className="swap-direction-icon">📥</span>
+
                   <div>
+
                     <span className="swap-box-title">
+
                       Step 1: Select Skill to Learn
+
                     </span>
+
                     <span className="swap-box-subtitle">
+
                       What {partnerUsername} will teach you
+
                     </span>
+
                   </div>
+
                 </div>
+
+
 
                 <div className="skill-selector-list">
+
                   {skillsToLearn.length === 0 ? (
+
                     <p className="empty-state-text">
+
                       This user has not added any teaching skills yet.
+
                     </p>
+
                   ) : (
+
                     skillsToLearn.map((skill) => (
+
                       <button
+
                         type="button"
+
                         key={skill.id}
+
                         className={`skill-choice ${
+
                           selectedSkill === skill.name ? "selected" : ""
+
                         }`}
+
                         onClick={() => setSelectedSkill(skill.name)}
+
                       >
+
                         <span className="skill-radio"></span>
+
                         <span className="skill-text">
+
                           {skill.name}
+
                           <VerifiedBadge
+
                             verified={!!skill.is_verified}
+
                             compact
+
                           />
+
                         </span>
+
                       </button>
+
                     ))
+
                   )}
+
                 </div>
+
               </div>
+
+
 
               <div className="swap-divider">
+
                 <span>⇄</span>
+
               </div>
+
+
 
               {/* Skills You Offer */}
-              <div className="swap-box teach-box">
+
+              <div className="swap-box teach-box fx-glow fx-lift fx-accent-top fx-theme-teal fx-rise fx-d2">
+
                 <div className="swap-box-header">
+
                   <span className="swap-direction-icon">📤</span>
+
                   <div>
+
                     <span className="swap-box-title">Skills You Offer</span>
+
                     <span className="swap-box-subtitle">
+
                       Skills you can teach {partnerUsername}
+
                     </span>
+
                   </div>
+
                 </div>
+
+
 
                 <div className="skill-legend">
+
                   <span className="legend-item">
+
                     <span className="legend-dot matched-dot"></span>
+
                     <strong>Green:</strong> Matched skill ({partnerUsername} wants to learn this)
+
                   </span>
+
                   <span className="legend-item">
+
                     <span className="legend-dot default-dot"></span>
+
                     <strong>Gray:</strong> Other skills you teach
+
                   </span>
+
                 </div>
+
+
 
                 <div className="skills-badge-list">
+
                   {skillsYouOffer.length === 0 ? (
+
                     <span className="empty-state-text">
+
                       You have not added any teaching skills yet.
+
                     </span>
+
                   ) : (
+
                     skillsYouOffer.map((skill) => {
+
                       const isMatch = matchingSkillNames.has(
+
                         skill.skill_name.toLowerCase().trim()
+
                       );
+
+
 
                       return (
+
                         <span
+
                           className={`skill-pill pill-teach ${
+
                             isMatch ? "pill-matched" : ""
+
                           }${skill.is_verified ? " is-verified" : ""}`}
+
                           key={skill.id}
+
                         >
+
                           {isMatch && <span className="matched-star">★ </span>}
+
                           {skill.skill_name}
+
                           <VerifiedBadge
+
                             verified={!!skill.is_verified}
+
                             compact
+
                           />
+
                         </span>
+
                       );
+
                     })
+
                   )}
+
                 </div>
+
               </div>
+
             </div>
           </section>
-
           {/* Session Planner */}
-          <section className="request-section">
+          <section className="request-section fx-glow fx-accent-top fx-theme-amber fx-rise fx-d3">
             <div className="section-heading">
               <span className="step-number">02</span>
               <div>
@@ -606,7 +1352,6 @@ function SendRequest() {
                 <p>Select an available period, start time, and duration.</p>
               </div>
             </div>
-
             <div className="schedule-card">
               <div className="schedule-card-top">
                 <div>
@@ -616,7 +1361,6 @@ function SendRequest() {
                     <p>Choose any session inside their available time.</p>
                   </div>
                 </div>
-
                 {sessionSettings && (
                   <span className="max-duration-badge">
                     Max {formatDuration(sessionSettings.max_session_duration_minutes)}
@@ -645,20 +1389,35 @@ function SendRequest() {
                     <span className="select-arrow">▾</span>
                   </div>
                 </div>
-
                 {/* 2. START TIME */}
+
                 <div className="scheduler-field">
+
                   <label>
+
                     <span className="field-number">2</span> Start time
+
                   </label>
+
                   <div className="select-wrapper">
+
                     <select
+
                       value={selectedStartTime}
+
                       disabled={!selectedSlot}
+
                       onChange={(e) => handleStartTimeChange(e.target.value)}
+
                     >
+
                       <option value="">
-                        {selectedSlot ? "Choose start time" : "Select availability first"}
+
+                        {selectedSlot
+                          ? startTimeOptions.length > 0
+                            ? "Choose start time"
+                            : "No available times"
+                          : "Select availability first"}
                       </option>
                       {startTimeOptions.map((time) => (
                         <option key={time} value={time}>
@@ -685,7 +1444,11 @@ function SendRequest() {
                       onChange={(e) => setSelectedDuration(Number(e.target.value))}
                     >
                       <option value="">
-                        {selectedStartTime ? "Choose duration" : "Choose start time first"}
+                        {selectedStartTime
+                          ? durationOptions.length > 0
+                            ? "Choose duration"
+                            : "No duration available"
+                          : "Choose start time first"}
                       </option>
                       {durationOptions.map((duration) => (
                         <option key={duration} value={duration}>
@@ -729,15 +1492,22 @@ function SendRequest() {
                 ? "Choose a session duration"
                 : "Everything looks good!"}
             </div>
-
             <button
+
               type="button"
-              className="send-request-button"
+
+              className="send-request-button fx-btn"
+
               disabled={
+
                 !selectedSkill ||
+
                 !selectedSlot ||
+
                 !selectedStartTime ||
+
                 selectedDuration === null ||
+
                 submitting
               }
               onClick={handleSendRequest}

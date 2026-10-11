@@ -4,12 +4,15 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { ChatProvider } from './context/ChatContext'
+import { NotificationProvider } from './context/NotificationContext'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <ChatProvider>
-        <App />
+        <NotificationProvider>
+          <App />
+        </NotificationProvider>
       </ChatProvider>
     </BrowserRouter>
   </StrictMode>,

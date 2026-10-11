@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getNotifications,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  type NotificationItem,
-} from "../api/notificationApi";
-import { isAuthenticated } from "../lib/auth";
+import type { NotificationItem } from "../api/notificationApi";
+import { useNotifications } from "../context/NotificationContext";
 import "./NotificationBell.css";
 
 function formatRelativeTime(dateString: string): string {
@@ -48,39 +43,11 @@ function getIconForType(type: string): string {
 }
 
 export default function NotificationBell() {
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+    useNotifications();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-
-  const fetchNotifications = async () => {
-    if (!isAuthenticated()) return;
-    try {
-      const data = await getNotifications();
-      setUnreadCount(data.unread_count);
-      setNotifications(data.notifications);
-    } catch {
-      // Silently ignore polling failures so console isn't spammed
-    }
-  };
-
-  useEffect(() => {
-    // 1. Initial fetch
-    fetchNotifications();
-
-    // 2. Poll every 10 seconds
-    const interval = setInterval(fetchNotifications, 10000);
-
-    // 3. Refetch when window regains focus
-    const handleFocus = () => fetchNotifications();
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -103,17 +70,7 @@ export default function NotificationBell() {
 
   const handleNotificationClick = async (item: NotificationItem) => {
     if (!item.is_read) {
-      // Optimistic update
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === item.id ? { ...n, is_read: true } : n))
-      );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
-
-      try {
-        await markNotificationAsRead(item.id);
-      } catch {
-        // Ignored
-      }
+      await markAsRead(item.id);
     }
 
     setIsOpen(false);
@@ -125,14 +82,7 @@ export default function NotificationBell() {
 
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    setUnreadCount(0);
-
-    try {
-      await markAllNotificationsAsRead();
-    } catch {
-      // Ignored
-    }
+    await markAllAsRead();
   };
 
   return (

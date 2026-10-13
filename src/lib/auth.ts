@@ -23,7 +23,7 @@ export type RegisterCredentials = {
 
 // JWT = three parts: header.payload.signature
 // We only read "exp" from the middle part to know if time ran out.
-function isExpired(token: string): boolean {
+export function isExpired(token: string): boolean {
   try {
     const middle = token.split('.')[1]
     const { exp } = JSON.parse(atob(middle)) as { exp?: number }
@@ -32,6 +32,14 @@ function isExpired(token: string): boolean {
   } catch {
     return true
   }
+}
+
+export async function getValidAccessToken(): Promise<string> {
+  const access = getAccessToken()
+  if (access && !isExpired(access)) {
+    return access
+  }
+  return refreshAccessToken()
 }
 
 export function getAccessToken(): string | null {

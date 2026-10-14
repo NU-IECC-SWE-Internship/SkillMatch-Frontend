@@ -105,7 +105,6 @@ useEffect(() => {
     logout();
     navigate("/login", { replace: true });
   }
-
   if (loading || error || !profile) {
     return (
       <main className="upp-page">

@@ -21,15 +21,15 @@ function statusFor(data: ReviewData) {
       theme: "blue",
       icon: "🔁",
       title: "Ready for another try",
-      text: `You need at least ${data.pass_score} correct to verify. You can take the quiz again now.`,
+      text: `You need at least ${data.pass_score} correct to verify. You can take the quiz again now — ${data.attempts_left} of ${data.max_attempts} attempts left this week.`,
     };
   }
   return {
     theme: "amber",
     icon: "⏳",
-    title: "Next attempt coming up",
+    title: "No attempts left this week",
     text: data.available_at
-      ? `You need at least ${data.pass_score} correct to verify. You can try again after ${new Date(data.available_at).toLocaleString()}.`
+      ? `You need at least ${data.pass_score} correct to verify. You've used all ${data.max_attempts} attempts; your next one opens on ${new Date(data.available_at).toLocaleString()}.`
       : `You need at least ${data.pass_score} correct to verify.`,
   };
 }
@@ -146,12 +146,6 @@ export default function SkillQuizReview() {
   return (
     <main className="skill-quiz-page fx-backdrop" onPointerMove={handleCursorGlow}>
       <div className="skill-quiz-shell">
-        <div className="skill-quiz-topbar">
-          <Link to="/profile" className="skill-quiz-back">
-            &larr; Back to Profile
-          </Link>
-          <span className="skill-quiz-brand">SkillMatch</span>
-        </div>
         <ReviewContent key={skillId} skillId={skillId} />
       </div>
     </main>

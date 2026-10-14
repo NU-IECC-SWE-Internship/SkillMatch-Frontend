@@ -58,9 +58,7 @@ import VerifiedBadge from "../components/VerifiedBadge";
 
 import NotificationBell from "../components/NotificationBell";
 import { logout } from "../lib/auth";
-
-
-
+import BrandIcon from "../components/BrandIcon";
 import "./MyProfile.css";
 import "./ProfileRedesign.css";
 
@@ -159,6 +157,18 @@ function retryLabel(availableAt: string | null | undefined) {
 
 
   const rest = minutes % 60;
+
+
+
+  if (hours >= 24) {
+
+    const days = Math.floor(hours / 24);
+
+    const restHours = hours % 24;
+
+    return restHours ? `Retry in ${days}d ${restHours}h` : `Retry in ${days}d`;
+
+  }
 
 
 
@@ -1085,6 +1095,13 @@ function Profile() {
 
           Verify with quiz
 
+          {skill.has_quiz_attempt &&
+          typeof skill.quiz_attempts_left === "number"
+            ? ` · ${skill.quiz_attempts_left} ${
+                skill.quiz_attempts_left === 1 ? "try" : "tries"
+              } left`
+            : ""}
+
         </button>
 
       ) : null}
@@ -1461,9 +1478,7 @@ function Profile() {
             className="profile-brand"
             onClick={() => navigate("/dashboard")}
           >
-            <span className="profile-brand-icon" aria-hidden="true">
-              ↔
-            </span>
+            <BrandIcon className="profile-brand-icon" />
             <span>SkillSwap</span>
           </button>
 

@@ -3,13 +3,18 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   getAdminUsers,
   type AdminUserPage,
-  type AdminUserRole,
   type AdminUserSort,
   type AdminUserStatus,
 } from "../api/adminApi";
 import AdminLayout from "../components/admin/AdminLayout";
 import { ChevronRightIcon, SearchIcon } from "../components/admin/AdminIcons";
-import { formatDate, formatDateTime, initials, timeAgo } from "../components/admin/adminFormat";
+import {
+  PERIOD_OPTIONS,
+  formatDate,
+  formatDateTime,
+  initials,
+  isPeriod,
+} from "../components/admin/adminFormat";
 import UserStatusBadge from "../components/admin/UserStatusBadge";
 import { getErrorMessage } from "../lib/api";
 import "./AdminSkills.css";
@@ -26,17 +31,21 @@ const SORT_OPTIONS: { value: AdminUserSort; label: string }[] = [
   { value: "oldest", label: "Oldest first" },
   { value: "name", label: "Name (A–Z)" },
   { value: "last_login", label: "Recently signed in" },
-  { value: "rating", label: "Highest rated" },
 ];
+
+const DATE_FILTERS = PERIOD_OPTIONS.filter((option) => option.value);
 
 function UsersContent() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
   const search = params.get("search") ?? "";
-  const role = (params.get("role") ?? "") as AdminUserRole | "";
   const status = (params.get("status") ?? "") as AdminUserStatus | "";
   const sort = (params.get("sort") ?? "newest") as AdminUserSort;
+  const joinedParam = params.get("joined");
+  const seenParam = params.get("seen");
+  const joined = isPeriod(joinedParam) ? joinedParam : "";
+  const seen = isPeriod(seenParam) ? seenParam : "";
   const page = Math.max(Number(params.get("page")) || 1, 1);
   const queryKey = params.toString();
 
@@ -73,7 +82,7 @@ function UsersContent() {
 
   useEffect(() => {
     let cancelled = false;
-    getAdminUsers({ search, role, status, sort, page })
+    getAdminUsers({ search, status, sort, joined, seen, page })
       .then((data) => {
         if (cancelled) return;
         setError(null);
@@ -85,14 +94,14 @@ function UsersContent() {
     return () => {
       cancelled = true;
     };
-  }, [search, role, status, sort, page, queryKey]);
+  }, [search, status, sort, joined, seen, page, queryKey]);
 
   const data = result?.data;
   const loading = result?.key !== queryKey && !error;
   const totalPages = data ? Math.max(Math.ceil(data.count / data.page_size), 1) : 1;
   const firstRow = data && data.count ? (data.page - 1) * data.page_size + 1 : 0;
   const lastRow = data ? Math.min(data.page * data.page_size, data.count) : 0;
-  const hasFilters = Boolean(search || role || status || sort !== "newest");
+  const hasFilters = Boolean(search || status || joined || seen || sort !== "newest");
 
   function tabCount(value: AdminUserStatus | "") {
     if (!data) return "…";
@@ -142,16 +151,6 @@ function UsersContent() {
         </div>
         <select
           className="admin-select"
-          value={role}
-          onChange={(e) => updateParams({ role: e.target.value })}
-          aria-label="Filter by role"
-        >
-          <option value="">All roles</option>
-          <option value="member">Members{data ? ` (${data.counts.role.member})` : ""}</option>
-          <option value="staff">Admins{data ? ` (${data.counts.role.staff})` : ""}</option>
-        </select>
-        <select
-          className="admin-select"
           value={sort}
           onChange={(e) => updateParams({ sort: e.target.value === "newest" ? "" : e.target.value })}
           aria-label="Sort users"
@@ -159,6 +158,32 @@ function UsersContent() {
           {SORT_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
+            </option>
+          ))}
+        </select>
+        <select
+          className="admin-select"
+          value={joined}
+          onChange={(e) => updateParams({ joined: e.target.value })}
+          aria-label="Filter by sign-up date"
+        >
+          <option value="">Joined any time</option>
+          {DATE_FILTERS.map((option) => (
+            <option key={option.value} value={option.value}>
+              Joined {option.label.toLowerCase()}
+            </option>
+          ))}
+        </select>
+        <select
+          className="admin-select"
+          value={seen}
+          onChange={(e) => updateParams({ seen: e.target.value })}
+          aria-label="Filter by last sign-in"
+        >
+          <option value="">Signed in any time</option>
+          {DATE_FILTERS.map((option) => (
+            <option key={option.value} value={option.value}>
+              Signed in {option.label.toLowerCase()}
             </option>
           ))}
         </select>
@@ -193,12 +218,9 @@ function UsersContent() {
             <thead>
               <tr>
                 <th>User</th>
-                <th>Role</th>
                 <th>Status</th>
                 <th>Skills</th>
-                <th>Rating</th>
                 <th>Joined</th>
-                <th>Last sign-in</th>
                 <th aria-label="Open" />
               </tr>
             </thead>
@@ -219,19 +241,17 @@ function UsersContent() {
                       <div className="admin-user-cell">
                         <span className="admin-avatar">{initials(name)}</span>
                         <div>
-                          <strong>{name}</strong>
+                          <strong>
+                            {name}
+                            {user.is_staff ? (
+                              <span className="admin-badge purple admin-name-badge">
+                                {user.is_superuser ? "Superuser" : "Admin"}
+                              </span>
+                            ) : null}
+                          </strong>
                           <span>{user.email || `@${user.username}`}</span>
                         </div>
                       </div>
-                    </td>
-                    <td>
-                      {user.is_superuser ? (
-                        <span className="admin-badge purple">Superuser</span>
-                      ) : user.is_staff ? (
-                        <span className="admin-badge purple">Admin</span>
-                      ) : (
-                        <span className="admin-badge">Member</span>
-                      )}
                     </td>
                     <td>
                       <UserStatusBadge
@@ -251,30 +271,11 @@ function UsersContent() {
                           <span title="Skills they want to learn">
                             <strong>{user.learn_count}</strong> learn
                           </span>
-                          {user.verified_count ? (
-                            <span className="admin-badge green" title="Teaching skills verified by quiz">
-                              ✓ {user.verified_count}
-                            </span>
-                          ) : null}
                         </div>
-                      )}
-                    </td>
-                    <td>
-                      {user.rating_count ? (
-                        <span className="admin-rating">
-                          <span className="admin-rating-star">★</span>
-                          {user.rating_average.toFixed(1)}
-                          <span className="admin-muted">({user.rating_count})</span>
-                        </span>
-                      ) : (
-                        <span className="admin-muted">No reviews</span>
                       )}
                     </td>
                     <td className="admin-muted" title={formatDateTime(user.date_joined)}>
                       {formatDate(user.date_joined)}
-                    </td>
-                    <td className="admin-muted" title={user.last_login ? formatDateTime(user.last_login) : undefined}>
-                      {timeAgo(user.last_login)}
                     </td>
                     <td className="admin-row-chevron">
                       <ChevronRightIcon />

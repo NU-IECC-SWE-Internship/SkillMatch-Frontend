@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import type { Match, MatchSkill } from "../../types/match";
 import VerifiedBadge from "../VerifiedBadge";
-import UserRatingBadge from "./UserRatingBadge";
 import "./MatchCard.css";
 
 interface MatchCardProps {
@@ -9,31 +8,56 @@ interface MatchCardProps {
   mutual?: boolean;
 }
 
-function SkillChips({
+const MAX_CHIPS = 3;
+
+function SkillRow({
+  label,
   skills,
-  tone,
   emptyText,
 }: {
+  label: string;
   skills: MatchSkill[];
-  tone: "learn" | "teach";
   emptyText: string;
 }) {
-  if (skills.length === 0) {
-    return <p className="mc-empty">{emptyText}</p>;
-  }
+  const shown = skills.slice(0, MAX_CHIPS);
+  const hidden = skills.length - shown.length;
 
   return (
-    <div className="mc-chips">
-      {skills.map((skill) => (
-        <span
-          key={skill.name}
-          className={`mc-chip mc-chip-${tone}${skill.is_verified ? " is-verified" : ""}`}
-        >
-          {skill.name}
-          <VerifiedBadge verified={skill.is_verified} compact />
-        </span>
-      ))}
+    <div className="mc-row">
+      <span className="mc-label">{label}</span>
+      {skills.length === 0 ? (
+        <p className="mc-empty">{emptyText}</p>
+      ) : (
+        <div className="mc-chips">
+          {shown.map((skill) => (
+            <span key={skill.name} className="mc-chip" title={skill.name}>
+              <span className="mc-chip-name">{skill.name}</span>
+              <VerifiedBadge verified={skill.is_verified} compact />
+            </span>
+          ))}
+          {hidden > 0 && (
+            <span
+              className="mc-chip mc-chip-more"
+              title={skills.slice(MAX_CHIPS).map((skill) => skill.name).join(", ")}
+            >
+              +{hidden}
+            </span>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function RatingLine({ average, count }: { average?: number; count?: number }) {
+  const total = Number(count) || 0;
+  if (total === 0) return <span className="mc-rating">New member</span>;
+
+  return (
+    <span className="mc-rating">
+      <span className="mc-star">★</span> {(Number(average) || 0).toFixed(1)}
+      <span className="mc-rating-count"> · {total} {total === 1 ? "review" : "reviews"}</span>
+    </span>
   );
 }
 
@@ -58,11 +82,7 @@ function MatchCard({ match, mutual = false }: MatchCardProps) {
     : "?";
 
   return (
-    <article
-      className={`mc-card fx-glow fx-lift fx-accent-top fx-pop ${
-        mutual ? "fx-theme-teal" : "fx-theme-blue"
-      }`}
-    >
+    <article className="mc-card fx-pop">
       <header className="mc-head">
         <button
           type="button"
@@ -74,58 +94,27 @@ function MatchCard({ match, mutual = false }: MatchCardProps) {
         </button>
 
         <div className="mc-identity">
-          <button
-            type="button"
-            className="mc-name"
-            onClick={handleProfile}
-          >
+          <button type="button" className="mc-name" onClick={handleProfile} title={match.username}>
             {match.username}
           </button>
-
-          <UserRatingBadge
-            ratingAverage={match.rating_average}
-            ratingCount={match.rating_count}
-          />
+          <RatingLine average={match.rating_average} count={match.rating_count} />
         </div>
 
-        {mutual && <span className="mc-mutual">Mutual match</span>}
+        {mutual && <span className="mc-mutual">Mutual</span>}
       </header>
 
-      <div className="mc-section">
-        <span className="mc-label">You learn</span>
-        <SkillChips
-          skills={match.teach_me}
-          tone="learn"
-          emptyText="No skills listed."
-        />
-      </div>
+      <SkillRow label="Teaches" skills={match.teach_me} emptyText="No skills listed." />
 
-      <div className="mc-section">
-        <span className="mc-label">
-          {mutual ? "You teach" : "You can offer"}
-        </span>
-        <SkillChips
-          skills={match.teach_them}
-          tone="teach"
-          emptyText="Add skills you can teach on your profile."
-        />
-      </div>
+      {mutual && (
+        <SkillRow label="Wants to learn" skills={match.teach_them} emptyText="Nothing listed." />
+      )}
 
       <footer className="mc-foot">
-        <button
-          type="button"
-          className="mc-btn mc-btn-ghost"
-          onClick={handleProfile}
-        >
-          View profile
+        <button type="button" className="mc-btn mc-btn-ghost" onClick={handleProfile}>
+          Profile
         </button>
-
-        <button
-          type="button"
-          className="mc-btn mc-btn-primary"
-          onClick={handleRequest}
-        >
-          Request swap &rarr;
+        <button type="button" className="mc-btn mc-btn-primary" onClick={handleRequest}>
+          Request swap
         </button>
       </footer>
     </article>

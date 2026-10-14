@@ -64,8 +64,8 @@ const RatingModal: React.FC<RatingModalProps> = ({
       >
         <div className="rating-modal-header">
           <div>
-            <span className="rating-modal-badge">Post-Session Feedback</span>
-            <h2 className="rating-modal-title">Rate Your Swap with {partnerName}</h2>
+            <span className="rating-modal-badge">Feedback</span>
+            <h2 className="rating-modal-title">Rate your session with {partnerName}</h2>
           </div>
           <button
             type="button"
@@ -83,12 +83,10 @@ const RatingModal: React.FC<RatingModalProps> = ({
 
           {/* Blind Review Notice */}
           <div className="blind-review-callout">
-            <span className="callout-icon">🔒</span>
             <div className="callout-content">
-              <strong>Double-Blind Guarantee</strong>
+              <strong>Your review stays private</strong>
               <p>
-                Your score and notes remain strictly confidential. {partnerName} cannot see your review
-                until they submit their review or 48 hours pass. It will not affect their score until unlocked.
+                {partnerName} sees it only after they review you, or after 48 hours.
               </p>
             </div>
           </div>
@@ -146,7 +144,7 @@ const RatingModal: React.FC<RatingModalProps> = ({
               className="btn-schedule"
               disabled={submitting}
             >
-              {submitting ? 'Submitting Review...' : 'Submit Blind Review'}
+              {submitting ? 'Submitting…' : 'Submit review'}
             </button>
           </div>
         </form>

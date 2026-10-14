@@ -3,42 +3,46 @@
 
 .fx-theme-blue {
   --accent: #2563eb;
-  --accent-soft: #eff6ff;
-  --accent-border: #bfdbfe;
-  --accent-glow: rgba(59, 130, 246, 0.14);
+  --accent-soft: #eef3fe;
+  --accent-border: #d6e2fc;
+  --accent-glow: rgba(37, 99, 235, 0.08);
 }
 
 .fx-theme-violet {
-  --accent: #7c3aed;
-  --accent-soft: #f5f3ff;
-  --accent-border: #ddd6fe;
-  --accent-glow: rgba(139, 92, 246, 0.14);
+  --accent: #0a4ac6;
+  --accent-soft: #eef3fe;
+  --accent-border: #d6e2fc;
+  --accent-glow: rgba(10, 74, 198, 0.08);
 }
 
 .fx-theme-teal {
-  --accent: #0d9488;
-  --accent-soft: #f0fdfa;
-  --accent-border: #99f6e4;
-  --accent-glow: rgba(20, 184, 166, 0.14);
+  --accent: #15803d;
+  --accent-soft: #ecfdf3;
+  --accent-border: #bbf7d0;
+  --accent-glow: rgba(21, 128, 61, 0.08);
 }
 
 .fx-theme-amber {
-  --accent: #d97706;
+  --accent: #b45309;
   --accent-soft: #fffbeb;
   --accent-border: #fde68a;
-  --accent-glow: rgba(245, 158, 11, 0.14);
+  --accent-glow: rgba(180, 83, 9, 0.08);
 }
 
 .fx-theme-rose {
-  --accent: #e11d48;
-  --accent-soft: #fff1f2;
-  --accent-border: #fecdd3;
-  --accent-glow: rgba(244, 63, 94, 0.13);
+  --accent: #b91c1c;
+  --accent-soft: #fef2f2;
+  --accent-border: #fecaca;
+  --accent-glow: rgba(185, 28, 28, 0.08);
 }
 
-/* Colourful page backdrop */
+/* Page backdrop */
 
 .fx-backdrop {
+  background: var(--sm-bg);
+}
+
+.mp-page.fx-backdrop {
   background:
     radial-gradient(circle at 8% 0%, rgba(96, 165, 250, 0.28) 0%, transparent 38%),
     radial-gradient(circle at 92% 8%, rgba(167, 139, 250, 0.22) 0%, transparent 36%),
@@ -46,16 +50,18 @@
     linear-gradient(180deg, #f5f9ff, #ffffff);
 }
 
-/* Gradient banner */
+.mp-page .fx-glow {
+  --accent-glow: rgba(59, 130, 246, 0.14);
+}
+
+/* Page header card */
 
 .fx-hero {
-  --accent-glow: rgba(255, 255, 255, 0.22);
-  border: 0;
-  background:
-    radial-gradient(circle at 85% -20%, rgba(255, 255, 255, 0.25), transparent 45%),
-    linear-gradient(120deg, #1d4ed8 0%, #4f46e5 50%, #7c3aed 100%);
-  color: #ffffff;
-  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.28);
+  --accent-glow: rgba(37, 99, 235, 0.06);
+  border: 1px solid var(--sm-line);
+  background: var(--sm-surface);
+  color: var(--sm-heading);
+  box-shadow: var(--sm-shadow);
 }
 
 /* Cursor spotlight */
@@ -73,7 +79,7 @@
   z-index: -1;
   background: radial-gradient(
     420px circle at var(--mx, 50%) var(--my, 0%),
-    var(--accent-glow, rgba(59, 130, 246, 0.14)),
+    var(--accent-glow, rgba(37, 99, 235, 0.06)),
     transparent 60%
   );
   opacity: 0;
@@ -89,70 +95,58 @@
 
 .fx-lift {
   transition:
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.3s ease,
-    border-color 0.3s ease;
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 }
 
 .fx-lift:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent-border, #bfdbfe);
-  box-shadow: 0 18px 40px var(--accent-glow, rgba(37, 99, 235, 0.12));
+  transform: translateY(-2px);
+  border-color: var(--sm-line-strong);
+  box-shadow: var(--sm-shadow-hover);
 }
 
 .fx-accent-top {
-  border-top: 3px solid var(--accent, #e2e8f0);
+  border-top: 1px solid var(--sm-line);
 }
 
-.fx-accent-top.fx-lift:hover {
-  border-top-color: var(--accent, #2563eb);
-}
-
-/* Bouncy icon that tilts when its card is hovered */
+/* Tinted icon tile */
 
 .fx-icon {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--accent-border, #e2e8f0);
-  border-radius: 13px;
-  background: var(--accent-soft, #f8fafc);
-  font-size: 21px;
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sm-radius);
+  background: var(--sm-tint-strong);
+  color: var(--sm-primary);
+  font-size: 20px;
 }
 
-.fx-glow:hover .fx-icon,
-.fx-lift:hover .fx-icon {
-  transform: scale(1.1) rotate(-6deg);
-}
-
-/* Gradient button with press feedback */
+/* Primary button */
 
 .fx-btn {
   border: 0;
-  background: linear-gradient(120deg, #2563eb, #4f46e5);
+  background: var(--sm-primary);
   color: #ffffff;
-  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
+  box-shadow: none;
   transition:
-    box-shadow 0.2s ease,
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.2s ease,
+    transform 0.15s ease,
     opacity 0.2s ease;
 }
 
 .fx-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(79, 70, 229, 0.35);
+  background: var(--sm-primary-hover);
 }
 
 .fx-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.97);
+  transform: scale(0.98);
 }
 
 .fx-btn:disabled {
   background: #94a3b8;
-  box-shadow: none;
 }
 
 /* Entrance animations */
@@ -171,7 +165,7 @@
 @keyframes fx-pop {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
@@ -184,30 +178,27 @@
 }
 
 .fx-pop {
-  animation: fx-pop 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: fx-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
-.fx-d1 { animation-delay: 0.06s; }
-.fx-d2 { animation-delay: 0.12s; }
-.fx-d3 { animation-delay: 0.18s; }
-.fx-d4 { animation-delay: 0.24s; }
-.fx-d5 { animation-delay: 0.3s; }
+.fx-d1 { animation-delay: 0.05s; }
+.fx-d2 { animation-delay: 0.1s; }
+.fx-d3 { animation-delay: 0.15s; }
+.fx-d4 { animation-delay: 0.2s; }
+.fx-d5 { animation-delay: 0.25s; }
 
 @media (prefers-reduced-motion: reduce) {
   .fx-rise,
   .fx-pop,
   .fx-glow::before,
   .fx-lift,
-  .fx-icon,
   .fx-btn {
     animation: none !important;
     transition: none !important;
   }
 
   .fx-lift:hover,
-  .fx-btn:hover:not(:disabled),
-  .fx-glow:hover .fx-icon,
-  .fx-lift:hover .fx-icon {
+  .fx-btn:active:not(:disabled) {
     transform: none;
   }
 }

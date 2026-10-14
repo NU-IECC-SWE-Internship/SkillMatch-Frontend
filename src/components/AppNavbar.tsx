@@ -28,7 +28,7 @@ export default function AppNavbar() {
       <div className="app-navbar-main">
         <button type="button" className="app-navbar-brand" onClick={() => navigate("/dashboard")}>
           <BrandIcon className="app-navbar-brand-icon" />
-          <span>SkillSwap</span>
+          <span>SkillMatch</span>
         </button>
 
         <nav className="app-navbar-links" aria-label="Main navigation">

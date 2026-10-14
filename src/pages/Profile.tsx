@@ -1395,10 +1395,8 @@ function Profile() {
               className="profile-brand"
               onClick={() => navigate("/dashboard")}
             >
-              <span className="profile-brand-icon" aria-hidden="true">
-                ↔
-              </span>
-              <span>SkillSwap</span>
+              <BrandIcon className="profile-brand-icon" />
+              <span>SkillMatch</span>
             </button>
 
             <nav className="profile-main-nav" aria-label="Main navigation">
@@ -1479,7 +1477,7 @@ function Profile() {
             onClick={() => navigate("/dashboard")}
           >
             <BrandIcon className="profile-brand-icon" />
-            <span>SkillSwap</span>
+            <span>SkillMatch</span>
           </button>
 
           <nav className="profile-main-nav" aria-label="Main navigation">

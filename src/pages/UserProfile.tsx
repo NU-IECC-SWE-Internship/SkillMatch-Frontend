@@ -9,24 +9,9 @@ import {
 import VerifiedBadge from "../components/VerifiedBadge";
 import NotificationBell from "../components/NotificationBell";
 import { logout } from "../lib/auth";
+import BrandIcon from "../components/BrandIcon";
 
 import "./ProfileRedesign.css";
-function BrandIcon() {
-  return (
-    <span className="upp-brand-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path
-          d="M7 7h10m0 0-3-3m3 3-3 3M17 17H7m0 0 3 3m-3-3 3-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  );
-}
 
 export default function UserProfile() {
   const { userId } = useParams();
@@ -115,8 +100,8 @@ useEffect(() => {
               className="upp-brand"
               onClick={() => navigate("/dashboard")}
             >
-              <BrandIcon />
-              <span>SkillSwap</span>
+              <BrandIcon className="upp-brand-icon" />
+              <span>SkillMatch</span>
             </button>
           </div>
         </header>
@@ -155,8 +140,8 @@ useEffect(() => {
             className="upp-brand"
             onClick={() => navigate("/dashboard")}
           >
-            <BrandIcon />
-            <span>SkillSwap</span>
+            <BrandIcon className="upp-brand-icon" />
+            <span>SkillMatch</span>
           </button>
 
           <nav className="upp-main-nav" aria-label="Main navigation">
@@ -236,7 +221,7 @@ useEffect(() => {
               </div>
 
               <p>
-                View their skills and start a SkillSwap request.
+                View their skills and start a SkillMatch request.
               </p>
             </div>
           </div>

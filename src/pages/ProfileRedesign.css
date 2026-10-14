@@ -52,6 +52,11 @@
   font-weight: 700;
 }
 
+.profile-brand-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
 .profile-main-nav {
   flex: 1;
   display: flex;

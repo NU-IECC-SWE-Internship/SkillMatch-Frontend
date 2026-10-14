@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getProfile } from "../api/profileApi";
 import { loadStaffRole, logout } from "../lib/auth";
 import NotificationBell from "../components/NotificationBell";
+import BrandIcon from "../components/BrandIcon";
 import "./Dashboard.css";
 
 type FeatureIcon = "search" | "calendar" | "profile";
@@ -36,23 +37,6 @@ const FEATURE_CARDS: Array<{
     action: "Manage profile",
   },
 ];
-
-function BrandIcon() {
-  return (
-    <span className="dashboard-brand-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path
-          d="M7 7h10m0 0-3-3m3 3-3 3M17 17H7m0 0 3 3m-3-3 3-3"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </span>
-  );
-}
 
 function FeatureCardIcon({ type }: { type: FeatureIcon }) {
   if (type === "search") {
@@ -170,7 +154,7 @@ export default function Dashboard() {
             className="dashboard-brand"
             onClick={() => navigate("/dashboard")}
           >
-            <BrandIcon />
+            <BrandIcon className="dashboard-brand-icon" />
             <span>SkillSwap</span>
           </button>
 

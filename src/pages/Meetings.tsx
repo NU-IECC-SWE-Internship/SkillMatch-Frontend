@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getMeetings, cancelMeeting, type Meeting } from '../api/meetingsApi';
 import RatingModal from '../components/meetings/RatingModal';
 import ViewReviewModal from '../components/meetings/ViewReviewModal';
+import { handleCursorGlow } from '../lib/cursorGlow';
 import '../components/meetings/Meetings.css';
 
 type TabType = 'active' | 'upcoming' | 'past';
@@ -113,25 +114,15 @@ const Meetings: React.FC = () => {
   }, [activeTab, activeMeetings, upcomingMeetings, pastMeetings]);
 
   return (
-    <div className="meetings-page">
+    <main className="meetings-page fx-backdrop" onPointerMove={handleCursorGlow}>
       <div className="meetings-container">
-        {/* Navigation & Header */}
-        <div className="meetings-topbar">
-          <div>
-            <Link to="/dashboard" className="meetings-nav-link">
-              &larr; Back to Dashboard
-            </Link>
-            <h1 className="meetings-title">Approved Skill Swap Sessions</h1>
-            <p className="meetings-subtitle">
-              Manage your live calls, upcoming scheduled sessions, and exchange reviews.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <Link to="/profile" className="meetings-nav-link" style={{ alignSelf: 'center' }}>
-              My Profile &rarr;
-            </Link>
-          </div>
-        </div>
+        <header className="meetings-header fx-rise">
+          <span className="meetings-eyebrow">Sessions</span>
+          <h1 className="meetings-title">Meetings</h1>
+          <p className="meetings-subtitle">
+            Join live calls, see what is coming up, and leave reviews.
+          </p>
+        </header>
 
         {/* Toast Alert */}
         {toastMessage && (
@@ -156,7 +147,7 @@ const Meetings: React.FC = () => {
             className={`meetings-tab-btn ${activeTab === 'active' ? 'active' : ''}`}
             onClick={() => setActiveTab('active')}
           >
-            🔴 Active Sessions
+            Live
             <span className={`tab-count-badge ${activeMeetings.length > 0 ? 'highlight' : ''}`}>
               {activeMeetings.length}
             </span>
@@ -169,7 +160,7 @@ const Meetings: React.FC = () => {
             className={`meetings-tab-btn ${activeTab === 'upcoming' ? 'active' : ''}`}
             onClick={() => setActiveTab('upcoming')}
           >
-            📅 Incoming / Upcoming
+            Upcoming
             <span className="tab-count-badge">
               {upcomingMeetings.length}
             </span>
@@ -182,7 +173,7 @@ const Meetings: React.FC = () => {
             className={`meetings-tab-btn ${activeTab === 'past' ? 'active' : ''}`}
             onClick={() => setActiveTab('past')}
           >
-            🏁 Past Sessions & Reviews
+            Past
             <span className="tab-count-badge">
               {pastMeetings.length}
             </span>
@@ -222,7 +213,7 @@ const Meetings: React.FC = () => {
             </h3>
             <p>
               {activeTab === 'active'
-                ? 'You do not have any ongoing video calls. Check "Incoming / Upcoming" for your scheduled times.'
+                ? 'No calls are running right now. Check Upcoming for your scheduled times.'
                 : activeTab === 'upcoming'
                 ? 'You have no confirmed future meetings. Explore matches to initiate new skill swaps.'
                 : 'Completed sessions will appear here where you can leave and view peer reviews.'}
@@ -255,17 +246,17 @@ const Meetings: React.FC = () => {
                         <span>{meeting.participant_b_name}</span>
                         {meeting.skill_name && (
                           <span className="meeting-skill-pill">
-                            🎯 {meeting.skill_name}
+                            {meeting.skill_name}
                           </span>
                         )}
                       </h3>
                       <div className="meeting-meta">
                         <span>
-                          📅 {startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at{' '}
+                          {startDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })} at{' '}
                           {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                         <span>
-                          ⏱️ {Math.round((meeting.end_time_ts - meeting.start_time_ts) / 60000)} mins
+                          {Math.round((meeting.end_time_ts - meeting.start_time_ts) / 60000)} mins
                         </span>
                       </div>
                     </div>
@@ -294,7 +285,6 @@ const Meetings: React.FC = () => {
                           to={`/meetings/${meeting.id}/room`}
                           state={{ meeting }}
                           className="btn-join"
-                          style={{ background: 'var(--blue-500)' }}
                         >
                           Enter Early &rarr;
                         </Link>
@@ -383,7 +373,7 @@ const Meetings: React.FC = () => {
           onOpenRateModal={(m) => setRateMeeting(m)}
         />
       </div>
-    </div>
+    </main>
   );
 };
 

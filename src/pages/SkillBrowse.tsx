@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 import { getMatches, getTeachers } from "../api/matchingApi";
 import { getMySkills } from "../api/profileApi";
@@ -211,22 +211,15 @@ function SkillBrowse() {
 
       <div className="teachers-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="teachers-panel">
-          <nav className="teachers-nav">
-            <Link to="/dashboard" className="teachers-nav-link">
-              &larr; Dashboard
-            </Link>
-
-            <Link to="/profile" className="teachers-nav-link">
-              My Profile &rarr;
-            </Link>
-          </nav>
-
-          <header className="teachers-hero fx-hero fx-glow fx-rise">
-            <h1 className="teachers-title">Find someone to learn from</h1>
-            <p className="teachers-subtitle">
-              Browse people who teach the skills you want, or jump straight to
-              mutual matches where you can swap skills both ways.
-            </p>
+          <header className="teachers-hero fx-rise">
+            <div className="teachers-hero-copy">
+              <span className="teachers-eyebrow">Peer exchange catalog</span>
+              <h1 className="teachers-title">Find someone to learn from</h1>
+              <p className="teachers-subtitle">
+                Browse people who teach the skills you want, or jump straight to
+                mutual matches where you can swap skills both ways.
+              </p>
+            </div>
 
             <div className="teachers-search">
               <svg
@@ -248,7 +241,7 @@ function SkillBrowse() {
             </div>
           </header>
 
-          <section className="teachers-filters fx-glow fx-theme-violet fx-rise fx-d1">
+          <section className="teachers-filters fx-rise fx-d1">
             <div className="teachers-tabs" role="tablist">
               <button
                 type="button"

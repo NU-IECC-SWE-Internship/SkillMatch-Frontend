@@ -1,0 +1,16 @@
+.brand-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #2563eb;
+}
+
+.brand-icon svg {
+  width: 62%;
+  height: 62%;
+}

@@ -10,8 +10,6 @@ import { handleCursorGlow } from "../lib/cursorGlow";
 
 import "./Onboarding.css";
 
-const STEP_THEMES = ["violet", "teal", "blue", "amber"];
-
 export default function Onboarding() {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
@@ -73,7 +71,7 @@ export default function Onboarding() {
 
         <section
           key={step}
-          className={`onboarding-card fx-glow fx-accent-top fx-pop fx-theme-${STEP_THEMES[step - 1]}`}
+          className="onboarding-card fx-pop fx-theme-violet"
         >
           <p className="step-label">
             STEP {step} OF 4

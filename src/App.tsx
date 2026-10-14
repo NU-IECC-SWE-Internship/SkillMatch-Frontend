@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, useLocation, useParams } from 'react-router-dom'
 // import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -23,6 +23,7 @@ import AdminUserDetail from "./pages/AdminUserDetail";
 
 import UserProfile from "./pages/UserProfile";
 import FloatingChatButton from './components/chat/FloatingChatButton'
+import AppNavbar from './components/AppNavbar'
 
 // function ProtectedHome() {
 //   if (!isAuthenticated()) {
@@ -113,6 +114,15 @@ function ProtectedUserProfile() {
 
   return <UserOnly><UserProfile /></UserOnly>;
 }
+function WithNavbar() {
+  return (
+    <>
+      {isAuthenticated() && !isStaffUser() && <AppNavbar />}
+      <Outlet />
+    </>
+  );
+}
+
 function ProtectedChat() {
   const { userId } = useParams()
   if (!isAuthenticated()) {
@@ -132,11 +142,18 @@ export default function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<RootRedirect />} />
       <Route path="/dashboard" element={<ProtectedDashboard />} />
-      <Route path="/meetings" element={<ProtectedMeetings />} />
+      <Route element={<WithNavbar />}>
+        <Route path="/meetings" element={<ProtectedMeetings />} />
+        <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
+        <Route path="/skills/:skillId/quiz/review" element={<ProtectedSkillQuizReview />} />
+        <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
+        <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
+        <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
+        <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
+        <Route path="/users/:userId" element={<ProtectedUserProfile />} />
+      </Route>
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
       <Route path="/profile" element={<ProtectedProfile />} />
-      <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
-      <Route path="/skills/:skillId/quiz/review" element={<ProtectedSkillQuizReview />} />
       <Route path="/admin" element={<AuthOnly><AdminOverview /></AuthOnly>} />
       <Route path="/admin/users" element={<AuthOnly><AdminUsers /></AuthOnly>} />
       <Route path="/admin/users/:userId" element={<AuthOnly><AdminUserDetail /></AuthOnly>} />
@@ -144,12 +161,7 @@ export default function App() {
       <Route path="/admin/skills/:skillId/questions" element={<AuthOnly><AdminSkillQuestions /></AuthOnly>} />
       <Route path="/onboarding" element={<ProtectedOnboarding />} />
       <Route path="/matches" element={<Navigate to="/skillbrowse" replace />} />
-      <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
-      <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
-      <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
-      <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
-      <Route path="/users/:userId" element={<ProtectedUserProfile />} />
       <Route path="/chat/:userId" element={<ProtectedChat />} />
     </Routes>
     {isAuthenticated() &&

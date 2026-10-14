@@ -25,6 +25,29 @@ export function formatDateTime(value: string | null) {
     : "—";
 }
 
+export type Period = "today" | "week" | "month";
+
+export const PERIOD_OPTIONS: { value: Period | ""; label: string }[] = [
+  { value: "today", label: "Today" },
+  { value: "week", label: "This week" },
+  { value: "month", label: "This month" },
+  { value: "", label: "All time" },
+];
+
+export function isPeriod(value: string | null): value is Period {
+  return value === "today" || value === "week" || value === "month";
+}
+
+/** Same boundaries as the backend: local midnight today, Monday of this week, 1st of this month. */
+export function periodStart(period: Period | "") {
+  if (!period) return null;
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  if (period === "week") start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  if (period === "month") start.setDate(1);
+  return start;
+}
+
 export function timeAgo(value: string | null) {
   if (!value) return "Never";
   const seconds = Math.round((Date.now() - new Date(value).getTime()) / 1000);

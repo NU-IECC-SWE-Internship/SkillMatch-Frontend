@@ -1,4 +1,31 @@
 :root {
+  --sm-bg: #f7f8fe;
+  --sm-surface: #ffffff;
+  --sm-tint: #f0f3fd;
+  --sm-tint-strong: #e4e9fb;
+  --sm-line: #e7eaf5;
+  --sm-line-strong: #d5dcf0;
+  --sm-primary: #0a4ac6;
+  --sm-primary-hover: #083c9f;
+  --sm-accent: #2563eb;
+  --sm-accent-hover: #1d4ed8;
+  --sm-accent-soft: #dce6fd;
+  --sm-heading: #111827;
+  --sm-body: #475569;
+  --sm-muted: #64748b;
+  --sm-success: #15803d;
+  --sm-success-soft: #dcfce7;
+  --sm-danger: #b91c1c;
+  --sm-danger-soft: #fee2e2;
+  --sm-warning: #b45309;
+  --sm-warning-soft: #fef3c7;
+  --sm-radius-sm: 8px;
+  --sm-radius: 10px;
+  --sm-radius-lg: 14px;
+  --sm-shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 2px 8px rgba(30, 41, 99, 0.04);
+  --sm-shadow-hover: 0 10px 28px rgba(30, 41, 99, 0.08);
+  --sm-focus: 0 0 0 3px rgba(37, 99, 235, 0.2);
+
   --text: #475569;
   --text-h: #0f172a;
   --bg: #f7fbff;
@@ -33,6 +60,23 @@ body,
   margin: 0;
   min-width: 100%;
   min-height: 100%;
+}
+
+.admin-shell,
+.login-page,
+.meetings-page,
+.onboarding-page,
+.teachers-page,
+.send-request-page,
+.requests-page,
+.skill-quiz-page {
+  --display: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --text: var(--sm-body);
+  --text-h: var(--sm-heading);
+  --bg: var(--sm-bg);
+  --border: var(--sm-line);
+  font-family: var(--sans);
 }
 
 body {

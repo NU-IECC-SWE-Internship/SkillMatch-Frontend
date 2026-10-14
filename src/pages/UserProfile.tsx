@@ -67,7 +67,6 @@ export default function UserProfile() {
   const nav = (
     <nav className="mp-nav">
       <Link to={backTo}>&larr; {backLabel}</Link>
-      <Link to="/dashboard">Dashboard &rarr;</Link>
     </nav>
   );
 

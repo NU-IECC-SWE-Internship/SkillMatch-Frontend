@@ -2,13 +2,21 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   approveSkill,
+  deleteSkill,
   denySkill,
   getAdminSkills,
+  renameSkill,
   type AdminSkill,
 } from "../api/adminApi";
 import AdminLayout from "../components/admin/AdminLayout";
 import { SearchIcon } from "../components/admin/AdminIcons";
-import { formatDateTime, timeAgo } from "../components/admin/adminFormat";
+import {
+  PERIOD_OPTIONS,
+  formatDateTime,
+  periodStart,
+  timeAgo,
+  type Period,
+} from "../components/admin/adminFormat";
 import { useConfirm } from "../components/admin/useConfirm";
 import { notifyPendingSkillsChanged, useFlash } from "../components/admin/useFlash";
 import { getErrorMessage } from "../lib/api";
@@ -28,7 +36,10 @@ function SkillsContent() {
   const [approved, setApproved] = useState<AdminSkill[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [added, setAdded] = useState<Period | "">("");
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [renamingId, setRenamingId] = useState<number | null>(null);
+  const [draftName, setDraftName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useFlash();
 
@@ -71,6 +82,67 @@ function SkillsContent() {
     }
   }
 
+  function startRename(skill: AdminSkill) {
+    setRenamingId(skill.id);
+    setDraftName(skill.name);
+  }
+
+  async function handleRename(skill: AdminSkill) {
+    const name = draftName.trim();
+    if (!name || name === skill.name) {
+      setRenamingId(null);
+      return;
+    }
+    try {
+      setBusyId(skill.id);
+      setError(null);
+      const updated = await renameSkill(skill.id, name);
+      setApproved((prev) =>
+        prev
+          .map((item) => (item.id === skill.id ? { ...item, ...updated } : item))
+          .sort((a, b) => a.name.localeCompare(b.name)),
+      );
+      setRenamingId(null);
+      setMessage(`"${skill.name}" renamed to "${updated.name}".`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDelete(skill: AdminSkill) {
+    const confirmed = await confirm({
+      title: `Delete "${skill.name}"?`,
+      message: (
+        <>
+          <p>The skill and its quiz question bank will be deleted. This can't be undone.</p>
+          {skill.user_count > 0 ? (
+            <p>
+              It will also be removed from <strong>{plural(skill.user_count, "user profile")}</strong>,
+              including any verified badges.
+            </p>
+          ) : null}
+        </>
+      ),
+      confirmLabel: "Delete skill",
+      danger: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      setBusyId(skill.id);
+      setError(null);
+      await deleteSkill(skill.id);
+      setApproved((prev) => prev.filter((item) => item.id !== skill.id));
+      setMessage(`"${skill.name}" deleted.`);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function handleDeny(skill: AdminSkill) {
     const confirmed = await confirm({
       title: `Deny "${skill.name}"?`,
@@ -104,9 +176,13 @@ function SkillsContent() {
   }
 
   const query = search.trim().toLowerCase();
+  const addedSince = periodStart(added);
   const list = (tab === "pending" ? pending : approved).filter(
-    (skill) => !query || skill.name.toLowerCase().includes(query),
+    (skill) =>
+      (!query || skill.name.toLowerCase().includes(query)) &&
+      (!addedSince || (skill.created_at !== null && new Date(skill.created_at) >= addedSince)),
   );
+  const filtered = Boolean(query || added);
 
   const tabs: { value: Tab; label: string; count: number }[] = [
     { value: "pending", label: "Awaiting approval", count: pending.length },
@@ -138,7 +214,7 @@ function SkillsContent() {
       <p className="admin-tab-hint">
         {tab === "pending"
           ? "Skills that users typed in themselves. They stay hidden from everyone else until you approve them."
-          : "Skills users can pick. Open a skill to manage the quiz questions used to verify teachers."}
+          : "Skills users can pick. Rename or delete a skill, or open it to manage the quiz questions used to verify teachers."}
       </p>
 
       <div className="admin-toolbar">
@@ -152,6 +228,19 @@ function SkillsContent() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+        <select
+          className="admin-select"
+          value={added}
+          onChange={(e) => setAdded(e.target.value as Period | "")}
+          aria-label="Filter by date added"
+        >
+          <option value="">Added any time</option>
+          {PERIOD_OPTIONS.filter((option) => option.value).map((option) => (
+            <option key={option.value} value={option.value}>
+              Added {option.label.toLowerCase()}
+            </option>
+          ))}
+        </select>
       </div>
 
       {message ? <p className="admin-skills-message">{message}</p> : null}
@@ -165,8 +254,8 @@ function SkillsContent() {
         <p className="admin-skills-status">Loading skills...</p>
       ) : list.length === 0 ? (
         <div className="admin-empty-state">
-          {query ? (
-            <p>No skills match &ldquo;{search}&rdquo;.</p>
+          {filtered ? (
+            <p>No skills match these filters.</p>
           ) : tab === "pending" ? (
             <>
               <strong>All caught up</strong>
@@ -225,9 +314,52 @@ function SkillsContent() {
             </thead>
             <tbody>
               {list.map((skill) => (
-                <tr key={skill.id} onClick={() => navigate(`/admin/skills/${skill.id}/questions`)}>
+                <tr
+                  key={skill.id}
+                  onClick={() => {
+                    if (renamingId !== skill.id) navigate(`/admin/skills/${skill.id}/questions`);
+                  }}
+                >
                   <td>
-                    <strong className="admin-skill-name">{skill.name}</strong>
+                    {renamingId === skill.id ? (
+                      <form
+                        className="admin-rename-form"
+                        onClick={(e) => e.stopPropagation()}
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void handleRename(skill);
+                        }}
+                      >
+                        <input
+                          type="text"
+                          className="admin-search"
+                          value={draftName}
+                          maxLength={100}
+                          autoFocus
+                          aria-label="New skill name"
+                          onChange={(e) => setDraftName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") setRenamingId(null);
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          className="admin-approve-btn admin-small-btn"
+                          disabled={busyId === skill.id}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-secondary-btn admin-small-btn"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </form>
+                    ) : (
+                      <strong className="admin-skill-name">{skill.name}</strong>
+                    )}
                   </td>
                   <td className="admin-muted">{plural(skill.user_count, "user")}</td>
                   <td>
@@ -237,15 +369,32 @@ function SkillsContent() {
                       <span className="admin-badge amber">None yet</span>
                     )}
                   </td>
-                  <td className="admin-muted">{skill.created_by_username ?? "System"}</td>
-                  <td className="admin-table-action">
-                    <Link
-                      to={`/admin/skills/${skill.id}/questions`}
-                      className="admin-panel-link"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Manage questions &rarr;
-                    </Link>
+                  <td className="admin-muted" title={formatDateTime(skill.created_at)}>
+                    {skill.created_by_username ?? "System"}
+                    {skill.created_at ? ` · ${timeAgo(skill.created_at)}` : ""}
+                  </td>
+                  <td className="admin-table-action" onClick={(e) => e.stopPropagation()}>
+                    <div className="admin-row-actions">
+                      <button
+                        type="button"
+                        className="admin-secondary-btn admin-small-btn"
+                        disabled={busyId === skill.id}
+                        onClick={() => startRename(skill)}
+                      >
+                        Rename
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-deny-btn admin-small-btn"
+                        disabled={busyId === skill.id}
+                        onClick={() => handleDelete(skill)}
+                      >
+                        Delete
+                      </button>
+                      <Link to={`/admin/skills/${skill.id}/questions`} className="admin-panel-link">
+                        Manage questions &rarr;
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

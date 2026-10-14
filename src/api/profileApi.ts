@@ -41,6 +41,14 @@ export interface UserSkill {
   can_take_quiz?: boolean
   quiz_available_at?: string | null
   has_quiz_review?: boolean
+  /** Attempts left this week; null for learn skills and verified skills. */
+  quiz_attempts_left?: number | null
+}
+
+export interface QuizAttemptLimits {
+  max_attempts: number
+  attempts_left: number
+  attempt_window_hours: number
 }
 
 export interface QuizQuestion {
@@ -71,7 +79,7 @@ export interface QuizReviewItem {
   is_correct: boolean
 }
 
-export interface SkillQuiz {
+export interface SkillQuiz extends QuizAttemptLimits {
   skill_id: number
   skill_name: string
   pass_score: number
@@ -79,7 +87,6 @@ export interface SkillQuiz {
   can_take: boolean
   has_attempt: boolean
   available_at?: string | null
-  cooldown_hours?: number
   attempt: {
     score: number
     passed: boolean
@@ -90,13 +97,14 @@ export interface SkillQuiz {
   questions: QuizQuestion[]
 }
 
-export interface QuizSubmitResult {
+export interface QuizSubmitResult extends QuizAttemptLimits {
   score: number
   total: number
   passed: boolean
   is_verified: boolean
   pass_score: number
   can_retry?: boolean
+  available_at?: string | null
   review?: QuizReviewItem[]
 }
 
@@ -237,7 +245,7 @@ export async function deleteUserSkill(id: number) {
   })
 }
 
-export interface SkillQuizReview {
+export interface SkillQuizReview extends QuizAttemptLimits {
   skill_id: number
   skill_name: string
   score: number

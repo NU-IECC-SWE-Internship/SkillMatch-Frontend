@@ -1,5 +1,6 @@
 .mp-page {
   min-height: 100svh;
+  padding: 0;
   background: #f8fafc;
   color: #0f172a;
   font-family: var(--sans);
@@ -656,6 +657,7 @@
   padding: 0 4px 0 0;
   list-style: none;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 7px;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
@@ -682,12 +684,19 @@
   border-radius: 8px;
 }
 
+.mp-slot:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .mp-slot.editing {
   border-color: #93c5fd;
   background: #eff6ff;
 }
 
 .mp-slot-day {
+  width: 100%;
+  min-width: 0;
   min-height: 26px;
   padding: 0 6px;
   display: inline-flex;

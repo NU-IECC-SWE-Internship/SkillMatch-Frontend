@@ -3,6 +3,8 @@ import type { SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/api'
 import { register } from '../lib/auth'
+import puzzleHands from '../assets/puzzle-hands.jpg'
+import BrandIcon from '../components/BrandIcon'
 import './Login.css'
 
 export default function Register() {
@@ -36,20 +38,19 @@ export default function Register() {
 
   return (
     <main className="login-page">
-      <div className="login-atmosphere" aria-hidden="true">
-        <span className="orb orb-a" />
-        <span className="orb orb-b" />
-        <span className="orb orb-c" />
-        <span className="grid-glow" />
-      </div>
-
       <section className="login-shell">
         <div className="login-brand">
-          <p className="brand-mark">SkillMatch</p>
+          <p className="brand-mark">
+            <BrandIcon className="brand-mark-icon" />
+            SkillMatch
+          </p>
           <h1>Create your account and start matching.</h1>
           <p className="brand-copy">
-            Join Now what are you waiting for ?
+            Teach what you know, learn what you need, and meet peers who want the same.
           </p>
+          <figure className="login-visual">
+            <img src={puzzleHands} alt="Two hands connecting matching puzzle pieces" />
+          </figure>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>

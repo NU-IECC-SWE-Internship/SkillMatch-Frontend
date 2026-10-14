@@ -8,7 +8,7 @@ import { cursorGlowFor } from "../../lib/cursorGlow";
 import { initials } from "./adminFormat";
 import { OverviewIcon, SkillsIcon, UsersIcon } from "./AdminIcons";
 import { PENDING_SKILLS_CHANGED } from "./useFlash";
-import smLogo from "../../assets/sm-logo.png";
+import BrandIcon from "../BrandIcon";
 import "./AdminLayout.css";
 
 const NAV_ITEMS = [
@@ -66,7 +66,7 @@ export default function AdminLayout({ title, subtitle, actions, children }: Admi
     <div className={menuOpen ? "admin-shell menu-open" : "admin-shell"}>
       <aside className="admin-sidebar">
         <div className="admin-sidebar-brand">
-          <img className="admin-sidebar-logo" src={smLogo} alt="SkillMatch logo" />
+          <BrandIcon className="admin-sidebar-logo" />
           <div>
             <strong>SkillMatch</strong>
             <span>Admin panel</span>
@@ -127,6 +127,7 @@ export default function AdminLayout({ title, subtitle, actions, children }: Admi
             ☰
           </button>
           <div className="admin-topbar-titles">
+            <span className="admin-topbar-eyebrow">Admin console</span>
             <h1>{title}</h1>
             {subtitle ? <p>{subtitle}</p> : null}
           </div>

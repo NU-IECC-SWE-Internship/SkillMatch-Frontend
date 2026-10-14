@@ -5,28 +5,14 @@ import UserRatingBadge from "./UserRatingBadge";
 export function RequestsHeader({
   title,
   subtitle,
-  actions,
 }: {
   title: string;
   subtitle: string;
-  actions?: ReactNode;
 }) {
   return (
     <>
-      <div className="requests-topbar">
-        <Link to="/dashboard" className="requests-nav-link">
-          &larr; Dashboard
-        </Link>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          {actions}
-          <Link to="/skillbrowse" className="requests-nav-link">
-            Browse Skills &rarr;
-          </Link>
-        </div>
-      </div>
-
       <header className="requests-header fx-hero fx-glow fx-rise">
+        <span className="requests-eyebrow">Exchange management</span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </header>

@@ -98,16 +98,27 @@ export async function deleteQuestion(id: number) {
 }
 
 
+export type AdminPeriod = 'today' | 'week' | 'month'
+
 export interface AdminOverview {
+  period: AdminPeriod | 'all'
+  since: string | null
   users: {
     total: number
     active: number
     staff: number
-    new_this_week: number
-    logged_in_this_week: number
     onboarding: number
   }
+  activity: {
+    new_users: number
+    signed_in: number
+    skills_added: number
+    meetings_booked: number
+    meetings_completed: number
+    quizzes: { attempts: number; passed: number; failed: number; abandoned: number }
+  }
   signups: { date: string; count: number }[]
+  signups_unit: 'hour' | 'day' | 'month'
   skills: { approved: number; pending: number; verified_teachers: number }
   top_skills: {
     id: number
@@ -118,7 +129,6 @@ export interface AdminOverview {
   }[]
   requests: Partial<Record<'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED', number>>
   meetings: Partial<Record<MeetingStatus, number>>
-  quizzes_this_week: { attempts: number; passed: number; failed: number; abandoned: number }
   recent_users: {
     id: number
     username: string
@@ -136,6 +146,8 @@ export interface AdminUser {
   id: number
   username: string
   email: string
+  first_name: string
+  last_name: string
   full_name: string
   is_staff: boolean
   is_superuser: boolean
@@ -171,18 +183,28 @@ export interface AdminUserFilters {
   role?: AdminUserRole | ''
   status?: AdminUserStatus | ''
   sort?: AdminUserSort | ''
+  joined?: AdminPeriod | ''
+  seen?: AdminPeriod | ''
   page?: number
+}
+
+export type SkillType = 'teach' | 'learn'
+
+export interface AdminUserSkill {
+  id: number
+  skill_id: number
+  name: string
+  type: SkillType
+  is_verified: boolean
+  /** Only set for unverified teach skills. */
+  quiz_attempts_left: number | null
+  quiz_available_at: string | null
 }
 
 export interface AdminUserDetail extends AdminUser {
   bio: string
-  skills: {
-    id: number
-    skill_id: number
-    name: string
-    type: 'teach' | 'learn'
-    is_verified: boolean
-  }[]
+  quiz_max_attempts: number
+  skills: AdminUserSkill[]
   stats: {
     requests_sent: number
     requests_received: number
@@ -195,6 +217,7 @@ export interface AdminUserDetail extends AdminUser {
     score: number
     passed: boolean
     abandoned: boolean
+    excused: boolean
     created_at: string
   }[]
   meetings: {
@@ -214,8 +237,8 @@ export interface AdminUserDetail extends AdminUser {
 }
 
 
-export async function getAdminOverview(): Promise<AdminOverview> {
-  return apiRequest<AdminOverview>('/api/admin/overview/')
+export async function getAdminOverview(period: AdminPeriod | '' = 'week'): Promise<AdminOverview> {
+  return apiRequest<AdminOverview>(`/api/admin/overview/?period=${period || 'all'}`)
 }
 
 
@@ -234,13 +257,72 @@ export async function getAdminUser(id: number): Promise<AdminUserDetail> {
 }
 
 
+export type AdminUserChanges = Partial<
+  Pick<
+    AdminUserDetail,
+    'is_active' | 'is_staff' | 'username' | 'email' | 'first_name' | 'last_name' | 'bio'
+  >
+>
+
 export async function updateAdminUser(
   id: number,
-  changes: Partial<Pick<AdminUser, 'is_active' | 'is_staff'>>,
+  changes: AdminUserChanges,
 ): Promise<AdminUserDetail> {
   return apiRequest<AdminUserDetail>(`/api/admin/users/${id}/`, {
     method: 'PATCH',
     body: changes,
+  })
+}
+
+
+export async function addAdminUserSkill(
+  userId: number,
+  skillId: number,
+  skillType: SkillType,
+): Promise<AdminUserDetail> {
+  return apiRequest<AdminUserDetail>(`/api/admin/users/${userId}/skills/`, {
+    method: 'POST',
+    body: { skill_id: skillId, skill_type: skillType },
+  })
+}
+
+
+export async function setUserSkillVerified(
+  userSkillId: number,
+  isVerified: boolean,
+): Promise<AdminUserDetail> {
+  return apiRequest<AdminUserDetail>(`/api/admin/user-skills/${userSkillId}/`, {
+    method: 'PATCH',
+    body: { is_verified: isVerified },
+  })
+}
+
+
+export async function removeUserSkill(userSkillId: number): Promise<AdminUserDetail> {
+  return apiRequest<AdminUserDetail>(`/api/admin/user-skills/${userSkillId}/`, {
+    method: 'DELETE',
+  })
+}
+
+
+export async function resetUserSkillQuiz(userSkillId: number): Promise<AdminUserDetail> {
+  return apiRequest<AdminUserDetail>(`/api/admin/user-skills/${userSkillId}/reset-quiz/`, {
+    method: 'POST',
+  })
+}
+
+
+export async function renameSkill(id: number, name: string): Promise<AdminSkill> {
+  return apiRequest<AdminSkill>(`/api/admin/skills/${id}/`, {
+    method: 'PATCH',
+    body: { name },
+  })
+}
+
+
+export async function deleteSkill(id: number) {
+  return apiRequest<{ id: number; status: string }>(`/api/admin/skills/${id}/`, {
+    method: 'DELETE',
   })
 }
 

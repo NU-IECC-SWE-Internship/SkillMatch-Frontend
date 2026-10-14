@@ -3,6 +3,8 @@ import type { SyntheticEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/api'
 import { loadStaffRole, login } from '../lib/auth'
+import puzzleHands from '../assets/puzzle-hands.jpg'
+import BrandIcon from '../components/BrandIcon'
 import './Login.css'
 
 export default function Login() {
@@ -31,20 +33,19 @@ export default function Login() {
 
   return (
     <main className="login-page">
-      <div className="login-atmosphere" aria-hidden="true">
-        <span className="orb orb-a" />
-        <span className="orb orb-b" />
-        <span className="orb orb-c" />
-        <span className="grid-glow" />
-      </div>
-
       <section className="login-shell">
         <div className="login-brand">
-          <p className="brand-mark">SkillMatch</p>
+          <p className="brand-mark">
+            <BrandIcon className="brand-mark-icon" />
+            SkillMatch
+          </p>
           <h1>Find the right skills. Build the right team.</h1>
           <p className="brand-copy">
             Sign in to connect talent with opportunity in one calm, clear place.
           </p>
+          <figure className="login-visual">
+            <img src={puzzleHands} alt="Two hands connecting matching puzzle pieces" />
+          </figure>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>

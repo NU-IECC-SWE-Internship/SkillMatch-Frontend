@@ -91,6 +91,18 @@ function retryLabel(availableAt: string | null | undefined) {
 
 
 
+  if (hours >= 24) {
+
+    const days = Math.floor(hours / 24);
+
+    const restHours = hours % 24;
+
+    return restHours ? `Retry in ${days}d ${restHours}h` : `Retry in ${days}d`;
+
+  }
+
+
+
   return rest ? `Retry in ${hours}h ${rest}m` : `Retry in ${hours}h`;
 
 }
@@ -1001,6 +1013,13 @@ function Profile() {
         >
 
           Verify with quiz
+
+          {skill.has_quiz_attempt &&
+          typeof skill.quiz_attempts_left === "number"
+            ? ` · ${skill.quiz_attempts_left} ${
+                skill.quiz_attempts_left === 1 ? "try" : "tries"
+              } left`
+            : ""}
 
         </button>
 

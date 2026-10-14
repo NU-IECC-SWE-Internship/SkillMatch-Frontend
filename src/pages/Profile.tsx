@@ -25,6 +25,7 @@ import type {
 import VerifiedBadge from "../components/VerifiedBadge";
 import NotificationBell from "../components/NotificationBell";
 import { logout } from "../lib/auth";
+import BrandIcon from "../components/BrandIcon";
 import "./MyProfile.css";
 import "./ProfileRedesign.css";
 const DAYS = [
@@ -1313,9 +1314,7 @@ function Profile() {
             className="profile-brand"
             onClick={() => navigate("/dashboard")}
           >
-            <span className="profile-brand-icon" aria-hidden="true">
-              ↔
-            </span>
+            <BrandIcon className="profile-brand-icon" />
             <span>SkillSwap</span>
           </button>
 

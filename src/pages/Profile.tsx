@@ -1,61 +1,129 @@
 import { useEffect, useState } from "react";
+
+
+
 import type { FormEvent } from "react";
+
+
+
 import { Link, useNavigate } from "react-router-dom";
+
+
+
 import {
+
   getProfile,
+
   updateEmailNotifications,
+
   updateProfileSettings,
+
   getSkills,
+
   createSkill,
+
   getMySkills,
+
   addUserSkill,
+
   deleteUserSkill,
+
   getAvailability,
+
   addAvailability,
+
   updateAvailability,
+
   deleteAvailability,
 
 } from "../api/profileApi";
+
+
+
 import type {
+
   Skill,
+
   UserSkill,
+
   AvailabilitySlot,
+
 } from "../api/profileApi";
 
+
+
 import VerifiedBadge from "../components/VerifiedBadge";
+
+
+
 import NotificationBell from "../components/NotificationBell";
 import { logout } from "../lib/auth";
 import BrandIcon from "../components/BrandIcon";
 import "./MyProfile.css";
 import "./ProfileRedesign.css";
+
+
+
 const DAYS = [
+
   "monday",
+
   "tuesday",
+
   "wednesday",
+
   "thursday",
+
   "friday",
+
   "saturday",
+
   "sunday",
+
 ];
 
 
 
 const sessionDurationOptions = [
+
   { value: 15, label: "15 minutes" },
+
   { value: 30, label: "30 minutes" },
+
   { value: 45, label: "45 minutes" },
+
+
+
   { value: 60, label: "1 hour" },
+
   { value: 75, label: "1 hour 15 minutes" },
+
   { value: 90, label: "1 hour 30 minutes" },
+
   { value: 105, label: "1 hour 45 minutes" },
+
+
+
   { value: 120, label: "2 hours" },
+
   { value: 135, label: "2 hours 15 minutes" },
+
   { value: 150, label: "2 hours 30 minutes" },
+
   { value: 165, label: "2 hours 45 minutes" },
+
+
+
   { value: 180, label: "3 hours" },
+
   { value: 195, label: "3 hours 15 minutes" },
+
   { value: 210, label: "3 hours 30 minutes" },
+
   { value: 225, label: "3 hours 45 minutes" },
+
+
+
   { value: 240, label: "4 hours" },
 
 ];
@@ -198,6 +266,10 @@ function Profile() {
 
   const [ratingCount, setRatingCount] = useState(0);
 
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  const [profileLoadError, setProfileLoadError] = useState("");
+
 
 
   // ---------------- SKILLS ----------------
@@ -263,6 +335,9 @@ function Profile() {
   useEffect(() => {
 
     async function loadData() {
+
+      setProfileLoading(true);
+      setProfileLoadError("");
 
       try {
 
@@ -349,6 +424,11 @@ function Profile() {
       } catch (error) {
 
         console.error(error);
+        setProfileLoadError("Could not load your profile.");
+
+      } finally {
+
+        setProfileLoading(false);
 
       }
 
@@ -1305,6 +1385,90 @@ function Profile() {
     navigate("/login", { replace: true });
   }
 
+  if (profileLoading || profileLoadError) {
+    return (
+      <main className="mp-page">
+        <header className="profile-topbar">
+          <div className="profile-topbar-main">
+            <button
+              type="button"
+              className="profile-brand"
+              onClick={() => navigate("/dashboard")}
+            >
+              <span className="profile-brand-icon" aria-hidden="true">
+                ↔
+              </span>
+              <span>SkillSwap</span>
+            </button>
+
+            <nav className="profile-main-nav" aria-label="Main navigation">
+              <button type="button" onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </button>
+              <button type="button" onClick={() => navigate("/skillbrowse")}>
+                Browse Skills
+              </button>
+              <button type="button" onClick={() => navigate("/requests")}>
+                Requests
+              </button>
+              <button type="button" onClick={() => navigate("/meetings")}>
+                Sessions
+              </button>
+              <button
+                type="button"
+                className="active"
+                onClick={() => navigate("/profile")}
+              >
+                Profile
+              </button>
+            </nav>
+
+            <div className="profile-topbar-actions">
+              <NotificationBell />
+              <button
+                type="button"
+                className="profile-logout"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+
+          <div className="profile-mobile-nav">
+            <button type="button" onClick={() => navigate("/dashboard")}>
+              Dashboard
+            </button>
+            <button type="button" onClick={() => navigate("/skillbrowse")}>
+              Browse
+            </button>
+            <button type="button" onClick={() => navigate("/requests")}>
+              Requests
+            </button>
+            <button type="button" onClick={() => navigate("/meetings")}>
+              Sessions
+            </button>
+            <button
+              type="button"
+              className="active"
+              onClick={() => navigate("/profile")}
+            >
+              Profile
+            </button>
+          </div>
+        </header>
+
+        <div className="mp-container">
+          <section className="mp-card">
+            <p className={profileLoadError ? "mp-error" : "mp-empty"}>
+              {profileLoadError || "Loading your profile..."}
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="mp-page">
       <header className="profile-topbar">
@@ -1377,62 +1541,93 @@ function Profile() {
 
       <div className="mp-container">
         <header className="mp-hero">
-          <div className="mp-hero-user">
-            <div className="mp-avatar">
-              {initial}
-            </div>
-
-            <div className="mp-hero-info">
-              <div className="mp-name-row">
-                <h1>{username || "My profile"}</h1>
-
-                {ratingCount > 0 ? (
-                  <span className="mp-rating">
-                    <span className="mp-star">★</span>
-                    <strong>{ratingAverage.toFixed(1)}</strong>
-                    <span>
-                      ({ratingCount} review
-                      {ratingCount === 1 ? "" : "s"})
-                    </span>
-                  </span>
-                ) : (
-                  <span className="mp-rating new">
-                    New member
-                  </span>
-                )}
+          <div className="mp-hero-top">
+            <div className="mp-hero-user">
+              <div className="mp-avatar">
+                {initial}
               </div>
 
-              <p className="mp-profile-caption">
-                Manage your skills, bio and weekly availability.
-              </p>
+              <div className="mp-hero-info">
+                <div className="mp-name-row">
+                  <h1>{username || "My profile"}</h1>
+
+                  {ratingCount > 0 ? (
+                    <span className="mp-rating">
+                      <span className="mp-star">★</span>
+                      <strong>{ratingAverage.toFixed(1)}</strong>
+                      <span>
+                        ({ratingCount} review
+                        {ratingCount === 1 ? "" : "s"})
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="mp-rating new">
+                      New member
+                    </span>
+                  )}
+                </div>
+
+                <p className="mp-profile-caption">
+                  Manage your skills, bio and weekly availability.
+                </p>
+              </div>
             </div>
+
+            <div className="mp-summary-stats">
+              <div className="mp-stat">
+                <strong>{teachSkills.length}</strong>
+                <span>Teaching Skills</span>
+              </div>
+
+              <div className="mp-stat">
+                <strong>{learnSkills.length}</strong>
+                <span>Learning Skills</span>
+              </div>
+
+              <div className="mp-stat">
+                <strong>{slots.length}</strong>
+                <span>Availability Slots</span>
+              </div>
+            </div>
+
+            {userId !== null && (
+              <Link
+                to={`/users/${userId}`}
+                className="mp-btn mp-btn-ghost mp-public-profile"
+              >
+                View Public Profile
+              </Link>
+            )}
           </div>
 
-          <div className="mp-summary-stats">
-            <div className="mp-stat">
-              <strong>{teachSkills.length}</strong>
-              <span>Teaching Skills</span>
+          <section className="mp-hero-about">
+            <div className="mp-card-head">
+              <div className="mp-card-title">
+                <h2>About Me</h2>
+                <p>A short intro helps people decide to swap with you.</p>
+              </div>
             </div>
 
-            <div className="mp-stat">
-              <strong>{learnSkills.length}</strong>
-              <span>Learning Skills</span>
-            </div>
+            <textarea
+              className="mp-textarea"
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="e.g. Frontend developer who loves teaching React. Looking to learn data analysis."
+            />
 
-            <div className="mp-stat">
-              <strong>{slots.length}</strong>
-              <span>Availability Slots</span>
-            </div>
-          </div>
+            <div className="mp-about-footer">
+              <span>Visible on your public profile.</span>
 
-          {userId !== null && (
-            <Link
-              to={`/users/${userId}`}
-              className="mp-btn mp-btn-ghost mp-public-profile"
-            >
-              View Public Profile
-            </Link>
-          )}
+              <button
+                type="button"
+                className="mp-btn mp-btn-primary"
+                onClick={saveProfile}
+                disabled={profileSaving || bio === savedBio}
+              >
+                {profileSaving ? "Saving..." : "Save Bio"}
+              </button>
+            </div>
+          </section>
         </header>
 
         {message && (
@@ -1450,41 +1645,6 @@ function Profile() {
 
         <div className="mp-profile-layout">
           <div className="mp-profile-column">
-            <section className="mp-card mp-about-card">
-              <div className="mp-card-head">
-                <div className="mp-card-title">
-                  <h2>About Me</h2>
-                  <p>
-                    A short intro helps people decide to swap with you.
-                  </p>
-                </div>
-              </div>
-
-              <textarea
-                className="mp-textarea"
-                value={bio}
-                onChange={(e) =>
-                  setBio(e.target.value)
-                }
-                placeholder="e.g. Frontend developer who loves teaching React. Looking to learn data analysis."
-              />
-
-              <div className="mp-about-footer">
-                <span>
-                  Visible on your public profile.
-                </span>
-
-                <button
-                  type="button"
-                  className="mp-btn mp-btn-primary"
-                  onClick={saveProfile}
-                  disabled={profileSaving || bio === savedBio}
-                >
-                  {profileSaving ? "Saving..." : "Save Bio"}
-                </button>
-              </div>
-            </section>
-
             {renderSkillSection("teach")}
           </div>
 

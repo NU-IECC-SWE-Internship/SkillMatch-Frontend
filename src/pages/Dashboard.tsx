@@ -26,7 +26,7 @@ const FEATURE_CARDS: Array<{
     to: "/meetings",
     icon: "calendar",
     title: "Upcoming Sessions",
-    description: "View and manage your scheduled SkillSwap sessions.",
+    description: "View and manage your scheduled SkillMatch sessions.",
     action: "View sessions",
   },
   {
@@ -155,7 +155,7 @@ export default function Dashboard() {
             onClick={() => navigate("/dashboard")}
           >
             <BrandIcon className="dashboard-brand-icon" />
-            <span>SkillSwap</span>
+            <span>SkillMatch</span>
           </button>
 
           <nav className="dashboard-nav" aria-label="Main navigation">
@@ -300,7 +300,7 @@ export default function Dashboard() {
         <section className="dashboard-actions-section">
           <div className="dashboard-section-heading">
             <div>
-              <span>SkillSwap</span>
+              <span>SkillMatch</span>
               <h2>What would you like to do?</h2>
             </div>
           </div>

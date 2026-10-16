@@ -73,6 +73,14 @@ export interface Meeting {
 
   user_review?: ReviewItem | null;
   partner_review?: ReviewItem | null;
+
+  // Cancellation information
+  can_cancel?: boolean;
+  cancellation_reason?: string;
+  cancelled_by_username?: string | null;
+  cancelled_at?: string | null;
+  cancellation_cutoff_ts?: number;
+  cancel_notice_hours?: number;
 }
 
 
@@ -308,9 +316,11 @@ export async function createMeeting(
 // ========================================================
 
 export async function cancelMeeting(
-  id: number
+  id: number,
+  reason: string
 ): Promise<{
   message: string;
+  meeting?: Meeting;
 }> {
 
   const response =
@@ -318,6 +328,7 @@ export async function cancelMeeting(
       `/api/meetings/${id}/`,
       {
         method: "DELETE",
+        body: JSON.stringify({ reason }),
       }
     );
 

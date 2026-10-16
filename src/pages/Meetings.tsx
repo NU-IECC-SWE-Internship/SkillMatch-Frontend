@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { getMeetings, cancelMeeting, type Meeting } from '../api/meetingsApi';
+import { getMeetings, type Meeting } from '../api/meetingsApi';
 import RatingModal from '../components/meetings/RatingModal';
 import ViewReviewModal from '../components/meetings/ViewReviewModal';
+import CancelMeetingModal from '../components/meetings/CancelMeetingModal';
 import { handleCursorGlow } from '../lib/cursorGlow';
 import '../components/meetings/Meetings.css';
 
@@ -12,13 +13,13 @@ const Meetings: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('upcoming');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Modals state
   const [rateMeeting, setRateMeeting] = useState<Meeting | null>(null);
   const [viewReviewMeeting, setViewReviewMeeting] = useState<Meeting | null>(null);
+  const [cancelModalMeeting, setCancelModalMeeting] = useState<Meeting | null>(null);
 
   const fetchAllMeetings = async (): Promise<void> => {
     try {
@@ -50,20 +51,10 @@ const Meetings: React.FC = () => {
     fetchAllMeetings();
   }, []);
 
-  const handleCancelMeeting = async (meetingId: number) => {
-    if (!window.confirm('Are you sure you want to cancel this scheduled meeting session?')) {
-      return;
-    }
-    try {
-      setCancellingId(meetingId);
-      await cancelMeeting(meetingId);
-      setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
-      setToastMessage('Meeting session has been cancelled.');
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : 'Failed to cancel meeting.');
-    } finally {
-      setCancellingId(null);
-    }
+  const handleCancellationSuccess = (meetingId: number, message: string) => {
+    setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+    setToastMessage(message);
+    setTimeout(() => setToastMessage(null), 6000);
   };
 
   const handleRatingSuccess = (updatedMeeting: Meeting, message: string) => {
@@ -288,14 +279,22 @@ const Meetings: React.FC = () => {
                         >
                           Enter Early &rarr;
                         </Link>
-                        <button
-                          type="button"
-                          onClick={() => handleCancelMeeting(meeting.id)}
-                          disabled={cancellingId === meeting.id}
-                          className="btn-cancel-action"
-                        >
-                          {cancellingId === meeting.id ? 'Cancelling...' : 'Cancel'}
-                        </button>
+                        {meeting.can_cancel ?? (Date.now() <= meeting.start_time_ts - (meeting.cancel_notice_hours || 2) * 3600 * 1000) ? (
+                          <button
+                            type="button"
+                            onClick={() => setCancelModalMeeting(meeting)}
+                            className="btn-cancel-action"
+                          >
+                            Cancel
+                          </button>
+                        ) : (
+                          <span
+                            className="badge-locked"
+                            title={`Cancellation locked within ${meeting.cancel_notice_hours || 2} hours of start time.`}
+                          >
+                            🔒 Cancel locked (&lt;{meeting.cancel_notice_hours || 2}h)
+                          </span>
+                        )}
                       </>
                     )}
 
@@ -371,6 +370,14 @@ const Meetings: React.FC = () => {
           meeting={viewReviewMeeting}
           onClose={() => setViewReviewMeeting(null)}
           onOpenRateModal={(m) => setRateMeeting(m)}
+        />
+
+        {/* Cancellation Modal */}
+        <CancelMeetingModal
+          isOpen={!!cancelModalMeeting}
+          meeting={cancelModalMeeting}
+          onClose={() => setCancelModalMeeting(null)}
+          onSuccess={handleCancellationSuccess}
         />
       </div>
     </main>

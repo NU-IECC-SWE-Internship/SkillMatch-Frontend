@@ -5,20 +5,20 @@ import {
   refreshAccessToken,
 } from "../lib/auth";
 
-export interface UseWebSocketOptions<T = unknown> {
-  endpoint: string;
-  enabled?: boolean;
-  onMessage?: (data: T) => void;
-  onOpen?: () => void;
-  onClose?: (event: CloseEvent) => void;
+export interface UseWebSocketOptions<T = unknown> {  //everything the caller configures
+  endpoint: string;   //e.g. "/ws/notifications/"
+  enabled?: boolean;   // false on login/register pages
+  onMessage?: (data: T) => void;  //what to do when a message arrives
+  onOpen?: () => void;   //optional callback for when the connection opens
+  onClose?: (event: CloseEvent) => void;  
   onError?: (event: Event) => void;
-  onConnectStart?: () => Promise<void> | void;
+  onConnectStart?: () => Promise<void> | void; //runs right before connecting (e.g. fetch initial state)
 }
 
-export interface UseWebSocketReturn {
+export interface UseWebSocketReturn { //everything the caller recives back to use in ui
   isConnected: boolean;
-  sendMessage: (payload: unknown) => boolean;
-  reconnect: (forceTokenRefresh?: boolean) => void;
+  sendMessage: (payload: unknown) => boolean;  //function to send data to django
+  reconnect: (forceTokenRefresh?: boolean) => void;  //manual reconnect trigger
 }
 
 function buildWebSocketUrl(endpoint: string, token: string): string {

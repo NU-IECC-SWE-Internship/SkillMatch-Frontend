@@ -1,0 +1,17 @@
+{
+  "name": "SkillMatch",
+  "short_name": "SkillMatch",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "description": "SkillMatch - Learn, Teach, and Exchange Skills",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -37,15 +37,51 @@ function getIconForType(type: string): string {
       return "ℹ️";
     case "meeting_cancelled":
       return "⚠️";
+    case "meeting_reminder":
+      return "⏰";
+    case "rating_prompt":
+      return "⭐";
+    case "partner_reviewed":
+      return "📝";
+    case "reviews_revealed":
+      return "✨";
+    case "skill_approved":
+      return "🎓";
+    case "skill_rejected":
+      return "ℹ️";
+    case "chat_message":
+      return "💬";
+    case "return_session_proposed":
+      return "📅";
+    case "return_session_confirmed":
+      return "🤝";
+    case "return_session_declined":
+      return "🔄";
+    case "skill_verified":
+      return "🌟";
+    case "welcome":
+      return "👋";
     default:
       return "🔔";
   }
 }
 
 export default function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    pushSupported,
+    pushSubscribed,
+    enablePushNotifications,
+    emailNotifications,
+    emailNotificationsLoading,
+    toggleEmailNotifications,
+  } = useNotifications();
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isEnablingPush, setIsEnablingPush] = useState<boolean>(false);
+  const [emailFeedback, setEmailFeedback] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -83,6 +119,35 @@ export default function NotificationBell() {
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await markAllAsRead();
+  };
+
+  const handleEnablePush = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEnablingPush(true);
+    try {
+      const res = await enablePushNotifications();
+      if (!res.success && res.error) {
+        alert(res.error);
+      }
+    } finally {
+      setIsEnablingPush(false);
+    }
+  };
+
+  const handleToggleEmail = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    const success = await toggleEmailNotifications();
+    if (success) {
+      setEmailFeedback(
+        !emailNotifications
+          ? "Email notifications turned on"
+          : "Email notifications paused"
+      );
+      setTimeout(() => setEmailFeedback(""), 3500);
+    } else {
+      setEmailFeedback("Failed to update setting");
+      setTimeout(() => setEmailFeedback(""), 3500);
+    }
   };
 
   return (
@@ -125,6 +190,28 @@ export default function NotificationBell() {
             )}
           </div>
 
+          {pushSupported && !pushSubscribed && (
+            <div className="push-prompt-banner">
+              <div className="push-prompt-content">
+                <span className="push-prompt-icon">🔔</span>
+                <div className="push-prompt-text-group">
+                  <span className="push-prompt-title">Desktop & device alerts </span>
+                  <span className="push-prompt-subtitle">
+                    Get notified even when away from the tab
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="push-prompt-btn"
+                onClick={handleEnablePush}
+                disabled={isEnablingPush}
+              >
+                {isEnablingPush ? "Enabling..." : "Enable"}
+              </button>
+            </div>
+          )}
+
           <div className="notification-list">
             {notifications.length === 0 ? (
               <div className="notification-empty">
@@ -155,6 +242,32 @@ export default function NotificationBell() {
                   {!item.is_read && <span className="unread-dot" />}
                 </div>
               ))
+            )}
+          </div>
+
+          <div className="notification-dropdown-footer">
+            <div className="notification-pref-item">
+              <div className="notification-pref-info">
+                <span className="notification-pref-icon">✉️</span>
+                <div className="notification-pref-text">
+                  <span className="notification-pref-title">Email Notifications</span>
+                  <span className="notification-pref-desc">
+                    Get emails for match requests & updates
+                  </span>
+                </div>
+              </div>
+              <label className="notification-switch" title="Toggle email notifications">
+                <input
+                  type="checkbox"
+                  checked={emailNotifications}
+                  disabled={emailNotificationsLoading}
+                  onChange={handleToggleEmail}
+                />
+                <span className="notification-switch-slider" />
+              </label>
+            </div>
+            {emailFeedback && (
+              <div className="notification-pref-feedback">{emailFeedback}</div>
             )}
           </div>
         </div>

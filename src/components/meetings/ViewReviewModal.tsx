@@ -48,7 +48,11 @@ const ViewReviewModal: React.FC<ViewReviewModalProps> = ({
         <div className="rating-modal-header">
           <div>
             <span className="rating-modal-badge">
-              {meeting.is_revealed ? '✨ Published Feedback' : '🔒 Double-Blind In Progress'}
+              {meeting.is_revealed
+                ? '✨ Published Feedback'
+                : isDeadlinePassed
+                ? '⏱️ Review Window Closed'
+                : '🔒 Double-Blind In Progress'}
             </span>
             <h2 className="rating-modal-title">Reviews for Swap with {partnerName}</h2>
           </div>
@@ -153,6 +157,10 @@ const ViewReviewModal: React.FC<ViewReviewModalProps> = ({
                   <p>{partnerName} did not submit a review within the 48-hour window.</p>
                 </div>
               )
+            ) : isDeadlinePassed ? (
+              <div className="review-card-empty">
+                <p>{partnerName} did not submit a review within the 48-hour window.</p>
+              </div>
             ) : (
               <div className="review-card-locked">
                 <div className="locked-icon">🔒</div>

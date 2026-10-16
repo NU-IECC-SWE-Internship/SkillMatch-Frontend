@@ -11,13 +11,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 
 import {
-
   getProfile,
-
-  updateEmailNotifications,
-
   updateProfileSettings,
-
   getSkills,
 
   createSkill,
@@ -256,14 +251,6 @@ function Profile() {
 
   const [ratingAverage, setRatingAverage] = useState(0);
 
-  const [emailNotifications, setEmailNotifications] = useState(true);
-
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-
-  const [notificationFeedback, setNotificationFeedback] = useState("");
-
-
-
   const [ratingCount, setRatingCount] = useState(0);
 
   const [profileLoading, setProfileLoading] = useState(true);
@@ -400,14 +387,6 @@ function Profile() {
 
 
         setRatingCount(profileData.rating_count || 0);
-
-
-
-        setEmailNotifications(
-
-          profileData.email_notifications_enabled ?? true
-
-        );
 
 
 
@@ -1863,54 +1842,6 @@ function Profile() {
           </div>
         </div>
 
-        <section className="mp-notification-card">
-          <div>
-            <strong>Email notifications</strong>
-            <span>
-              Receive email updates for requests, changes and meeting cancellations.
-            </span>
-          </div>
-
-          <label className="mp-notification-toggle">
-            <input
-              type="checkbox"
-              checked={emailNotifications}
-              disabled={notificationsLoading}
-              onChange={async () => {
-                const nextVal = !emailNotifications;
-                setEmailNotifications(nextVal);
-                setNotificationsLoading(true);
-                setNotificationFeedback("");
-
-                try {
-                  await updateEmailNotifications(nextVal);
-                  setNotificationFeedback(
-                    nextVal
-                      ? "Email notifications turned on"
-                      : "Email notifications paused"
-                  );
-                  setTimeout(() => setNotificationFeedback(""), 3500);
-                } catch (err) {
-                  console.error(err);
-                  setEmailNotifications(!nextVal);
-                  setNotificationFeedback("Failed to update setting");
-                } finally {
-                  setNotificationsLoading(false);
-                }
-              }}
-            />
-
-            <span>
-              {emailNotifications ? "Enabled" : "Disabled"}
-            </span>
-          </label>
-
-          {notificationFeedback && (
-            <p className="mp-notification-feedback">
-              {notificationFeedback}
-            </p>
-          )}
-        </section>
 
       </div>
     </main>

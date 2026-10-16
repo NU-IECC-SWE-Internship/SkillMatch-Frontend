@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
@@ -14,19 +15,33 @@ import {
 } from "../api/notificationApi";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { isAuthenticated } from "../lib/auth";
+import {
+  isPushSupported,
+  getExistingPushSubscription,
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+} from "../lib/pushSubscription";
+import { getProfile, updateEmailNotifications } from "../api/profileApi";
 
 export interface NotificationContextType {
-  notifications: NotificationItem[];
-  unreadCount: number;
-  markAsRead: (id: number) => Promise<void>;
-  markAllAsRead: () => Promise<void>;
-  refreshNotifications: () => Promise<void>;
-  isConnected: boolean;
+  notifications: NotificationItem[];  //the list of messages (title, message, date)
+  unreadCount: number;  // the red badge number (e.g., 5) when there are unread messages
+  markAsRead: (id: number) => Promise<void>; // mark a notification as read
+  markAllAsRead: () => Promise<void>; // mark all notifications as read
+  refreshNotifications: () => Promise<void>; // refresh the notifications
+  isConnected: boolean; // check if WebSocket is connected
+  pushSupported: boolean; // check if push notifications are supported
+  pushSubscribed: boolean; // Did user subscribe to push notifications? 
+  enablePushNotifications: () => Promise<{ success: boolean; error?: string }>; // Enable push notifications
+  disablePushNotifications: () => Promise<boolean>; // Disable push notifications
+  emailNotifications: boolean; // User email notifications toggle state
+  emailNotificationsLoading: boolean; // Updating email notifications setting
+  toggleEmailNotifications: () => Promise<boolean>; // Toggle email notifications on/off
 }
 
 const NotificationContext = createContext<NotificationContextType | null>(null);
 
-type NotificationWebSocketEvent =
+type NotificationWebSocketEvent = // this is the type of the messages that will be sent from the backend to the frontend via WebSocket
   | {
       type: "new_notification";
       notification: NotificationItem;
@@ -43,9 +58,9 @@ type NotificationWebSocketEvent =
     };
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const location = useLocation(); // Get current location
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState<number>(0); 
+  const location = useLocation(); // Get current page
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]); // all notifications (read + unread)  
+  const [unreadCount, setUnreadCount] = useState<number>(0); // the red badge number (e.g., 5) when there are unread messages
 
   const isPublicPage =
     location.pathname === "/login" || location.pathname === "/register"; // Check if current page is public page
@@ -126,6 +141,66 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const [pushSupported] = useState<boolean>(() => isPushSupported());
+  const [pushSubscribed, setPushSubscribed] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (pushSupported && isAuthenticated()) {
+      void getExistingPushSubscription().then((sub) => {
+        setPushSubscribed(Boolean(sub));
+      });
+    }
+  }, [pushSupported]);
+
+  const enablePushNotifications = useCallback(async () => {
+    const res = await subscribeToPushNotifications();
+    if (res.success) {
+      setPushSubscribed(true);
+    }
+    return res;
+  }, []);
+
+  const disablePushNotifications = useCallback(async () => {
+    const success = await unsubscribeFromPushNotifications();
+    if (success) {
+      setPushSubscribed(false);
+    }
+    return success;
+  }, []);
+
+  const [emailNotifications, setEmailNotifications] = useState<boolean>(true);
+  const [emailNotificationsLoading, setEmailNotificationsLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isAuthenticated()) {
+      void getProfile()
+        .then((profile) => {
+          if (typeof profile.email_notifications_enabled === "boolean") {
+            setEmailNotifications(profile.email_notifications_enabled);
+          }
+        })
+        .catch(() => {
+          // Ignore background fetch error
+        });
+    }
+  }, [location.pathname]);
+
+  const toggleEmailNotifications = useCallback(async () => {
+    const nextVal = !emailNotifications;
+    setEmailNotifications(nextVal);
+    setEmailNotificationsLoading(true);
+    try {
+      await updateEmailNotifications(nextVal);
+      return true;
+    } catch (err) {
+      console.error("Failed to update email notifications:", err);
+      setEmailNotifications(!nextVal);
+      return false;
+    } finally {
+      setEmailNotificationsLoading(false);
+    }
+  }, [emailNotifications]);
+
   return (
     <NotificationContext.Provider
       value={{
@@ -135,6 +210,13 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAllAsRead,
         refreshNotifications,
         isConnected,
+        pushSupported,
+        pushSubscribed,
+        enablePushNotifications,
+        disablePushNotifications,
+        emailNotifications,
+        emailNotificationsLoading,
+        toggleEmailNotifications,
       }}
     >
       {children}

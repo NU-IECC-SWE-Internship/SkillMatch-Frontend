@@ -955,6 +955,12 @@ function SendRequest() {
 
   });
 
+  setStatusModal({
+    title: "Request sent!",
+    message: `Your request was sent to ${partnerUsername} successfully.`,
+    type: "success",
+  });
+
     } catch (error) {
 
       const message = getErrorMessage(error);
@@ -1079,7 +1085,17 @@ function SendRequest() {
 
         type={statusModal?.type ?? "success"}
 
-        onClose={() => setStatusModal(null)}
+        onClose={() => {
+          if (
+            statusModal?.type === "success" &&
+            statusModal?.title === "Request sent!"
+          ) {
+            navigate("/my-requests");
+            return;
+          }
+
+          setStatusModal(null);
+        }}
 
       />
 

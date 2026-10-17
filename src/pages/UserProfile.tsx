@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 import {
   getUserProfile,
@@ -7,16 +7,12 @@ import {
 } from "../api/profileApi";
 
 import VerifiedBadge from "../components/VerifiedBadge";
-import NotificationBell from "../components/NotificationBell";
-import { logout } from "../lib/auth";
-import BrandIcon from "../components/BrandIcon";
 
 import "./ProfileRedesign.css";
 
 export default function UserProfile() {
   const { userId } = useParams();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const from = (location.state as { from?: string } | null)?.from;
   const fromPath = from?.split(/[?#]/, 1)[0];
@@ -86,25 +82,9 @@ useEffect(() => {
     cancelled = true;
   };
 }, [userId]);
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
   if (loading || error || !profile) {
     return (
       <main className="upp-page">
-        <header className="upp-topbar">
-          <div className="upp-topbar-main">
-            <button
-              type="button"
-              className="upp-brand"
-              onClick={() => navigate("/dashboard")}
-            >
-              <BrandIcon className="upp-brand-icon" />
-              <span>SkillMatch</span>
-            </button>
-          </div>
-        </header>
 
         <div className="upp-container">
           <Link to={backTo} className="upp-back-link">
@@ -133,65 +113,6 @@ useEffect(() => {
 
   return (
     <main className="upp-page">
-      <header className="upp-topbar">
-        <div className="upp-topbar-main">
-          <button
-            type="button"
-            className="upp-brand"
-            onClick={() => navigate("/dashboard")}
-          >
-            <BrandIcon className="upp-brand-icon" />
-            <span>SkillMatch</span>
-          </button>
-
-          <nav className="upp-main-nav" aria-label="Main navigation">
-            <button type="button" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button type="button" onClick={() => navigate("/skillbrowse")}>
-              Browse Skills
-            </button>
-            <button type="button" onClick={() => navigate("/requests")}>
-              Requests
-            </button>
-            <button type="button" onClick={() => navigate("/meetings")}>
-              Sessions
-            </button>
-            <button type="button" onClick={() => navigate("/profile")}>
-              Profile
-            </button>
-          </nav>
-
-          <div className="upp-topbar-actions">
-            <NotificationBell />
-            <button
-              type="button"
-              className="upp-logout"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className="upp-mobile-nav">
-          <button type="button" onClick={() => navigate("/dashboard")}>
-            Dashboard
-          </button>
-          <button type="button" onClick={() => navigate("/skillbrowse")}>
-            Browse
-          </button>
-          <button type="button" onClick={() => navigate("/requests")}>
-            Requests
-          </button>
-          <button type="button" onClick={() => navigate("/meetings")}>
-            Sessions
-          </button>
-          <button type="button" onClick={() => navigate("/profile")}>
-            Profile
-          </button>
-        </div>
-      </header>
 
       <div className="upp-container">
         <Link to={backTo} className="upp-back-link">

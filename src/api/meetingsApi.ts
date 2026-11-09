@@ -81,6 +81,9 @@ export interface Meeting {
   cancelled_at?: string | null;
   cancellation_cutoff_ts?: number;
   cancel_notice_hours?: number;
+
+  // Testing switch from the backend (MEETINGS_NO_TIME_LIMIT): join at any time
+  no_time_limit?: boolean;
 }
 
 

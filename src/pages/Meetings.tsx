@@ -32,7 +32,7 @@ const Meetings: React.FC = () => {
       const now = Date.now();
       const FIVE_MIN_MS = 5 * 60 * 1000;
       const hasActive = data.some(
-        (m) => m.status !== 'CANCELLED' && m.status !== 'COMPLETED' && now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts
+        (m) => m.status !== 'CANCELLED' && m.status !== 'COMPLETED' && (m.no_time_limit || (now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts))
       );
       if (hasActive) {
         setActiveTab('active');
@@ -78,8 +78,8 @@ const Meetings: React.FC = () => {
       if (m.status === 'CANCELLED') return;
 
       const isCompleted = m.status === 'COMPLETED';
-      const isLive = !isCompleted && now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts;
-      const isPast = isCompleted || now > m.end_time_ts;
+      const isLive = !isCompleted && (m.no_time_limit || (now >= m.start_time_ts - FIVE_MIN_MS && now <= m.end_time_ts));
+      const isPast = isCompleted || (!m.no_time_limit && now > m.end_time_ts);
 
       if (isLive) {
         active.push(m);

@@ -7,6 +7,7 @@ export interface MeetingSessionProps {
   token: string;
   startTs: number;
   endTs: number;
+  noTimeLimit?: boolean;
   partnerName?: string;
   meetingStatus?: string;
   onLeaveTemporarily?: () => void;
@@ -19,6 +20,7 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
   token,
   startTs,
   endTs,
+  noTimeLimit = false,
   partnerName,
   meetingStatus,
   onLeaveTemporarily,
@@ -48,8 +50,8 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
   }, [meetingStatus, displayName]);
 
   const FIVE_MINUTES = 5 * 60 * 1000;
-  const canJoin = now >= (startTs - FIVE_MINUTES);
-  const isOver = now > endTs;
+  const canJoin = noTimeLimit || now >= (startTs - FIVE_MINUTES);
+  const isOver = !noTimeLimit && now > endTs;
 
   const handleLeaveTemporarily = () => {
     const call = DailyIframe.getCallInstance();
@@ -114,7 +116,10 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
           },
         });
 
-        call.join({ url: roomUrl, token });
+        call.join({ url: roomUrl, token }).catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          setCallError(`Could not join the video call: ${msg}`);
+        });
       } catch (err: unknown) {
         console.error('Daily initialization error:', err);
         const msg = err instanceof Error ? err.message : String(err);
@@ -166,16 +171,22 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
       }
     };
 
+    // Daily refused the join or dropped the call (e.g. token outside its time window).
+    // Show the reason instead of ending the meeting, so it stays joinable.
+    const handleCallError = (ev?: { errorMsg?: string }) => {
+      setCallError(`The video call stopped: ${ev?.errorMsg || 'unknown error'}`);
+    };
+
     call.on('app-message', handleAppMessage);
     call.on('participant-left', handleParticipantLeft);
     call.on('participant-joined', handleParticipantJoined);
-    call.on('left-meeting', handleEndCall);
+    call.on('error', handleCallError);
 
     return () => {
       call?.off('app-message', handleAppMessage);
       call?.off('participant-left', handleParticipantLeft);
       call?.off('participant-joined', handleParticipantJoined);
-      call?.off('left-meeting', handleEndCall);
+      call?.off('error', handleCallError);
       if (call) {
         call.leave().catch(() => { });
         call.destroy().catch(() => { });

@@ -173,6 +173,7 @@ const MeetingRoom: React.FC = () => {
         token={meeting.my_token}
         startTs={meeting.start_time_ts}
         endTs={meeting.end_time_ts}
+        noTimeLimit={meeting.no_time_limit}
         partnerName={partnerName}
         meetingStatus={meeting.status}
         onLeaveTemporarily={handleLeaveTemporarily}

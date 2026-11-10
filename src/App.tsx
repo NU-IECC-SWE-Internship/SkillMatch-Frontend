@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Meetings from './pages/Meetings';
 import MeetingRoom from './pages/MeetingRoom';
 import Requests from "./pages/Requests";
+import Quizzes from "./pages/Quizzes";
 import SkillBrowse from "./pages/SkillBrowse";
 import { homePath, isAuthenticated, isStaffUser } from './lib/auth'
 import MyRequests from "./pages/MyRequests";
@@ -141,19 +142,20 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/" element={<RootRedirect />} />
-      <Route path="/dashboard" element={<ProtectedDashboard />} />
       <Route element={<WithNavbar />}>
+        <Route path="/dashboard" element={<ProtectedDashboard />} />
+        <Route path="/profile" element={<ProtectedProfile />} />
         <Route path="/meetings" element={<ProtectedMeetings />} />
         <Route path="/skills/:skillId/quiz" element={<ProtectedSkillQuiz />} />
         <Route path="/skills/:skillId/quiz/review" element={<ProtectedSkillQuizReview />} />
         <Route path="/matches/:userId/request" element={<UserOnly><SendRequest /></UserOnly>} />
         <Route path="/requests" element={<UserOnly><Requests /></UserOnly>} />
+        <Route path="/quizzes" element={<UserOnly><Quizzes /></UserOnly>} />
         <Route path="/my-requests" element={<UserOnly><MyRequests /></UserOnly>} />
         <Route path="/skillbrowse" element={<UserOnly><SkillBrowse /></UserOnly>} />
         <Route path="/users/:userId" element={<ProtectedUserProfile />} />
       </Route>
       <Route path="/meetings/:id/room" element={<ProtectedMeetingRoom />} />
-      <Route path="/profile" element={<ProtectedProfile />} />
       <Route path="/admin" element={<AuthOnly><AdminOverview /></AuthOnly>} />
       <Route path="/admin/users" element={<AuthOnly><AdminUsers /></AuthOnly>} />
       <Route path="/admin/users/:userId" element={<AuthOnly><AdminUserDetail /></AuthOnly>} />

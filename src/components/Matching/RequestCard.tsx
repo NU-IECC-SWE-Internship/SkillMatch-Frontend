@@ -46,7 +46,8 @@ export default function PendingRequestCard({
 
   const senderTeachSkills = [
     ...(request.sender_teach_skills ?? []),
-    { id: -1, name: "None" },
+    // -1 = skip: just teach, learn nothing back
+    { id: -1, name: "No, just teach" },
   ];
 
   const handleSkillSelect = (skillId: number) => {
@@ -158,7 +159,7 @@ export default function PendingRequestCard({
 
   return (
     <div
-      className={`incoming-card fx-glow fx-accent-top fx-pop ${
+      className={`incoming-card ${
         request.status === "SCHEDULING" ? "fx-theme-amber" : "fx-theme-blue"
       }`}
     >
@@ -210,11 +211,9 @@ export default function PendingRequestCard({
 
       {request.status === "PENDING" && showSkillSelector && (
         <div className="choose-skill-section">
-          <span className="detail-label">
-            What do you want to learn from {request.sender_username} in return?
-          </span>
+          <h4 className="choose-skill-title">Learn something in return?</h4>
           <p className="choose-skill-hint">
-            Pick a skill, or choose None if you just want to teach.
+            Optional. Choose one of {request.sender_username}'s skills, or skip it.
           </p>
 
           <div className="skill-selector-list">
@@ -229,7 +228,7 @@ export default function PendingRequestCard({
                   key={skill.id}
                   className={`skill-choice-pill ${
                     selectedSkill === skill.id ? "selected" : ""
-                  }`}
+                  }${skill.id === -1 ? " skip" : ""}`}
                   disabled={isProcessing}
                   onClick={() => handleSkillSelect(skill.id)}
                 >
@@ -243,6 +242,10 @@ export default function PendingRequestCard({
                         verified={!!skill.is_verified}
                         compact
                       />
+                    )}
+
+                    {"wanted" in skill && skill.wanted && (
+                      <span className="skill-choice-note">On your list</span>
                     )}
                   </span>
                 </button>

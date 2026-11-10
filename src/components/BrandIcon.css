@@ -14,3 +14,25 @@
   width: 62%;
   height: 62%;
 }
+
+/* Hover the logo (or the button/link around it): the arrows swap places.
+   SVG transforms use viewBox units, so 10px = the 10-unit gap between the arrows. */
+.brand-arrow {
+  transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.brand-icon:hover .brand-arrow-top,
+:is(button, a, .brand-mark, .admin-sidebar-brand):hover > .brand-icon .brand-arrow-top {
+  transform: translateY(10px);
+}
+
+.brand-icon:hover .brand-arrow-bottom,
+:is(button, a, .brand-mark, .admin-sidebar-brand):hover > .brand-icon .brand-arrow-bottom {
+  transform: translateY(-10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-arrow {
+    transition: none;
+  }
+}

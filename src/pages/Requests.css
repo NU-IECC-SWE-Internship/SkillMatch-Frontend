@@ -1124,3 +1124,246 @@ a.sender-name:hover {
     flex-wrap: wrap;
   }
 }
+
+/* ========================================
+   REQUEST CARDS - PLAIN STYLE
+   White card, normal-case labels, label/value rows, no glow or tinted boxes.
+   Used by both "Incoming" and "Sent by me".
+======================================== */
+
+.incoming-card {
+  padding: 20px 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.incoming-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+.incoming-card-top {
+  margin-bottom: 14px;
+}
+
+.sender-name {
+  font-family: var(--sans);
+  font-size: 1.02rem;
+}
+
+/* Rating: plain text, "New member" in grey */
+.partner-rating-badge {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.partner-rating-badge .rating-new {
+  padding: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.request-tag {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Status: small, sentence case, no dot */
+.status-chip {
+  padding: 3px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.status-chip::before {
+  display: none;
+}
+
+.status-chip-pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-chip-action {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Details: label / value rows instead of a tinted box */
+.swap-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 16px;
+  padding: 0;
+  border-top: 1px solid #f1f5f9;
+  background: transparent;
+}
+
+.detail-item {
+  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-label {
+  color: #64748b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.skill-pill,
+.pill-learn {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.pill-learn.is-verified {
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+}
+
+.slot-pill {
+  color: #0f172a;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .detail-item {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.swap-details .detail-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.skill-choice-note {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/* Verified skills on request cards: plain text + the small badge, no green box
+   (overrides the shared .skill-pill.is-verified.pill-learn style in VerifiedBadge.css). */
+.swap-details .skill-pill.is-verified.pill-learn,
+.swap-details .skill-pill.is-verified.pill-teach {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+}
+
+/* ========================================
+   "Learn something in return?" picker - refined
+======================================== */
+
+.choose-skill-section {
+  margin-top: 4px;
+  padding: 14px 0 0;
+  border-top: 1px solid #f1f5f9;
+  border-radius: 0;
+  background: transparent;
+}
+
+.choose-skill-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.choose-skill-hint {
+  margin: 2px 0 12px;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.skill-selector-list {
+  gap: 8px;
+}
+
+.skill-choice-pill {
+  min-height: 38px;
+  padding: 0 14px;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.skill-choice-pill:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.skill-choice-pill.selected,
+.skill-choice-pill.selected:hover:not(:disabled) {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.skill-choice-pill .radio-indicator {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.5px solid #94a3b8;
+}
+
+.skill-choice-pill.selected .radio-indicator {
+  border-color: #2563eb;
+  background: #2563eb;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.skill-choice-pill .skill-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.2;
+}
+
+.skill-choice-note {
+  margin-left: 0;
+}
+
+/* "No, just teach": the skip option, quieter than the skills */
+.skill-choice-pill.skip {
+  border-style: dashed;
+  color: #475569;
+  font-weight: 500;
+}
+
+.skill-choice-pill.skip.selected {
+  border-style: solid;
+  color: #1e3a8a;
+}

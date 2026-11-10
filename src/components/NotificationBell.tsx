@@ -27,43 +27,68 @@ function formatRelativeTime(dateString: string): string {
   }
 }
 
-function getIconForType(type: string): string {
+type IconName = "inbox" | "calendar" | "star" | "check" | "alert" | "chat" | "bell" | "mail";
+
+// Simple line icons (24x24, stroked) instead of emojis.
+const ICON_PATHS: Record<IconName, string> = {
+  inbox: "M4 13h4l1.5 3h5L16 13h4M4 13l2.5-7h11L20 13v6H4z",
+  calendar: "M5 6h14v14H5zM9 3v5M15 3v5M5 11h14",
+  star: "M12 4l2.4 5 5.6.8-4 3.9.9 5.5L12 16.6 7.1 19.2 8 13.7 4 9.8 9.6 9z",
+  check: "M5 12.5l4.5 4.5L19 7.5",
+  alert: "M12 4l9 16H3zM12 10v4M12 17.5v.5",
+  chat: "M4 5h16v11H9l-5 4z",
+  bell: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0",
+  mail: "M3 6h18v12H3zM3 7l9 6 9-6",
+};
+
+function LineIcon({ name }: { name: IconName }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d={ICON_PATHS[name]}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function getIconForType(type: string): IconName {
   switch (type) {
     case "match_request":
-      return "🎯";
-    case "match_accepted":
-      return "🎉";
-    case "match_rejected":
-      return "ℹ️";
-    case "meeting_cancelled":
-      return "⚠️";
+      return "inbox";
     case "meeting_reminder":
-      return "⏰";
-    case "rating_prompt":
-      return "⭐";
-    case "partner_reviewed":
-      return "📝";
-    case "reviews_revealed":
-      return "✨";
-    case "skill_approved":
-      return "🎓";
-    case "skill_rejected":
-      return "ℹ️";
-    case "chat_message":
-      return "💬";
     case "return_session_proposed":
-      return "📅";
-    case "return_session_confirmed":
-      return "🤝";
-    case "return_session_declined":
-      return "🔄";
+      return "calendar";
+    case "rating_prompt":
+    case "partner_reviewed":
+    case "reviews_revealed":
+      return "star";
+    case "match_accepted":
+    case "skill_approved":
     case "skill_verified":
-      return "🌟";
-    case "welcome":
-      return "👋";
+    case "return_session_confirmed":
+      return "check";
+    case "match_rejected":
+    case "meeting_cancelled":
+    case "skill_rejected":
+    case "return_session_declined":
+      return "alert";
+    case "chat_message":
+      return "chat";
     default:
-      return "🔔";
+      return "bell";
   }
+}
+
+// Older notifications were saved with emojis in their titles; hide them.
+function stripEmoji(text: string): string {
+  return text
+    .replace(/\s*(?:\p{Extended_Pictographic}|️)+/gu, "")
+    .trim();
 }
 
 export default function NotificationBell() {
@@ -72,16 +97,8 @@ export default function NotificationBell() {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    pushSupported,
-    pushSubscribed,
-    enablePushNotifications,
-    emailNotifications,
-    emailNotificationsLoading,
-    toggleEmailNotifications,
   } = useNotifications();
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isEnablingPush, setIsEnablingPush] = useState<boolean>(false);
-  const [emailFeedback, setEmailFeedback] = useState<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -119,35 +136,6 @@ export default function NotificationBell() {
   const handleMarkAllRead = async (e: React.MouseEvent) => {
     e.stopPropagation();
     await markAllAsRead();
-  };
-
-  const handleEnablePush = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsEnablingPush(true);
-    try {
-      const res = await enablePushNotifications();
-      if (!res.success && res.error) {
-        alert(res.error);
-      }
-    } finally {
-      setIsEnablingPush(false);
-    }
-  };
-
-  const handleToggleEmail = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    e.stopPropagation();
-    const success = await toggleEmailNotifications();
-    if (success) {
-      setEmailFeedback(
-        !emailNotifications
-          ? "Email notifications turned on"
-          : "Email notifications paused"
-      );
-      setTimeout(() => setEmailFeedback(""), 3500);
-    } else {
-      setEmailFeedback("Failed to update setting");
-      setTimeout(() => setEmailFeedback(""), 3500);
-    }
   };
 
   return (
@@ -190,32 +178,12 @@ export default function NotificationBell() {
             )}
           </div>
 
-          {pushSupported && !pushSubscribed && (
-            <div className="push-prompt-banner">
-              <div className="push-prompt-content">
-                <span className="push-prompt-icon">🔔</span>
-                <div className="push-prompt-text-group">
-                  <span className="push-prompt-title">Desktop & device alerts </span>
-                  <span className="push-prompt-subtitle">
-                    Get notified even when away from the tab
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="push-prompt-btn"
-                onClick={handleEnablePush}
-                disabled={isEnablingPush}
-              >
-                {isEnablingPush ? "Enabling..." : "Enable"}
-              </button>
-            </div>
-          )}
-
           <div className="notification-list">
             {notifications.length === 0 ? (
               <div className="notification-empty">
-                <div className="notification-empty-icon">🔔</div>
+                <div className="notification-empty-icon">
+                  <LineIcon name="bell" />
+                </div>
                 <p>No notifications yet</p>
               </div>
             ) : (
@@ -226,13 +194,13 @@ export default function NotificationBell() {
                   onClick={() => handleNotificationClick(item)}
                 >
                   <span className="notification-item-icon">
-                    {getIconForType(item.notification_type)}
+                    <LineIcon name={getIconForType(item.notification_type)} />
                   </span>
                   <div className="notification-item-content">
-                    <div className="notification-item-title">{item.title}</div>
+                    <div className="notification-item-title">{stripEmoji(item.title)}</div>
                     {item.message && (
                       <div className="notification-item-message">
-                        {item.message}
+                        {stripEmoji(item.message)}
                       </div>
                     )}
                     <div className="notification-item-time">
@@ -242,32 +210,6 @@ export default function NotificationBell() {
                   {!item.is_read && <span className="unread-dot" />}
                 </div>
               ))
-            )}
-          </div>
-
-          <div className="notification-dropdown-footer">
-            <div className="notification-pref-item">
-              <div className="notification-pref-info">
-                <span className="notification-pref-icon">✉️</span>
-                <div className="notification-pref-text">
-                  <span className="notification-pref-title">Email Notifications</span>
-                  <span className="notification-pref-desc">
-                    Get emails for match requests & updates
-                  </span>
-                </div>
-              </div>
-              <label className="notification-switch" title="Toggle email notifications">
-                <input
-                  type="checkbox"
-                  checked={emailNotifications}
-                  disabled={emailNotificationsLoading}
-                  onChange={handleToggleEmail}
-                />
-                <span className="notification-switch-slider" />
-              </label>
-            </div>
-            {emailFeedback && (
-              <div className="notification-pref-feedback">{emailFeedback}</div>
             )}
           </div>
         </div>

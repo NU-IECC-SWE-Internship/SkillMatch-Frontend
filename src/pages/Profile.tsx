@@ -12,7 +12,8 @@ import { Link, useNavigate } from "react-router-dom";
 
 import {
   getProfile,
-  updateProfileSettings,
+  updateProfile,
+  updateMaxSessionDuration,
   getSkills,
 
   createSkill,
@@ -51,11 +52,10 @@ import VerifiedBadge from "../components/VerifiedBadge";
 
 
 
-import NotificationBell from "../components/NotificationBell";
-import { logout } from "../lib/auth";
-import BrandIcon from "../components/BrandIcon";
+import { useNotifications } from "../context/NotificationContext";
 import "./MyProfile.css";
 import "./ProfileRedesign.css";
+import "./ProfileSections.css";
 
 
 
@@ -78,6 +78,9 @@ const DAYS = [
 ];
 
 
+
+// How long a toast stays on screen; keep in sync with the fade-out delay in ProfileSections.css.
+const TOAST_MS = 3500;
 
 const sessionDurationOptions = [
 
@@ -235,17 +238,38 @@ function Profile() {
 
 
 
-  const [profileSaving, setProfileSaving] = useState(false);
+  const [editingBio, setEditingBio] = useState(false);
+
+  const [bioSaving, setBioSaving] = useState(false);
+
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  const {
+    emailNotifications,
+    emailNotificationsLoading,
+    toggleEmailNotifications,
+  } = useNotifications();
 
 
 
-  const [message, setMessage] = useState<{
+  const [message, setMessageState] = useState<{
+
+    id: number;
 
     text: string;
 
     type: "success" | "error";
 
   } | null>(null);
+
+  // Each message gets a fresh id so the toast re-animates even if one is already showing.
+  const setMessage = (
+    next: { text: string; type: "success" | "error" } | null
+  ) => {
+
+    setMessageState(next ? { ...next, id: Date.now() } : null);
+
+  };
 
 
 
@@ -285,6 +309,9 @@ function Profile() {
 
   const [selectedLearnSkill, setSelectedLearnSkill] = useState("");
 
+  // Which skill list has its "add" form open
+  const [addingSkill, setAddingSkill] = useState<"teach" | "learn" | null>(null);
+
 
 
   // ---------------- AVAILABILITY ----------------
@@ -300,6 +327,8 @@ function Profile() {
 
 
   const [slotError, setSlotError] = useState("");
+
+  const [showSlotForm, setShowSlotForm] = useState(false);
 
 
 
@@ -421,52 +450,42 @@ function Profile() {
 
 
 
+  // Toast: shows briefly, then hides itself (CSS fades it out just before this fires).
+  useEffect(() => {
+
+    if (!message) return;
+
+    const timer = setTimeout(() => setMessageState(null), TOAST_MS);
+
+    return () => clearTimeout(timer);
+
+  }, [message]);
+
   // ---------------- SAVE PROFILE ----------------
 
 
 
 
-  const saveProfile = async () => {
+  // Bio and settings save separately so one never sends the other's unsaved edits.
+  const saveBio = async () => {
 
     try {
 
-      setProfileSaving(true);
-
-
+      setBioSaving(true);
 
       setMessage(null);
 
-
-
-      const saved = await updateProfileSettings({
-
-        bio,
-
-        max_session_duration_minutes: maxSessionDuration,
-
-      });
-
-
+      const saved = await updateProfile(bio);
 
       setBio(saved.bio || "");
 
-
-
       setSavedBio(saved.bio || "");
 
-
-
-      setMaxSessionDuration(saved.max_session_duration_minutes);
-
-
-
-      setSavedDuration(saved.max_session_duration_minutes);
-
-
+      setEditingBio(false);
 
       setMessage({
 
-        text: "Changes saved.",
+        text: "Bio saved.",
 
         type: "success",
 
@@ -476,11 +495,9 @@ function Profile() {
 
       console.error(error);
 
-
-
       setMessage({
 
-        text: "Could not save your changes.",
+        text: "Could not save your bio.",
 
         type: "error",
 
@@ -488,7 +505,77 @@ function Profile() {
 
     } finally {
 
-      setProfileSaving(false);
+      setBioSaving(false);
+
+    }
+
+  };
+
+  const cancelBioEdit = () => {
+
+    setBio(savedBio);
+
+    setEditingBio(false);
+
+  };
+
+  const saveSessionLength = async () => {
+
+    try {
+
+      setSettingsSaving(true);
+
+      setMessage(null);
+
+      const saved = await updateMaxSessionDuration(maxSessionDuration);
+
+      setMaxSessionDuration(saved.max_session_duration_minutes);
+
+      setSavedDuration(saved.max_session_duration_minutes);
+
+      setMessage({
+
+        text: "Settings saved.",
+
+        type: "success",
+
+      });
+
+    } catch (error) {
+
+      console.error(error);
+
+      setMessage({
+
+        text: "Could not save your settings.",
+
+        type: "error",
+
+      });
+
+    } finally {
+
+      setSettingsSaving(false);
+
+    }
+
+  };
+
+  const handleEmailToggle = async () => {
+
+    setMessage(null);
+
+    const ok = await toggleEmailNotifications();
+
+    if (!ok) {
+
+      setMessage({
+
+        text: "Could not update email notifications.",
+
+        type: "error",
+
+      });
 
     }
 
@@ -864,6 +951,8 @@ function Profile() {
 
   const resetSlotForm = () => {
 
+    setShowSlotForm(false);
+
     setEditingId(null);
 
 
@@ -1182,32 +1271,30 @@ function Profile() {
         : setSelectedLearnSkill;
 
     return (
-      <section className={`mp-card mp-skill-card mp-theme-${type}`}>
-        <div className="mp-card-head">
-          <div className="mp-card-title">
-            <h2>
-              {type === "teach"
-                ? "Skills I Can Teach"
-                : "Skills I Want to Learn"}
-            </h2>
+      <div className={`mp-skill-group mp-theme-${type}`}>
+        <div className="mp-group-head">
+          <h3>
+            {type === "teach" ? "I can teach" : "I want to learn"}
+            <span className="mp-count">{selected.length}</span>
+          </h3>
 
-            <p>
-              {type === "teach"
-                ? "Manage the skills you can offer to other learners."
-                : "Choose the skills you want to learn from other people."}
-            </p>
-          </div>
-
-          <span className="mp-count">
-            {selected.length} {type === "teach" ? "Listed" : "Desired"}
-          </span>
+          <button
+            type="button"
+            className="mp-btn mp-btn-ghost mp-btn-small"
+            onClick={() =>
+              setAddingSkill(addingSkill === type ? null : type)
+            }
+            aria-expanded={addingSkill === type}
+          >
+            {addingSkill === type ? "Done" : "+ Add"}
+          </button>
         </div>
 
         {selected.length === 0 ? (
           <p className="mp-empty">
             {type === "teach"
-              ? "No teaching skills yet. Add an existing skill or request a new one below."
-              : "No learning skills yet. Choose an existing skill below."}
+              ? "No teaching skills yet. Use + Add to list one."
+              : "No learning skills yet. Use + Add to choose one."}
           </p>
         ) : (
           <ul className="mp-skill-list">
@@ -1273,6 +1360,7 @@ function Profile() {
           </ul>
         )}
 
+        {addingSkill === type && (
         <div className="mp-add">
           <span className="mp-label">
             Choose an existing skill
@@ -1349,7 +1437,8 @@ function Profile() {
             </>
           )}
         </div>
-      </section>
+        )}
+      </div>
     );
   };
 
@@ -1359,81 +1448,9 @@ function Profile() {
     ? username.charAt(0).toUpperCase()
     : "?";
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
   if (profileLoading || profileLoadError) {
     return (
       <main className="mp-page">
-        <header className="profile-topbar">
-          <div className="profile-topbar-main">
-            <button
-              type="button"
-              className="profile-brand"
-              onClick={() => navigate("/dashboard")}
-            >
-              <BrandIcon className="profile-brand-icon" />
-              <span>SkillMatch</span>
-            </button>
-
-            <nav className="profile-main-nav" aria-label="Main navigation">
-              <button type="button" onClick={() => navigate("/dashboard")}>
-                Dashboard
-              </button>
-              <button type="button" onClick={() => navigate("/skillbrowse")}>
-                Browse Skills
-              </button>
-              <button type="button" onClick={() => navigate("/requests")}>
-                Requests
-              </button>
-              <button type="button" onClick={() => navigate("/meetings")}>
-                Sessions
-              </button>
-              <button
-                type="button"
-                className="active"
-                onClick={() => navigate("/profile")}
-              >
-                Profile
-              </button>
-            </nav>
-
-            <div className="profile-topbar-actions">
-              <NotificationBell />
-              <button
-                type="button"
-                className="profile-logout"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-
-          <div className="profile-mobile-nav">
-            <button type="button" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button type="button" onClick={() => navigate("/skillbrowse")}>
-              Browse
-            </button>
-            <button type="button" onClick={() => navigate("/requests")}>
-              Requests
-            </button>
-            <button type="button" onClick={() => navigate("/meetings")}>
-              Sessions
-            </button>
-            <button
-              type="button"
-              className="active"
-              onClick={() => navigate("/profile")}
-            >
-              Profile
-            </button>
-          </div>
-        </header>
 
         <div className="mp-container">
           <section className="mp-card">
@@ -1446,75 +1463,10 @@ function Profile() {
     );
   }
 
+  const slotFormOpen = showSlotForm || editingId !== null;
+
   return (
     <main className="mp-page">
-      <header className="profile-topbar">
-        <div className="profile-topbar-main">
-          <button
-            type="button"
-            className="profile-brand"
-            onClick={() => navigate("/dashboard")}
-          >
-            <BrandIcon className="profile-brand-icon" />
-            <span>SkillMatch</span>
-          </button>
-
-          <nav className="profile-main-nav" aria-label="Main navigation">
-            <button type="button" onClick={() => navigate("/dashboard")}>
-              Dashboard
-            </button>
-            <button type="button" onClick={() => navigate("/skillbrowse")}>
-              Browse Skills
-            </button>
-            <button type="button" onClick={() => navigate("/requests")}>
-              Requests
-            </button>
-            <button type="button" onClick={() => navigate("/meetings")}>
-              Sessions
-            </button>
-            <button
-              type="button"
-              className="active"
-              onClick={() => navigate("/profile")}
-            >
-              Profile
-            </button>
-          </nav>
-
-          <div className="profile-topbar-actions">
-            <NotificationBell />
-            <button
-              type="button"
-              className="profile-logout"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className="profile-mobile-nav">
-          <button type="button" onClick={() => navigate("/dashboard")}>
-            Dashboard
-          </button>
-          <button type="button" onClick={() => navigate("/skillbrowse")}>
-            Browse
-          </button>
-          <button type="button" onClick={() => navigate("/requests")}>
-            Requests
-          </button>
-          <button type="button" onClick={() => navigate("/meetings")}>
-            Sessions
-          </button>
-          <button
-            type="button"
-            className="active"
-            onClick={() => navigate("/profile")}
-          >
-            Profile
-          </button>
-        </div>
-      </header>
 
       <div className="mp-container">
         <header className="mp-hero">
@@ -1576,39 +1528,14 @@ function Profile() {
               </Link>
             )}
           </div>
-
-          <section className="mp-hero-about">
-            <div className="mp-card-head">
-              <div className="mp-card-title">
-                <h2>About Me</h2>
-                <p>A short intro helps people decide to swap with you.</p>
-              </div>
-            </div>
-
-            <textarea
-              className="mp-textarea"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="e.g. Frontend developer who loves teaching React. Looking to learn data analysis."
-            />
-
-            <div className="mp-about-footer">
-              <span>Visible on your public profile.</span>
-
-              <button
-                type="button"
-                className="mp-btn mp-btn-primary"
-                onClick={saveProfile}
-                disabled={profileSaving || bio === savedBio}
-              >
-                {profileSaving ? "Saving..." : "Save Bio"}
-              </button>
-            </div>
-          </section>
         </header>
 
         {message && (
-          <div className={`mp-inline-message ${message.type}`}>
+          <div
+            key={message.id}
+            className={`mp-inline-message mp-toast ${message.type}`}
+            role={message.type === "error" ? "alert" : "status"}
+          >
             <span>{message.text}</span>
             <button
               type="button"
@@ -1620,130 +1547,144 @@ function Profile() {
           </div>
         )}
 
-        <div className="mp-profile-layout">
-          <div className="mp-profile-column">
-            {renderSkillSection("teach")}
-          </div>
-
-          <div className="mp-profile-column">
-            {renderSkillSection("learn")}
-
-            <section className="mp-card mp-availability-card">
-              <div className="mp-card-head">
-                <div className="mp-card-title">
-                  <h2>Weekly Availability</h2>
-                  <p>
-                    People can request sessions during these times.
-                  </p>
-                </div>
-
-                <span className="mp-count">
-                  Recurring
-                </span>
+        <div className="mp-sections">
+          {/* About me */}
+          <section className="mp-card mp-about-card">
+            <div className="mp-card-head">
+              <div className="mp-card-title">
+                <h2>About Me</h2>
+                <p>Shown on your public profile. A short intro helps people decide to swap with you.</p>
               </div>
 
-              <div className="mp-setting">
-                <div>
-                  <strong>
-                    Maximum Session Length
-                  </strong>
+              {!editingBio && (
+                <button
+                  type="button"
+                  className="mp-btn mp-btn-ghost mp-btn-small"
+                  onClick={() => setEditingBio(true)}
+                >
+                  {savedBio ? "Edit" : "+ Add"}
+                </button>
+              )}
+            </div>
 
-                  <span>
-                    Sessions can be shorter, but never longer than this.
-                  </span>
-                </div>
+            {editingBio ? (
+              <>
+                <textarea
+                  className="mp-textarea"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="e.g. Frontend developer who loves teaching React. Looking to learn data analysis."
+                  autoFocus
+                />
 
-                <div className="mp-setting-controls">
-                  <select
-                    value={maxSessionDuration}
-                    onChange={(e) =>
-                      setMaxSessionDuration(
-                        Number(e.target.value)
-                      )
-                    }
+                <div className="mp-section-actions">
+                  <button
+                    type="button"
+                    className="mp-btn mp-btn-ghost"
+                    onClick={cancelBioEdit}
+                    disabled={bioSaving}
                   >
-                    {sessionDurationOptions.map(
-                      (option) => (
-                        <option
-                          key={option.value}
-                          value={option.value}
-                        >
-                          {option.label}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    Cancel
+                  </button>
 
                   <button
                     type="button"
-                    className="mp-btn mp-btn-primary mp-duration-save"
-                    onClick={saveProfile}
-                    disabled={
-                      profileSaving ||
-                      maxSessionDuration === savedDuration
-                    }
+                    className="mp-btn mp-btn-primary"
+                    onClick={saveBio}
+                    disabled={bioSaving || bio === savedBio}
                   >
-                    {profileSaving ? "Saving..." : "Save"}
+                    {bioSaving ? "Saving..." : "Save"}
                   </button>
                 </div>
+              </>
+            ) : savedBio ? (
+              <p className="mp-bio-text">{savedBio}</p>
+            ) : (
+              <p className="mp-empty">You haven't written an intro yet.</p>
+            )}
+          </section>
+
+          {/* Skills */}
+          <section className="mp-card mp-skills-card">
+            <div className="mp-card-head">
+              <div className="mp-card-title">
+                <h2>Skills</h2>
+                <p>What you can teach and what you want to learn. Your matches are based on these.</p>
+              </div>
+            </div>
+
+            <div className="mp-skills-grid">
+              {renderSkillSection("teach")}
+              {renderSkillSection("learn")}
+            </div>
+          </section>
+
+          {/* Availability */}
+          <section className="mp-card mp-availability-card">
+            <div className="mp-card-head">
+              <div className="mp-card-title">
+                <h2>Weekly Availability</h2>
+                <p>People can request sessions during these recurring times.</p>
               </div>
 
-              <div className="mp-slot-section">
-                <span className="mp-label">
-                  Active recurring slots
-                </span>
+              {!slotFormOpen && (
+                <button
+                  type="button"
+                  className="mp-btn mp-btn-ghost mp-btn-small"
+                  onClick={() => setShowSlotForm(true)}
+                >
+                  + Add slot
+                </button>
+              )}
+            </div>
 
-                {sortedSlots.length === 0 ? (
-                  <p className="mp-empty">
-                    No time slots yet. Add your first one below.
-                  </p>
-                ) : (
-                  <ul className="mp-slot-list">
-                    {sortedSlots.map((slot) => (
-                      <li
-                        key={slot.id}
-                        className={
-                          editingId === slot.id
-                            ? "mp-slot editing"
-                            : "mp-slot"
-                        }
+            {sortedSlots.length === 0 ? (
+              <p className="mp-empty">
+                No time slots yet. Add one so people can book sessions with you.
+              </p>
+            ) : (
+              <ul className="mp-slot-list">
+                {sortedSlots.map((slot) => (
+                  <li
+                    key={slot.id}
+                    className={
+                      editingId === slot.id
+                        ? "mp-slot editing"
+                        : "mp-slot"
+                    }
+                  >
+                    <span className="mp-slot-day">
+                      {capitalize(slot.day).slice(0, 3)}
+                    </span>
+
+                    <span className="mp-slot-time">
+                      {formatTime(slot.start_time)} –{" "}
+                      {formatTime(slot.end_time)}
+                    </span>
+
+                    <div className="mp-slot-actions">
+                      <button
+                        type="button"
+                        className="mp-link-btn"
+                        onClick={() => startEditingSlot(slot)}
                       >
-                        <span className="mp-slot-day">
-                          {capitalize(slot.day).slice(0, 3)}
-                        </span>
+                        Edit
+                      </button>
 
-                        <span className="mp-slot-time">
-                          {formatTime(slot.start_time)} –{" "}
-                          {formatTime(slot.end_time)}
-                        </span>
+                      <button
+                        type="button"
+                        className="mp-link-btn danger"
+                        onClick={() => removeSlot(slot.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
 
-                        <div className="mp-slot-actions">
-                          <button
-                            type="button"
-                            className="mp-link-btn"
-                            onClick={() =>
-                              startEditingSlot(slot)
-                            }
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            className="mp-link-btn danger"
-                            onClick={() =>
-                              removeSlot(slot.id)
-                            }
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-
+            {slotFormOpen && (
               <form
                 className="mp-slot-form"
                 onSubmit={handleSlotSubmit}
@@ -1768,10 +1709,7 @@ function Profile() {
                       }
                     >
                       {DAYS.map((day) => (
-                        <option
-                          key={day}
-                          value={day}
-                        >
+                        <option key={day} value={day}>
                           {capitalize(day)}
                         </option>
                       ))}
@@ -1787,8 +1725,7 @@ function Profile() {
                       onChange={(e) =>
                         setSlotForm({
                           ...slotForm,
-                          start_time:
-                            e.target.value,
+                          start_time: e.target.value,
                         })
                       }
                     />
@@ -1803,8 +1740,7 @@ function Profile() {
                       onChange={(e) =>
                         setSlotForm({
                           ...slotForm,
-                          end_time:
-                            e.target.value,
+                          end_time: e.target.value,
                         })
                       }
                     />
@@ -1815,20 +1751,16 @@ function Profile() {
                       type="submit"
                       className="mp-btn mp-btn-primary"
                     >
-                      {editingId !== null
-                        ? "Save"
-                        : "Add Slot"}
+                      {editingId !== null ? "Save" : "Add Slot"}
                     </button>
 
-                    {editingId !== null && (
-                      <button
-                        type="button"
-                        className="mp-btn mp-btn-ghost"
-                        onClick={resetSlotForm}
-                      >
-                        Cancel
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      className="mp-btn mp-btn-ghost"
+                      onClick={resetSlotForm}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
 
@@ -1838,11 +1770,72 @@ function Profile() {
                   </p>
                 )}
               </form>
-            </section>
-          </div>
+            )}
+          </section>
+
+          {/* Settings */}
+          <section className="mp-card mp-settings-card">
+            <div className="mp-card-head">
+              <div className="mp-card-title">
+                <h2>Settings</h2>
+                <p>Session preferences and notifications.</p>
+              </div>
+            </div>
+
+            <div className="mp-setting">
+              <div>
+                <strong>Maximum Session Length</strong>
+                <span>Sessions can be shorter, but never longer than this.</span>
+              </div>
+
+              <div className="mp-setting-controls">
+                <select
+                  value={maxSessionDuration}
+                  onChange={(e) =>
+                    setMaxSessionDuration(Number(e.target.value))
+                  }
+                >
+                  {sessionDurationOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <button
+                  type="button"
+                  className="mp-btn mp-btn-primary mp-duration-save"
+                  onClick={saveSessionLength}
+                  disabled={
+                    settingsSaving ||
+                    maxSessionDuration === savedDuration
+                  }
+                >
+                  {settingsSaving ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mp-setting">
+              <div>
+                <strong>Email Notifications</strong>
+                <span>Emails about requests, sessions and reviews. Saved as soon as you switch it.</span>
+              </div>
+
+              <button
+                type="button"
+                role="switch"
+                aria-checked={emailNotifications}
+                aria-label="Email notifications"
+                className={emailNotifications ? "mp-switch on" : "mp-switch"}
+                onClick={handleEmailToggle}
+                disabled={emailNotificationsLoading}
+              >
+                <span className="mp-switch-knob" />
+              </button>
+            </div>
+          </section>
         </div>
-
-
       </div>
     </main>
   );

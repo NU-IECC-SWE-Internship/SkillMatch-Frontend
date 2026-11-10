@@ -1990,3 +1990,42 @@
     gap: 10px;
   }
 }
+
+/* ========================================
+   OTHER USER'S PROFILE - SKILL LISTS
+   Full lists with a "Show all" toggle instead of a capped scroll box.
+======================================== */
+
+.upp-skill-list {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+.upp-skill-tag {
+  flex-shrink: 0;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.7rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.upp-show-all {
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.upp-show-all:hover {
+  text-decoration: underline;
+}

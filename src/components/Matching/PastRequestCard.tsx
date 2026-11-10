@@ -38,7 +38,7 @@ export default function PastRequestCard({
 
   return (
     <div
-      className={`incoming-card past-card fx-glow fx-lift fx-pop ${
+      className={`incoming-card past-card ${
         accepted ? "fx-theme-teal" : "fx-theme-rose"
       }`}
     >

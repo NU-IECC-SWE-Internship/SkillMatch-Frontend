@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import type { Match, MatchSkill } from "../../types/match";
+import type { Match } from "../../types/match";
 import VerifiedBadge from "../VerifiedBadge";
 import "./MatchCard.css";
 
@@ -8,62 +9,26 @@ interface MatchCardProps {
   mutual?: boolean;
 }
 
-const MAX_CHIPS = 3;
+// After this many tags the rest go behind "+N more".
+const MAX_TAGS = 4;
 
-function SkillRow({
-  label,
-  skills,
-  emptyText,
-}: {
-  label: string;
-  skills: MatchSkill[];
-  emptyText: string;
-}) {
-  const shown = skills.slice(0, MAX_CHIPS);
-  const hidden = skills.length - shown.length;
-
-  return (
-    <div className="mc-row">
-      <span className="mc-label">{label}</span>
-      {skills.length === 0 ? (
-        <p className="mc-empty">{emptyText}</p>
-      ) : (
-        <div className="mc-chips">
-          {shown.map((skill) => (
-            <span key={skill.name} className="mc-chip" title={skill.name}>
-              <span className="mc-chip-name">{skill.name}</span>
-              <VerifiedBadge verified={skill.is_verified} compact />
-            </span>
-          ))}
-          {hidden > 0 && (
-            <span
-              className="mc-chip mc-chip-more"
-              title={skills.slice(MAX_CHIPS).map((skill) => skill.name).join(", ")}
-            >
-              +{hidden}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RatingLine({ average, count }: { average?: number; count?: number }) {
+function RatingText({ average, count }: { average?: number; count?: number }) {
   const total = Number(count) || 0;
   if (total === 0) return <span className="mc-rating">New member</span>;
 
   return (
     <span className="mc-rating">
-      <span className="mc-star">★</span> {(Number(average) || 0).toFixed(1)}
-      <span className="mc-rating-count"> · {total} {total === 1 ? "review" : "reviews"}</span>
+      Rated <strong>{(Number(average) || 0).toFixed(1)}</strong> ({total}{" "}
+      {total === 1 ? "review" : "reviews"})
     </span>
   );
 }
 
+// Compact tile: who they are, the skills they teach (yours highlighted first), one action.
 function MatchCard({ match, mutual = false }: MatchCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showAll, setShowAll] = useState(false);
 
   const handleRequest = () => {
     navigate(`/matches/${match.user_id}/request`, {
@@ -81,8 +46,16 @@ function MatchCard({ match, mutual = false }: MatchCardProps) {
     ? match.username.charAt(0).toUpperCase()
     : "?";
 
+  // In "Mutual matches" every listed skill is one you want; elsewhere is_matching marks them.
+  const isWanted = (matching?: boolean) => mutual || Boolean(matching);
+  const skills = [...match.teach_me].sort(
+    (a, b) => Number(isWanted(b.is_matching)) - Number(isWanted(a.is_matching))
+  );
+  const shown = showAll ? skills : skills.slice(0, MAX_TAGS);
+  const hidden = skills.length - MAX_TAGS;
+
   return (
-    <article className="mc-card fx-pop">
+    <article className="mc-card">
       <header className="mc-head">
         <button
           type="button"
@@ -94,29 +67,56 @@ function MatchCard({ match, mutual = false }: MatchCardProps) {
         </button>
 
         <div className="mc-identity">
-          <button type="button" className="mc-name" onClick={handleProfile} title={match.username}>
+          <button type="button" className="mc-name" onClick={handleProfile} title={`View ${match.username}'s profile`}>
             {match.username}
           </button>
-          <RatingLine average={match.rating_average} count={match.rating_count} />
+          <RatingText average={match.rating_average} count={match.rating_count} />
         </div>
 
         {mutual && <span className="mc-mutual">Mutual</span>}
       </header>
 
-      <SkillRow label="Teaches" skills={match.teach_me} emptyText="No skills listed." />
+      <div className="mc-body">
+        <span className="mc-label">Teaches</span>
+        {skills.length === 0 ? (
+          <p className="mc-empty">No skills listed.</p>
+        ) : (
+          <ul className="mc-tags">
+            {shown.map((skill) => (
+              <li
+                key={skill.name}
+                className={isWanted(skill.is_matching) ? "mc-tag wanted" : "mc-tag"}
+                title={isWanted(skill.is_matching) ? `${skill.name} (on your learning list)` : skill.name}
+              >
+                {skill.name}
+                <VerifiedBadge verified={skill.is_verified} compact />
+              </li>
+            ))}
+            {hidden > 0 && (
+              <li>
+                <button
+                  type="button"
+                  className="mc-more"
+                  aria-expanded={showAll}
+                  onClick={() => setShowAll(!showAll)}
+                >
+                  {showAll ? "Show less" : `+${hidden} more`}
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
 
-      {mutual && (
-        <SkillRow label="Wants to learn" skills={match.teach_them} emptyText="Nothing listed." />
-      )}
+        {mutual && match.teach_them.length > 0 && (
+          <p className="mc-wants">
+            Wants to learn: {match.teach_them.map((skill) => skill.name).join(", ")}
+          </p>
+        )}
+      </div>
 
-      <footer className="mc-foot">
-        <button type="button" className="mc-btn mc-btn-ghost" onClick={handleProfile}>
-          Profile
-        </button>
-        <button type="button" className="mc-btn mc-btn-primary" onClick={handleRequest}>
-          Request swap
-        </button>
-      </footer>
+      <button type="button" className="mc-request" onClick={handleRequest}>
+        Request swap
+      </button>
     </article>
   );
 }

@@ -45,6 +45,11 @@ export default function SkillQuiz() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, OptionKey>>({});
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS);
+  // When the current question's time runs out (ms timestamp). Based on the clock,
+  // so time keeps passing while the tab is hidden (browsers pause timers there).
+  const [deadline, setDeadline] = useState(0);
+  // Same value, read by the timer callbacks so a stale tick can't skip an extra question.
+  const deadlineRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,7 +169,9 @@ export default function SkillQuiz() {
     [questions, skillId],
   );
 
-  const goNext = useCallback(() => {
+  // timedOut: the next question's clock starts where this one ran out, so time spent
+  // away from the tab uses up questions; answering starts the next one fresh.
+  const goNext = useCallback((timedOut = false) => {
     if (advancingRef.current || submitting || result) return;
     advancingRef.current = true;
 
@@ -174,29 +181,41 @@ export default function SkillQuiz() {
     }
 
     setIndex((i) => i + 1);
+    const next = (timedOut ? deadlineRef.current : Date.now()) + QUESTION_SECONDS * 1000;
+    deadlineRef.current = next;
+    setDeadline(next);
     setSecondsLeft(QUESTION_SECONDS);
     window.setTimeout(() => {
       advancingRef.current = false;
     }, 0);
   }, [finishQuiz, isLast, result, submitting]);
 
-  // Timer: count down 20s per question; only while the quiz has started
+  // Timer: 20s per question, measured against the deadline (not by counting ticks).
   useEffect(() => {
     if (!started || loading || error || result || submitting || !current) return;
 
-    if (secondsLeft <= 0) {
-      goNext();
-      return;
-    }
+    const tick = () => {
+      const left = Math.ceil((deadlineRef.current - Date.now()) / 1000);
+      setSecondsLeft(Math.max(left, 0));
+      if (left <= 0) goNext(true);
+    };
 
-    const timer = window.setTimeout(() => {
-      setSecondsLeft((s) => s - 1);
-    }, 1000);
+    const first = window.setTimeout(tick, 0);
+    const interval = window.setInterval(tick, 250);
+    // Update right away when coming back to the tab.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    document.addEventListener("visibilitychange", onVisible);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(first);
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [
     started,
-    secondsLeft,
+    deadline,
     loading,
     error,
     result,
@@ -237,6 +256,8 @@ export default function SkillQuiz() {
       setIndex(0);
       setAnswers({});
       setSecondsLeft(QUESTION_SECONDS);
+      deadlineRef.current = Date.now() + QUESTION_SECONDS * 1000;
+      setDeadline(deadlineRef.current);
       advancingRef.current = false;
       setStarted(true);
     } catch (err) {
@@ -262,8 +283,8 @@ export default function SkillQuiz() {
         ) : error && !result ? (
           <div className="skill-quiz-error-card fx-glow fx-accent-top fx-theme-rose fx-rise fx-d1" role="alert">
             <p>{error}</p>
-            <Link to="/profile" className="skill-quiz-secondary">
-              Back to Profile
+            <Link to="/quizzes" className="skill-quiz-secondary">
+              Back to Quizzes
             </Link>
           </div>
         ) : blockedAttempt ? (
@@ -305,9 +326,9 @@ export default function SkillQuiz() {
               <button
                 type="button"
                 className="skill-quiz-primary fx-btn"
-                onClick={() => navigate("/profile", { replace: true })}
+                onClick={() => navigate("/quizzes", { replace: true })}
               >
-                Back to Profile
+                Back to Quizzes
               </button>
             </div>
             {showLastReview ? <QuizReview items={blockedAttempt.review} /> : null}
@@ -345,9 +366,9 @@ export default function SkillQuiz() {
               <button
                 type="button"
                 className="skill-quiz-primary fx-btn"
-                onClick={() => navigate("/profile", { replace: true })}
+                onClick={() => navigate("/quizzes", { replace: true })}
               >
-                Back to Profile
+                Back to Quizzes
               </button>
             </div>
             {result.review?.length ? <QuizReview items={result.review} /> : null}
@@ -378,7 +399,7 @@ export default function SkillQuiz() {
               <button
                 type="button"
                 className="skill-quiz-secondary"
-                onClick={() => navigate("/profile", { replace: true })}
+                onClick={() => navigate("/quizzes", { replace: true })}
                 disabled={generating}
               >
                 Not now
@@ -462,7 +483,7 @@ export default function SkillQuiz() {
               <button
                 type="button"
                 className="skill-quiz-primary fx-btn"
-                onClick={goNext}
+                onClick={() => goNext()}
                 disabled={submitting || !answers[current.id]}
               >
                 {submitting

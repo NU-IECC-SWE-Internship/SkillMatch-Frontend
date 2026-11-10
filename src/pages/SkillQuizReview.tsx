@@ -57,8 +57,8 @@ function ReviewContent({ skillId }: { skillId: number }) {
     return (
       <div className="skill-quiz-error-card fx-rise" role="alert">
         <p>{error}</p>
-        <Link to="/profile" className="skill-quiz-secondary">
-          Back to Profile
+        <Link to="/quizzes" className="skill-quiz-secondary">
+          Back to Quizzes
         </Link>
       </div>
     );

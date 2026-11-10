@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import {
+  getMySkills,
   getUserProfile,
   type PublicUserProfile,
 } from "../api/profileApi";
@@ -9,6 +10,79 @@ import {
 import VerifiedBadge from "../components/VerifiedBadge";
 
 import "./ProfileRedesign.css";
+
+const SKILL_PREVIEW = 6;
+
+type ProfileSkill = PublicUserProfile["teach_skills"][number];
+
+// Shows the first few skills with a "Show all" toggle; `tagged` skills get a note
+// (e.g. "You want this" when they teach something you want to learn).
+function SkillList({
+  skills,
+  emptyText,
+  showVerified,
+  tagged,
+  tagText,
+}: {
+  skills: ProfileSkill[];
+  emptyText: string;
+  showVerified: boolean;
+  tagged: Set<string>;
+  tagText: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (skills.length === 0) {
+    return <p className="upp-empty">{emptyText}</p>;
+  }
+
+  const shown = expanded ? skills : skills.slice(0, SKILL_PREVIEW);
+  const hidden = skills.length - SKILL_PREVIEW;
+
+  return (
+    <>
+      <ul className="upp-skill-list">
+        {shown.map((skill) => (
+          <li
+            key={skill.skill}
+            className={
+              showVerified && skill.is_verified
+                ? "upp-skill-row verified"
+                : "upp-skill-row"
+            }
+          >
+            <div className="upp-skill-left">
+              <span className="upp-skill-initial">
+                {skill.skill_name.slice(0, 2)}
+              </span>
+
+              <span className="upp-skill-name">
+                {skill.skill_name}
+              </span>
+
+              {tagged.has(skill.skill_name.toLowerCase()) && (
+                <span className="upp-skill-tag">{tagText}</span>
+              )}
+            </div>
+
+            {showVerified && <VerifiedBadge verified={skill.is_verified} />}
+          </li>
+        ))}
+      </ul>
+
+      {hidden > 0 && (
+        <button
+          type="button"
+          className="upp-show-all"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded ? "Show less" : `Show all ${skills.length} skills`}
+        </button>
+      )}
+    </>
+  );
+}
 
 export default function UserProfile() {
   const { userId } = useParams();
@@ -32,6 +106,27 @@ export default function UserProfile() {
           : "Browse Skills";
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
+  // Your own skills (lower-cased names), to point out overlaps with this person
+  const [myLearn, setMyLearn] = useState<Set<string>>(new Set());
+  const [myTeach, setMyTeach] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    getMySkills()
+      .then((skills) => {
+        if (cancelled) return;
+        const names = (type: string) =>
+          new Set(skills.filter((s) => s.skill_type === type).map((s) => s.skill_name.toLowerCase()));
+        setMyLearn(names("learn"));
+        setMyTeach(names("teach"));
+      })
+      .catch(() => {
+        // Optional extra; the profile still works without it.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -217,34 +312,13 @@ useEffect(() => {
               </span>
             </div>
 
-            {profile.teach_skills.length === 0 ? (
-              <p className="upp-empty">No teaching skills added yet.</p>
-            ) : (
-              <ul className="upp-skill-list">
-                {profile.teach_skills.map((skill) => (
-                  <li
-                    key={skill.skill}
-                    className={
-                      skill.is_verified
-                        ? "upp-skill-row verified"
-                        : "upp-skill-row"
-                    }
-                  >
-                    <div className="upp-skill-left">
-                      <span className="upp-skill-initial">
-                        {skill.skill_name.slice(0, 2)}
-                      </span>
-
-                      <span className="upp-skill-name">
-                        {skill.skill_name}
-                      </span>
-                    </div>
-
-                    <VerifiedBadge verified={skill.is_verified} />
-                  </li>
-                ))}
-              </ul>
-            )}
+            <SkillList
+              skills={profile.teach_skills}
+              emptyText="No teaching skills added yet."
+              showVerified
+              tagged={myLearn}
+              tagText="You want this"
+            />
           </section>
 
           <section className="upp-skill-card">
@@ -259,25 +333,13 @@ useEffect(() => {
               </span>
             </div>
 
-            {profile.learn_skills.length === 0 ? (
-              <p className="upp-empty">No learning skills added yet.</p>
-            ) : (
-              <ul className="upp-skill-list">
-                {profile.learn_skills.map((skill) => (
-                  <li key={skill.skill} className="upp-skill-row">
-                    <div className="upp-skill-left">
-                      <span className="upp-skill-initial">
-                        {skill.skill_name.slice(0, 2)}
-                      </span>
-
-                      <span className="upp-skill-name">
-                        {skill.skill_name}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <SkillList
+              skills={profile.learn_skills}
+              emptyText="No learning skills added yet."
+              showVerified={false}
+              tagged={myTeach}
+              tagText="You teach this"
+            />
           </section>
         </div>
       </div>

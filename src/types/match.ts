@@ -19,6 +19,16 @@ export interface SkillItem {
   id: number;
   name: string;
   is_verified?: boolean;
+  // True when it's a skill the current user wants to learn
+  wanted?: boolean;
+}
+
+// A skill someone teaches, for the Browse Skills filter
+export interface CatalogSkill {
+  id: number;
+  name: string;
+  teacher_count: number;
+  wanted: boolean;
 }
 
 export interface Teacher {
@@ -31,5 +41,6 @@ export interface Teacher {
 
 export interface TeachersResponse {
   learning_skills: SkillItem[];
+  all_skills?: CatalogSkill[];
   teachers: Teacher[];
 }

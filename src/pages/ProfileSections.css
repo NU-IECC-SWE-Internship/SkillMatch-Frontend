@@ -1,0 +1,232 @@
+/* ========================================
+   MY PROFILE - SECTION LAYOUT
+   One column of cards: About, Skills, Availability, Settings.
+   Loaded after MyProfile.css and ProfileRedesign.css.
+======================================== */
+
+.mp-sections {
+  display: grid;
+  gap: 20px;
+}
+
+.mp-sections > .mp-card {
+  margin: 0;
+}
+
+/* Lists grow with their content; the old layout capped them with inner scrollbars. */
+.mp-sections .mp-skill-list,
+.mp-sections .mp-slot-list {
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
+}
+
+/* ---------- Toast ---------- */
+
+.mp-toast {
+  position: fixed;
+  top: 84px;
+  left: 50%;
+  z-index: 1000;
+  width: max-content;
+  max-width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.16);
+  transform: translateX(-50%);
+  /* Pops in quickly, fades out just before the 3.5s timer removes it (TOAST_MS). */
+  animation:
+    mp-toast-in 0.18s ease-out,
+    mp-toast-out 0.3s ease-in 3.2s forwards;
+}
+
+@keyframes mp-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes mp-toast-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+.mp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.mp-btn-small {
+  min-height: 34px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* ---------- About ---------- */
+
+.mp-bio-text {
+  margin: 0;
+  color: #334155;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mp-section-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---------- Skills ---------- */
+
+.mp-skills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+}
+
+.mp-skill-group {
+  min-width: 0;
+  padding: 16px;
+  background: var(--accent-soft, #f8fafc);
+  border: 1px solid var(--accent-border, #e2e8f0);
+  border-radius: 10px;
+}
+
+.mp-group-head {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mp-group-head h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent, #0f172a);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.mp-skill-group .mp-skill-list {
+  margin: 0;
+}
+
+.mp-skill-group .mp-empty {
+  margin: 0;
+}
+
+.mp-skill-group .mp-add {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--accent-border, #e2e8f0);
+}
+
+/* ---------- Availability ---------- */
+
+.mp-availability-card .mp-slot-list {
+  margin: 0;
+}
+
+.mp-availability-card .mp-slot-form {
+  margin-top: 16px;
+}
+
+/* ---------- Settings ---------- */
+
+.mp-settings-card .mp-setting {
+  margin-bottom: 12px;
+}
+
+.mp-settings-card .mp-setting:last-child {
+  margin-bottom: 0;
+}
+
+.mp-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  background: #cbd5e1;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.mp-switch.on {
+  background: #2563eb;
+}
+
+.mp-switch:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.mp-switch:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.mp-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+  transition: transform 0.18s ease;
+}
+
+.mp-switch.on .mp-switch-knob {
+  transform: translateX(20px);
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 720px) {
+  .mp-skills-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mp-section-actions {
+    justify-content: stretch;
+  }
+
+  .mp-section-actions .mp-btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-switch,
+  .mp-switch-knob {
+    transition: none;
+  }
+
+  .mp-toast {
+    animation: none;
+  }
+}

@@ -1,0 +1,209 @@
+/* Quizzes page: one plain card listing your teaching skills and their quiz status. */
+
+.qz-page {
+  min-height: 100vh;
+  padding: 32px 16px 64px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-family: var(--sans);
+}
+
+.qz-container {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.qz-header {
+  margin-bottom: 20px;
+}
+
+.qz-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.qz-header p {
+  margin: 6px 0 0;
+  max-width: 620px;
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.qz-card,
+.qz-state {
+  padding: 20px 22px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.qz-card-head {
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.qz-card-head h2,
+.qz-state h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.qz-count {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ---------- Rows ---------- */
+
+.qz-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.qz-row {
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.qz-row:last-child {
+  border-bottom: 0;
+}
+
+.qz-skill {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qz-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.98rem;
+  font-weight: 650;
+}
+
+.qz-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.qz-status {
+  font-weight: 600;
+}
+
+.qz-status.done {
+  color: #15803d;
+}
+
+.qz-status.todo {
+  color: #1d4ed8;
+}
+
+.qz-status.wait {
+  color: #64748b;
+}
+
+.qz-details {
+  color: #64748b;
+}
+
+/* ---------- Buttons ---------- */
+
+.qz-actions {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+}
+
+.qz-btn {
+  min-height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.qz-btn-primary {
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.qz-btn-primary:hover {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+}
+
+.qz-btn-ghost {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.qz-btn-ghost:hover {
+  background: #f8fafc;
+}
+
+.qz-footnote {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.qz-footnote a {
+  color: #1d4ed8;
+}
+
+/* ---------- Loading / empty / error ---------- */
+
+.qz-state {
+  color: #64748b;
+}
+
+.qz-state p {
+  margin: 6px 0 14px;
+}
+
+.qz-error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+@media (max-width: 600px) {
+  .qz-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .qz-actions .qz-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

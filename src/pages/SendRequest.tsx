@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   getMySkills,
+  getUserProfile,
   type AvailabilitySlot,
 } from "../api/profileApi";
 import {
@@ -19,7 +20,6 @@ import type {
   SkillItem,
   Teacher,
 } from "../types/match";
-import { handleCursorGlow } from "../lib/cursorGlow";
 import "./SendRequest.css";
 interface MySkill {
   id: number;
@@ -105,6 +105,12 @@ function getCandidateDateTime(day: string, time: string) {
 
 
 
+const WIZARD_STEPS = [
+  { n: 1, label: "Skill" },
+  { n: 2, label: "Time" },
+  { n: 3, label: "Review" },
+] as const;
+
 function SendRequest() {
 
   const { userId } = useParams();
@@ -134,6 +140,10 @@ function SendRequest() {
   const [match, setMatch] = useState<Match | null>(matchFromState ?? null);
 
   const [teacher, setTeacher] = useState<Teacher | null>(teacherFromState ?? null);
+  // Everything the partner teaches, from their public profile (the matches list only has overlaps)
+  const [partnerTeachSkills, setPartnerTeachSkills] = useState<SkillItem[] | null>(null);
+  // Wizard step: 1 = skill, 2 = time, 3 = review
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
 
 
@@ -221,13 +231,27 @@ function SendRequest() {
 
 
 
-        const [skillsData, matchesData] = await Promise.all([
+        const [skillsData, matchesData, partnerProfile] = await Promise.all([
 
           getSkillsList(),
 
           resolvedId ? getMatches() : Promise.resolve([]),
 
+          resolvedId ? getUserProfile(resolvedId).catch(() => null) : Promise.resolve(null),
+
         ]);
+
+        if (isMounted && partnerProfile) {
+          setPartnerTeachSkills(
+            partnerProfile.teach_skills.map((skill) => ({
+              id: skill.skill,
+              name: skill.skill_name,
+              is_verified: skill.is_verified,
+            }))
+          );
+          // Their real learning list, for the "Wanted" tags on your skills.
+          setPartnerWantsToLearn(partnerProfile.learn_skills.map((skill) => skill.skill_name));
+        }
 
 
 
@@ -425,9 +449,14 @@ function SendRequest() {
 
   const busyIntervals = sessionSettings?.busy_intervals ?? [];
 
+  // Times someone already requested from this person can't be picked again.
+  const requestedTimes = sessionSettings?.requested_times ?? [];
+
 
 
   const skillsToLearn =
+
+    partnerTeachSkills ??
 
     teacher?.skills.map((skill) => ({
 
@@ -486,6 +515,21 @@ function SendRequest() {
     duration: number
 
   ) => {
+
+    const startMinutes = timeToMinutes(startTime);
+    const endMinutes = startMinutes + duration;
+    const alreadyRequested = requestedTimes.some(
+      (taken) =>
+        taken.day.toLowerCase() === day.toLowerCase() &&
+        startMinutes < timeToMinutes(taken.end_time) &&
+        endMinutes > timeToMinutes(taken.start_time)
+    );
+
+    if (alreadyRequested) {
+
+      return true;
+
+    }
 
     const start = getCandidateDateTime(day, startTime);
 
@@ -553,7 +597,7 @@ function SendRequest() {
 
     return options;
 
-  }, [selectedSlotObject, busyIntervals]);
+  }, [selectedSlotObject, busyIntervals, requestedTimes]);
 
 
 
@@ -610,6 +654,7 @@ function SendRequest() {
     sessionSettings,
 
     busyIntervals,
+    requestedTimes,
 
   ]);
 
@@ -986,105 +1031,58 @@ function SendRequest() {
 
 
   if (loading) {
-
     return (
-
-      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
-
-        <div className="send-request-panel">
-
-          <button
-
-            type="button"
-
-            className="send-request-back-btn"
-
-            onClick={handleBack}
-
-          >
-
+      <main className="sr-page">
+        <div className="sr-container">
+          <button type="button" className="sr-back" onClick={handleBack}>
             &larr; Back
-
           </button>
-
-          <div className="empty-state">
-
-            <h2>Loading session details...</h2>
-
-          </div>
-
+          <p className="sr-state">Loading session details...</p>
         </div>
-
       </main>
-
     );
-
   }
-
-
 
   if (!partnerId) {
-
     return (
-
-      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
-
-        <div className="send-request-panel">
-
-          <button
-
-            type="button"
-
-            className="send-request-back-btn"
-
-            onClick={handleBack}
-
-          >
-
+      <main className="sr-page">
+        <div className="sr-container">
+          <button type="button" className="sr-back" onClick={handleBack}>
             &larr; Back
-
           </button>
-
-          <div className="empty-state">
-
+          <div className="sr-state">
             <h2>User not found</h2>
-
             <p>This profile could not be loaded.</p>
-
           </div>
-
         </div>
-
       </main>
-
     );
-
   }
 
-
-
   const initial = partnerUsername
-
     ? partnerUsername.charAt(0).toUpperCase()
-
     : "?";
 
+  const ready =
+    Boolean(selectedSkill) &&
+    Boolean(selectedSlot) &&
+    Boolean(selectedStartTime) &&
+    selectedDuration !== null;
 
+  const timeReady =
+    Boolean(selectedSlot) && Boolean(selectedStartTime) && selectedDuration !== null;
+
+  // A step can be opened once everything before it is filled in.
+  const canOpenStep = (n: 1 | 2 | 3) =>
+    n === 1 || (n === 2 && Boolean(selectedSkill)) || (n === 3 && ready);
 
   return (
-
     <>
-
       <StatusModal
-
         isOpen={Boolean(statusModal)}
-
         title={statusModal?.title ?? ""}
-
         message={statusModal?.message ?? ""}
-
         type={statusModal?.type ?? "success"}
-
         onClose={() => {
           if (
             statusModal?.type === "success" &&
@@ -1096,441 +1094,233 @@ function SendRequest() {
 
           setStatusModal(null);
         }}
-
       />
 
+      <main className="sr-page">
+        <div className="sr-container">
+          <button type="button" className="sr-back" onClick={handleBack}>
+            &larr; Back
+          </button>
 
-
-      <main className="send-request-page fx-backdrop" onPointerMove={handleCursorGlow}>
-
-        <div className="send-request-panel">
-
-          <div className="send-request-nav">
-
-            <button
-
-              type="button"
-
-              className="send-request-back-btn"
-
-              onClick={handleBack}
-
-            >
-
-              &larr; Back
-
-            </button>
-
-            <span className="send-request-brand">SkillMatch</span>
-
-          </div>
-
-
-
-          <header className="send-request-header fx-hero fx-glow fx-rise">
-
-            <div className="partner-profile-lockup">
-
-              <div className="partner-avatar">{initial}</div>
-
-              <div>
-
-                <span className="step-tag">PROPOSE A SESSION</span>
-
-                <h1 className="request-title">
-
-                  Skill Swap with {partnerUsername}
-
-                </h1>
-
-              </div>
-
+          <header className="sr-header">
+            <div className="sr-avatar" aria-hidden="true">{initial}</div>
+            <div>
+              <h1>Request a skill swap with {partnerUsername}</h1>
+              <p>
+                Pick what you want to learn and a time that fits their schedule.
+                They can accept or decline.
+              </p>
             </div>
-
           </header>
 
-
-
-          {/* Skill Selection & Offer Grid */}
-
-          <section className="swap-overview-section">
-
-            <div className="swap-grid">
-
-              {/* Skill to Learn */}
-
-              <div className="swap-box learn-box fx-glow fx-lift fx-accent-top fx-theme-blue fx-rise fx-d1">
-
-                <div className="swap-box-header">
-
-                  <span className="swap-direction-icon">📥</span>
-
-                  <div>
-
-                    <span className="swap-box-title">
-
-                      Step 1: Select Skill to Learn
-
-                    </span>
-
-                    <span className="swap-box-subtitle">
-
-                      What {partnerUsername} will teach you
-
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-
-                <div className="skill-selector-list">
-
-                  {skillsToLearn.length === 0 ? (
-
-                    <p className="empty-state-text">
-
-                      This user has not added any teaching skills yet.
-
-                    </p>
-
-                  ) : (
-
-                    skillsToLearn.map((skill) => (
-
-                      <button
-
-                        type="button"
-
-                        key={skill.id}
-
-                        className={`skill-choice ${
-
-                          selectedSkill === skill.name ? "selected" : ""
-
-                        }`}
-
-                        onClick={() => setSelectedSkill(skill.name)}
-
-                      >
-
-                        <span className="skill-radio"></span>
-
-                        <span className="skill-text">
-
-                          {skill.name}
-
-                          <VerifiedBadge
-
-                            verified={!!skill.is_verified}
-
-                            compact
-
-                          />
-
-                        </span>
-
-                      </button>
-
-                    ))
-
-                  )}
-
-                </div>
-
-              </div>
-
-
-
-              <div className="swap-divider">
-
-                <span>⇄</span>
-
-              </div>
-
-
-
-              {/* Skills You Offer */}
-
-              <div className="swap-box teach-box fx-glow fx-lift fx-accent-top fx-theme-teal fx-rise fx-d2">
-
-                <div className="swap-box-header">
-
-                  <span className="swap-direction-icon">📤</span>
-
-                  <div>
-
-                    <span className="swap-box-title">Skills You Offer</span>
-
-                    <span className="swap-box-subtitle">
-
-                      Skills you can teach {partnerUsername}
-
-                    </span>
-
-                  </div>
-
-                </div>
-
-
-
-                <div className="skill-legend">
-
-                  <span className="legend-item">
-
-                    <span className="legend-dot matched-dot"></span>
-
-                    <strong>Green:</strong> Matched skill ({partnerUsername} wants to learn this)
-
-                  </span>
-
-                  <span className="legend-item">
-
-                    <span className="legend-dot default-dot"></span>
-
-                    <strong>Gray:</strong> Other skills you teach
-
-                  </span>
-
-                </div>
-
-
-
-                <div className="skills-badge-list">
-
-                  {skillsYouOffer.length === 0 ? (
-
-                    <span className="empty-state-text">
-
-                      You have not added any teaching skills yet.
-
-                    </span>
-
-                  ) : (
-
-                    skillsYouOffer.map((skill) => {
-
-                      const isMatch = matchingSkillNames.has(
-
-                        skill.skill_name.toLowerCase().trim()
-
-                      );
-
-
-
-                      return (
-
-                        <span
-
-                          className={`skill-pill pill-teach ${
-
-                            isMatch ? "pill-matched" : ""
-
-                          }${skill.is_verified ? " is-verified" : ""}`}
-
-                          key={skill.id}
-
-                        >
-
-                          {isMatch && <span className="matched-star">★ </span>}
-
-                          {skill.skill_name}
-
-                          <VerifiedBadge
-
-                            verified={!!skill.is_verified}
-
-                            compact
-
-                          />
-
-                        </span>
-
-                      );
-
-                    })
-
-                  )}
-
-                </div>
-
-              </div>
-
-            </div>
-          </section>
-          {/* Session Planner */}
-          <section className="request-section fx-glow fx-accent-top fx-theme-amber fx-rise fx-d3">
-            <div className="section-heading">
-              <span className="step-number">02</span>
-              <div>
-                <h2>Plan your session</h2>
-                <p>Select an available period, start time, and duration.</p>
-              </div>
-            </div>
-            <div className="schedule-card">
-              <div className="schedule-card-top">
-                <div>
-                  <span className="schedule-icon">◷</span>
-                  <div>
-                    <strong>{partnerUsername}&apos;s schedule</strong>
-                    <p>Choose any session inside their available time.</p>
-                  </div>
-                </div>
-                {sessionSettings && (
-                  <span className="max-duration-badge">
-                    Max {formatDuration(sessionSettings.max_session_duration_minutes)}
-                  </span>
-                )}
-              </div>
-
-              <div className="scheduler-grid">
-                {/* 1. AVAILABILITY */}
-                <div className="scheduler-field">
-                  <label>
-                    <span className="field-number">1</span> Availability
-                  </label>
-                  <div className="select-wrapper">
-                    <select
-                      value={selectedSlot ?? ""}
-                      onChange={(e) => handleSlotChange(Number(e.target.value))}
+          <nav className="sr-progress" aria-label="Request steps">
+            <span className="sr-progress-label">Step {step} of 3</span>
+            <ol>
+              {WIZARD_STEPS.map((item) => {
+                const state = item.n === step ? "current" : item.n < step ? "done" : "todo";
+                return (
+                  <li key={item.n} className={`sr-progress-step ${state}`}>
+                    <button
+                      type="button"
+                      disabled={!canOpenStep(item.n)}
+                      aria-current={item.n === step ? "step" : undefined}
+                      onClick={() => setStep(item.n)}
                     >
-                      <option value="">Choose availability</option>
-                      {availableSlots.map((slot) => (
-                        <option key={slot.id} value={slot.id}>
-                          {formatDayLabel(slot.day)} · {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="select-arrow">▾</span>
-                  </div>
-                </div>
-                {/* 2. START TIME */}
+                      <span className="sr-progress-bar" aria-hidden="true" />
+                      {item.label}
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
-                <div className="scheduler-field">
+          {step === 1 && (
+            <section className="sr-card">
+              <h2>What do you want to learn?</h2>
+              <p className="sr-help">Choose one skill {partnerUsername} teaches.</p>
 
-                  <label>
-
-                    <span className="field-number">2</span> Start time
-
-                  </label>
-
-                  <div className="select-wrapper">
-
-                    <select
-
-                      value={selectedStartTime}
-
-                      disabled={!selectedSlot}
-
-                      onChange={(e) => handleStartTimeChange(e.target.value)}
-
-                    >
-
-                      <option value="">
-
-                        {selectedSlot
-                          ? startTimeOptions.length > 0
-                            ? "Choose start time"
-                            : "No available times"
-                          : "Select availability first"}
-                      </option>
-                      {startTimeOptions.map((time) => (
-                        <option key={time} value={time}>
-                          {formatTime(time)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="select-arrow">▾</span>
-                  </div>
-                  {selectedSlot && (
-                    <span className="field-hint">Every 15 minutes</span>
-                  )}
-                </div>
-
-                {/* 3. DURATION */}
-                <div className="scheduler-field">
-                  <label>
-                    <span className="field-number">3</span> Duration
-                  </label>
-                  <div className="select-wrapper">
-                    <select
-                      value={selectedDuration ?? ""}
-                      disabled={!selectedStartTime}
-                      onChange={(e) => setSelectedDuration(Number(e.target.value))}
-                    >
-                      <option value="">
-                        {selectedStartTime
-                          ? durationOptions.length > 0
-                            ? "Choose duration"
-                            : "No duration available"
-                          : "Choose start time first"}
-                      </option>
-                      {durationOptions.map((duration) => (
-                        <option key={duration} value={duration}>
-                          {formatDuration(duration)}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="select-arrow">▾</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Proposed Session Summary */}
-              {selectedSlotObject && selectedStartTime && selectedDuration && requestedEndTime && (
-                <div className="session-preview">
-                  <div className="preview-icon">✓</div>
-                  <div className="preview-content">
-                    <span>YOUR PROPOSED SESSION</span>
-                    <strong>
-                      {formatDayLabel(selectedSlotObject.day)} · {formatTime(selectedStartTime)} – {formatTime(requestedEndTime)}
-                    </strong>
-                  </div>
-                  <div className="preview-duration">
-                    {formatDuration(selectedDuration)}
-                  </div>
+              {skillsToLearn.length === 0 ? (
+                <p className="sr-empty">{partnerUsername} has not added any teaching skills yet.</p>
+              ) : (
+                <div className="sr-options" role="radiogroup" aria-label="Skill to learn">
+                  {skillsToLearn.map((skill) => {
+                    const checked = selectedSkill === skill.name;
+                    return (
+                      <label key={skill.id} className={checked ? "sr-option checked" : "sr-option"}>
+                        <input
+                          type="radio"
+                          name="skill-to-learn"
+                          checked={checked}
+                          onChange={() => setSelectedSkill(skill.name)}
+                        />
+                        <span className="sr-option-name" title={skill.name}>{skill.name}</span>
+                        <VerifiedBadge verified={!!skill.is_verified} compact />
+                      </label>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          </section>
+            </section>
+          )}
 
-          {/* Footer */}
-          <div className="send-request-footer">
-            <div className="footer-help">
-              {!selectedSkill
-                ? "Choose a skill to continue"
-                : !selectedSlot
-                ? "Choose an available period"
-                : !selectedStartTime
-                ? "Choose your start time"
-                : selectedDuration === null
-                ? "Choose a session duration"
-                : "Everything looks good!"}
-            </div>
-            <button
+          {step === 2 && (
+            <section className="sr-card">
+              <h2>When should it happen?</h2>
+              <p className="sr-help">
+                Pick a time inside {partnerUsername}'s weekly availability
+                {sessionSettings
+                  ? `. Sessions can be up to ${formatDuration(sessionSettings.max_session_duration_minutes)}.`
+                  : "."}
+              </p>
 
-              type="button"
+              <div className="sr-fields">
+                <label className="sr-field">
+                  <span>Time window</span>
+                  <select
+                    value={selectedSlot ?? ""}
+                    onChange={(e) => handleSlotChange(Number(e.target.value))}
+                  >
+                    <option value="">
+                      {availableSlots.length > 0 ? "Choose a window" : "No availability yet"}
+                    </option>
+                    {availableSlots.map((slot) => (
+                      <option key={slot.id} value={slot.id}>
+                        {formatDayLabel(slot.day)}, {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              className="send-request-button fx-btn"
+                <label className="sr-field">
+                  <span>Start time</span>
+                  <select
+                    value={selectedStartTime}
+                    disabled={!selectedSlot}
+                    onChange={(e) => handleStartTimeChange(e.target.value)}
+                  >
+                    <option value="">
+                      {selectedSlot
+                        ? startTimeOptions.length > 0
+                          ? "Choose a start time"
+                          : "No free times"
+                        : "Choose a window first"}
+                    </option>
+                    {startTimeOptions.map((time) => (
+                      <option key={time} value={time}>
+                        {formatTime(time)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              disabled={
+                <label className="sr-field">
+                  <span>Length</span>
+                  <select
+                    value={selectedDuration ?? ""}
+                    disabled={!selectedStartTime}
+                    onChange={(e) => setSelectedDuration(Number(e.target.value))}
+                  >
+                    <option value="">
+                      {selectedStartTime
+                        ? durationOptions.length > 0
+                          ? "Choose a length"
+                          : "No length available"
+                        : "Choose a start time first"}
+                    </option>
+                    {durationOptions.map((duration) => (
+                      <option key={duration} value={duration}>
+                        {formatDuration(duration)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </section>
+          )}
 
-                !selectedSkill ||
+          {step === 3 && (
+            <section className="sr-card">
+              <h2>Review your request</h2>
+              <p className="sr-help">{partnerUsername} can accept or decline it.</p>
 
-                !selectedSlot ||
+              <dl className="sr-review">
+                <div>
+                  <dt>With</dt>
+                  <dd>{partnerUsername}</dd>
+                </div>
+                <div>
+                  <dt>You learn</dt>
+                  <dd>{selectedSkill}</dd>
+                </div>
+                <div>
+                  <dt>When</dt>
+                  <dd>
+                    {selectedSlotObject && selectedStartTime && requestedEndTime
+                      ? `${formatDayLabel(selectedSlotObject.day)}, ${formatTime(selectedStartTime)} – ${formatTime(requestedEndTime)}`
+                      : "-"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Length</dt>
+                  <dd>{selectedDuration ? formatDuration(selectedDuration) : "-"}</dd>
+                </div>
+                <div>
+                  <dt>You can offer</dt>
+                  <dd>
+                    {skillsYouOffer.length === 0 ? (
+                      "No teaching skills yet"
+                    ) : (
+                      <ul className="sr-tags">
+                        {skillsYouOffer.map((skill) => {
+                          const wanted = matchingSkillNames.has(skill.skill_name.toLowerCase().trim());
+                          return (
+                            <li key={skill.id} className={wanted ? "sr-tag wanted" : "sr-tag"}>
+                              {skill.skill_name}
+                              {wanted && <span className="sr-tag-note">Wanted</span>}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    <span className="sr-review-note">
+                      {partnerUsername} picks one of these when they accept, or none.
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+            </section>
+          )}
 
-                !selectedStartTime ||
+          <footer className="sr-footer">
+            {step > 1 ? (
+              <button type="button" className="sr-secondary" onClick={() => setStep((step - 1) as 1 | 2)}>
+                Previous
+              </button>
+            ) : (
+              <span />
+            )}
 
-                selectedDuration === null ||
-
-                submitting
-              }
-              onClick={handleSendRequest}
-            >
-              {submitting ? "Sending..." : "Send Request →"}
-            </button>
-          </div>
+            {step < 3 ? (
+              <button
+                type="button"
+                className="sr-send"
+                disabled={step === 1 ? !selectedSkill : !timeReady}
+                onClick={() => setStep((step + 1) as 2 | 3)}
+              >
+                Next
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="sr-send"
+                disabled={!ready || submitting}
+                onClick={handleSendRequest}
+              >
+                {submitting ? "Sending..." : "Send request"}
+              </button>
+            )}
+          </footer>
         </div>
       </main>
     </>

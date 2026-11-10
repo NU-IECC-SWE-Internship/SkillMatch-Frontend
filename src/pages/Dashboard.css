@@ -255,6 +255,107 @@
   transform: translateY(14px);
 }
 
+/* Hover (or tap on tablets) the banner: Learn and Teach swap places.
+   Sideways: `translate`, one step = card width + 42px arrow column.
+   Up/down: a keyframe arc on `transform` - Learn hops over, Teach ducks under.
+   On mouse-out the cards slide straight back (keyframes can't run on leave
+   without also running on page load). */
+.exchange-person {
+  position: relative;
+  transition:
+    translate 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+    transform 0.7s cubic-bezier(0.65, 0, 0.35, 1),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.exchange-person-left {
+  z-index: 1;
+}
+
+.dashboard-hero:hover .exchange-person,
+.dashboard-hero:focus-within .exchange-person {
+  border-color: #bfdbfe;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.14);
+}
+
+.dashboard-hero:hover .exchange-person-left,
+.dashboard-hero:focus-within .exchange-person-left {
+  translate: calc(100% + 42px) 0;
+  transform: translateY(14px);
+  animation: exchange-hop-over 0.7s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.dashboard-hero:hover .exchange-person-right,
+.dashboard-hero:focus-within .exchange-person-right {
+  translate: calc(-100% - 42px) 0;
+  transform: translateY(0);
+  animation: exchange-duck-under 0.7s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+@keyframes exchange-hop-over {
+  0% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-30px) rotate(-3deg);
+  }
+
+  100% {
+    transform: translateY(14px);
+  }
+}
+
+@keyframes exchange-duck-under {
+  0% {
+    transform: translateY(14px);
+  }
+
+  50% {
+    transform: translateY(40px) rotate(3deg) scale(0.96);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Teach is green so the two roles read apart at a glance. */
+.exchange-person-right {
+  border-color: #bbf7d0;
+}
+
+.exchange-person-right .exchange-avatar {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.exchange-person.exchange-person-right span {
+  color: #16a34a;
+}
+
+.dashboard-hero:hover .exchange-person-right,
+.dashboard-hero:focus-within .exchange-person-right {
+  border-color: #86efac;
+  box-shadow: 0 14px 32px rgba(22, 163, 74, 0.14);
+}
+
+/* Arrows flip just after the cards start moving. */
+.exchange-connection span {
+  transition: transform 0.5s cubic-bezier(0.65, 0, 0.35, 1) 0.12s;
+}
+
+.exchange-connection span:last-child {
+  color: #16a34a;
+}
+
+.dashboard-hero:hover .exchange-connection span,
+.dashboard-hero:focus-within .exchange-connection span {
+  transform: rotate(180deg);
+}
+
 .exchange-avatar {
   width: 34px;
   height: 34px;
@@ -426,6 +527,189 @@
 
 .dashboard-feature-card:hover .dashboard-card-action span {
   transform: translateX(3px);
+}
+
+/* Live value on each card (next session time, requests waiting, match count) */
+.dashboard-card-stat {
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-live-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  animation: dashboard-live-pulse 1.6s ease-out infinite;
+}
+
+@keyframes dashboard-live-pulse {
+  to {
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+  }
+}
+
+/* ---------- Live card layout: icon + title row, value, description, action ---------- */
+
+/* All three cards look the same, with a little brand blue: top line, icon, badge, button. */
+.dashboard-feature-card {
+  min-height: 0;
+  padding: 20px 22px 18px;
+  border-top: 3px solid #2563eb;
+}
+
+.dashboard-feature-card:hover {
+  border-color: #cbd5e1;
+  border-top-color: #2563eb;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.07);
+}
+
+/* A live session keeps the plain card; the pulsing dot next to "Live now" is the signal. */
+.dashboard-feature-card.live,
+.dashboard-feature-card.live:hover {
+  background: #ffffff;
+}
+
+.dashboard-card-head {
+  width: 100%;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-card-head .dashboard-card-icon {
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.dashboard-card-head h3 {
+  margin: 0;
+  color: #475569;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* The current state as a highlighted badge:
+   grey = nothing to do, blue = something there, green = live now. */
+.dashboard-card-stat {
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 1.05rem;
+}
+
+.dashboard-card-stat.tone-idle {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.dashboard-card-stat.tone-active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dashboard-card-stat.tone-live {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.dashboard-feature-card .dashboard-card-content p {
+  max-width: none;
+}
+
+/* Action as a real button: solid when there's something to do, outlined when idle. */
+.dashboard-feature-card .dashboard-card-action {
+  margin-top: 18px;
+  padding: 9px 16px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.dashboard-feature-card:hover .dashboard-card-action {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+}
+
+.dashboard-feature-card .dashboard-card-action.idle {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+.dashboard-feature-card:hover .dashboard-card-action.idle {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.dashboard-feature-card.live .dashboard-card-action {
+  border-color: #16a34a;
+  background: #16a34a;
+}
+
+.dashboard-feature-card.live:hover .dashboard-card-action {
+  border-color: #15803d;
+  background: #15803d;
+}
+
+/* Placeholder while the cards load */
+.dashboard-card-loading {
+  cursor: default;
+}
+
+.dashboard-card-loading:hover {
+  border-color: #e2e8f0;
+  box-shadow: none;
+  transform: none;
+}
+
+.dashboard-skeleton {
+  width: 70%;
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+}
+
+.dashboard-skeleton.short {
+  width: 45%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-live-dot {
+    animation: none;
+  }
+
+  .exchange-person,
+  .exchange-connection span {
+    transition: none;
+  }
+
+  .dashboard-hero:hover .exchange-person,
+  .dashboard-hero:focus-within .exchange-person {
+    animation: none;
+  }
 }
 
 @media (max-width: 980px) {

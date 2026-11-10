@@ -138,9 +138,11 @@ export default function MyRequests() {
       request.selected_slot_day.charAt(0).toUpperCase() +
       request.selected_slot_day.slice(1);
 
-    return `${day}, ${formatTime(
-      request.selected_slot_start_time
-    )} – ${formatTime(request.selected_slot_end_time)}`;
+    // The time the requester picked; older requests only have the whole window.
+    const start = request.requested_start_time || request.selected_slot_start_time;
+    const end = request.requested_end_time || request.selected_slot_end_time;
+
+    return `${day}, ${formatTime(start)} – ${formatTime(end)}`;
   };
 
   const formatReturnSlot = (request: MatchRequest) => {
@@ -220,7 +222,7 @@ export default function MyRequests() {
                       const busy = processingAction?.id === request.id;
 
                       return (
-                        <div key={request.id} className="incoming-card fx-glow fx-accent-top fx-pop fx-theme-violet">
+                        <div key={request.id} className="incoming-card">
                           <PersonHeader
                             userId={request.receiver}
                             username={request.receiver_username}
@@ -293,7 +295,7 @@ export default function MyRequests() {
                 ) : (
                   <div className="requests-grid">
                     {pendingRequests.map((request) => (
-                      <div key={request.id} className="incoming-card fx-glow fx-accent-top fx-pop fx-theme-blue">
+                      <div key={request.id} className="incoming-card">
                         <PersonHeader
                           userId={request.receiver}
                           username={request.receiver_username}
@@ -324,7 +326,7 @@ export default function MyRequests() {
                     ))}
 
                     {schedulingRequests.map((request) => (
-                      <div key={request.id} className="incoming-card fx-glow fx-accent-top fx-pop fx-theme-amber">
+                      <div key={request.id} className="incoming-card">
                         <PersonHeader
                           userId={request.receiver}
                           username={request.receiver_username}

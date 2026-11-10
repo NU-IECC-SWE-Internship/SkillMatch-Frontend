@@ -57,6 +57,7 @@
 }
 
 .app-navbar-link {
+  position: relative;
   border: 0;
   background: transparent;
   color: #475569;
@@ -76,10 +77,25 @@
   background: #f1f5f9;
 }
 
+/* Active page: blue text with an underline sitting on the navbar's bottom edge. */
 .app-navbar-link.active {
   color: #1d4ed8;
-  background: #eff6ff;
   font-weight: 650;
+}
+
+.app-navbar-link.active:hover {
+  background: transparent;
+}
+
+.app-navbar-link.active::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -14px;
+  height: 2px;
+  border-radius: 2px;
+  background: #2563eb;
 }
 
 .app-navbar-actions {
@@ -88,24 +104,128 @@
   gap: 12px;
 }
 
-.app-navbar-logout {
-  border: 0;
-  background: transparent;
-  color: #475569;
-  padding: 9px 10px;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.88rem;
-  font-weight: 550;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    color 0.18s ease;
+/* ---------- Account menu ---------- */
+
+.app-navbar-account {
+  position: relative;
 }
 
-.app-navbar-logout:hover {
-  background: #fef2f2;
+.app-navbar-avatar {
+  width: 38px;
+  height: 38px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2563eb;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.app-navbar-avatar:hover,
+.app-navbar-avatar[aria-expanded="true"] {
+  box-shadow: 0 0 0 4px #dbeafe;
+}
+
+.app-navbar-avatar.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #2563eb;
+}
+
+.app-navbar-avatar:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.app-navbar-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 110;
+  min-width: 200px;
+  padding: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.14);
+  animation: app-navbar-menu-in 0.14s ease-out;
+}
+
+@keyframes app-navbar-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-navbar-menu-head {
+  margin-bottom: 4px;
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.app-navbar-menu-head span {
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.app-navbar-menu-head strong {
+  color: #0f172a;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-navbar-menu button {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 10px;
+  background: transparent;
+  color: #334155;
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 550;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-navbar-menu button:hover,
+.app-navbar-menu button:focus-visible {
+  background: #f1f5f9;
+  outline: none;
+}
+
+.app-navbar-menu button.app-navbar-menu-logout {
   color: #dc2626;
+}
+
+.app-navbar-menu button.app-navbar-menu-logout:hover,
+.app-navbar-menu button.app-navbar-menu-logout:focus-visible {
+  background: #fef2f2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-navbar-menu {
+    animation: none;
+  }
 }
 
 .app-navbar-mobile {
@@ -150,9 +270,11 @@
   }
 
   .app-navbar-mobile button.active {
-    background: #eff6ff;
+    border-radius: 0;
+    background: transparent;
     color: #1d4ed8;
     font-weight: 650;
+    box-shadow: inset 0 -2px 0 #2563eb;
   }
 }
 
@@ -176,9 +298,10 @@
     gap: 6px;
   }
 
-  .app-navbar-logout {
-    padding: 8px;
-    font-size: 0.82rem;
+  .app-navbar-avatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.88rem;
   }
 }
 
@@ -190,5 +313,135 @@
   .app-navbar-mobile {
     padding-left: 14px;
     padding-right: 14px;
+  }
+}
+
+/* ========================================
+   Refined layout: links next to the logo, quiet icon buttons,
+   account button with name, shadow once scrolled.
+======================================== */
+
+.app-navbar {
+  transition: box-shadow 0.2s ease;
+}
+
+.app-navbar.scrolled {
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.app-navbar-main {
+  min-height: 62px;
+  gap: 28px;
+}
+
+.app-navbar-links {
+  justify-content: flex-start;
+  gap: 2px;
+}
+
+/* Underline sits on the bar's bottom edge (62px bar, ~37px link) */
+.app-navbar-link.active::after {
+  bottom: -12px;
+}
+
+/* Bell: plain round icon button instead of a bordered box */
+.app-navbar .notification-bell-btn {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #475569;
+}
+
+.app-navbar .notification-bell-btn:hover,
+.app-navbar .notification-bell-btn.active {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.app-navbar .notification-badge {
+  top: 2px;
+  right: 2px;
+}
+
+/* Account button: avatar + name + chevron */
+.app-navbar-actions {
+  gap: 6px;
+}
+
+.app-navbar-account-btn {
+  max-width: 220px;
+  padding: 3px 10px 3px 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #0f172a;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.app-navbar-account-btn:hover,
+.app-navbar-account-btn[aria-expanded="true"] {
+  background: #f1f5f9;
+}
+
+.app-navbar-account-btn.active {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.app-navbar-account-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.app-navbar-account-btn .app-navbar-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 0;
+  box-shadow: none;
+  font-size: 0.85rem;
+  cursor: inherit;
+}
+
+.app-navbar-username {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.app-navbar-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #64748b;
+  transition: transform 0.18s ease;
+}
+
+.app-navbar-account-btn[aria-expanded="true"] .app-navbar-chevron {
+  transform: rotate(180deg);
+}
+
+/* Phones: avatar only */
+@media (max-width: 680px) {
+  .app-navbar-username,
+  .app-navbar-chevron {
+    display: none;
+  }
+
+  .app-navbar-account-btn {
+    padding: 2px;
   }
 }

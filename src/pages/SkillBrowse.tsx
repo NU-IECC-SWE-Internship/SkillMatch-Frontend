@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 import { getMatches, getTeachers } from "../api/matchingApi";
 import { getMySkills } from "../api/profileApi";
 
-import type { Teacher, SkillItem, Match, MatchSkill } from "../types/match";
+import type { Teacher, SkillItem, Match, MatchSkill, CatalogSkill } from "../types/match";
 import MatchCard from "../components/Matching/MatchCard";
 import StatusModal from "../components/ui/StatusModal";
 import { handleCursorGlow } from "../lib/cursorGlow";
@@ -19,25 +19,26 @@ interface MySkill {
   is_verified?: boolean;
 }
 
-const SKILL_PREVIEW_COUNT = 12;
+// null = people teaching what you want, "all" = everyone, number = one skill
+type BrowseFilter = number | "all" | "matches" | null;
 
 function SkillBrowse() {
   const location = useLocation();
 
   const [learningSkills, setLearningSkills] = useState<SkillItem[]>([]);
+  const [allSkills, setAllSkills] = useState<CatalogSkill[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [myTeachSkills, setMyTeachSkills] = useState<MatchSkill[]>([]);
 
 
-  const [activeFilter, setActiveFilter] = useState<
-    number | "matches" | null
-  >(null);
+  const [activeFilter, setActiveFilter] = useState<BrowseFilter>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  const [showAllSkills, setShowAllSkills] = useState(false);
+  // "Browse all skills" panel
+  const [catalogOpen, setCatalogOpen] = useState(false);
 
   const [statusModal, setStatusModal] = useState<{
     title: string;
@@ -89,6 +90,7 @@ function SkillBrowse() {
 
       setMyTeachSkills(teachSkills);
       setLearningSkills(teachersData.learning_skills ?? []);
+      setAllSkills(teachersData.all_skills ?? []);
       setTeachers(teachersData.teachers ?? []);
       setMatches(matchesData ?? []);
     } catch (err) {
@@ -99,12 +101,12 @@ function SkillBrowse() {
     }
   }
 
-  async function loadTeachers(skillId?: number) {
+  async function loadTeachers(skill?: number | "all") {
     try {
       setLoading(true);
       setError("");
 
-      const data = await getTeachers(skillId);
+      const data = await getTeachers(skill);
       setTeachers(data.teachers ?? []);
     } catch (err) {
       console.error(err);
@@ -129,7 +131,7 @@ function SkillBrowse() {
     }
   }
 
-  function handleFilterClick(filter: number | "matches" | null) {
+  function handleFilterClick(filter: BrowseFilter) {
     setActiveFilter(filter);
 
     if (filter === "matches") {
@@ -147,10 +149,11 @@ function SkillBrowse() {
     username: teacher.username,
     rating_average: teacher.rating_average ?? 0,
     rating_count: teacher.rating_count ?? 0,
+    // Every skill they teach; the ones you want to learn are highlighted.
     teach_me: teacher.skills.map((skill) => ({
       name: skill.name,
       is_verified: Boolean(skill.is_verified),
-      is_matching: true,
+      is_matching: Boolean(skill.wanted),
     })),
     teach_them: myTeachSkills,
     teach_me_ids: teacher.skills.map((skill) => skill.id),
@@ -184,20 +187,25 @@ function SkillBrowse() {
       );
     });
 
-  const visibleSkills = showAllSkills
-    ? learningSkills
-    : learningSkills.slice(0, SKILL_PREVIEW_COUNT);
+  // The search box also narrows the "all skills" list and opens it.
+  const catalogSkills = normalizedQuery
+    ? allSkills.filter((skill) => skill.name.toLowerCase().includes(normalizedQuery))
+    : allSkills;
+  const catalogVisible = catalogOpen || (normalizedQuery !== "" && catalogSkills.length > 0);
 
   const activeSkillName =
     typeof activeFilter === "number"
-      ? learningSkills.find((skill) => skill.id === activeFilter)?.name
+      ? (allSkills.find((skill) => skill.id === activeFilter) ??
+          learningSkills.find((skill) => skill.id === activeFilter))?.name
       : undefined;
 
   const listTitle = showingMatches
     ? "Mutual matches"
-    : activeSkillName
-      ? `People who teach ${activeSkillName}`
-      : "People who can teach you";
+    : activeFilter === "all"
+      ? "Everyone, all skills"
+      : activeSkillName
+        ? `People who teach ${activeSkillName}`
+        : "People who can teach you";
 
   return (
     <>
@@ -264,7 +272,9 @@ function SkillBrowse() {
               </button>
             </div>
 
-            {!showingMatches && learningSkills.length > 0 && (
+            {/* With one learning skill, "For you" and that skill show the same people,
+                so the row only appears when it can narrow things down or to get back to "For you". */}
+            {!showingMatches && (learningSkills.length > 1 || activeFilter !== null) && (
               <div className="skills-filter">
                 <span className="skills-filter-label">
                   Skills you want to learn
@@ -278,10 +288,10 @@ function SkillBrowse() {
                     }
                     onClick={() => handleFilterClick(null)}
                   >
-                    All skills
+                    For you
                   </button>
 
-                  {visibleSkills.map((skill) => (
+                  {learningSkills.length > 1 && learningSkills.map((skill) => (
                     <button
                       type="button"
                       key={skill.id}
@@ -295,22 +305,70 @@ function SkillBrowse() {
                       {skill.name}
                     </button>
                   ))}
-
-                  {learningSkills.length > SKILL_PREVIEW_COUNT && (
-                    <button
-                      type="button"
-                      className="skill-filter more"
-                      onClick={() => setShowAllSkills((current) => !current)}
-                    >
-                      {showAllSkills
-                        ? "Show less"
-                        : `+${learningSkills.length - SKILL_PREVIEW_COUNT} more`}
-                    </button>
-                  )}
                 </div>
               </div>
             )}
           </section>
+
+          {!showingMatches && allSkills.length > 0 && (
+            <section className="skills-catalog fx-rise fx-d1">
+              <button
+                type="button"
+                className="skills-catalog-toggle"
+                aria-expanded={catalogVisible}
+                aria-controls="skills-catalog-list"
+                onClick={() => setCatalogOpen(!catalogVisible)}
+              >
+                <span>
+                  {normalizedQuery
+                    ? `Skills matching "${query.trim()}" (${catalogSkills.length})`
+                    : `Not finding what you need? Browse all ${allSkills.length} skills`}
+                </span>
+                <span className="skills-catalog-action">
+                  {catalogVisible ? "Hide skills" : "Show skills"}
+                </span>
+              </button>
+
+              {catalogVisible && (
+                <div className="skills-wrap skills-catalog-list" id="skills-catalog-list">
+                  <button
+                    type="button"
+                    className={activeFilter === "all" ? "skill-filter active" : "skill-filter"}
+                    onClick={() => handleFilterClick("all")}
+                  >
+                    All skills
+                  </button>
+
+                  {catalogSkills.map((skill) => (
+                    <button
+                      type="button"
+                      key={skill.id}
+                      className={[
+                        "skill-filter",
+                        activeFilter === skill.id ? "active" : "",
+                        skill.wanted ? "wanted" : "",
+                        // Nobody teaches it yet: shown lighter
+                        skill.teacher_count === 0 ? "empty" : "",
+                      ].join(" ").trim()}
+                      title={
+                        skill.teacher_count === 0
+                          ? `Nobody teaches ${skill.name} yet`
+                          : `${skill.teacher_count} ${skill.teacher_count === 1 ? "person teaches" : "people teach"} ${skill.name}`
+                      }
+                      onClick={() => handleFilterClick(skill.id)}
+                    >
+                      {skill.name}
+                      <span className="skill-filter-count">{skill.teacher_count}</span>
+                    </button>
+                  ))}
+
+                  {catalogSkills.length === 0 && (
+                    <span className="skills-catalog-empty">No skill matches "{query.trim()}".</span>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
 
           <section className="teachers-list-section">
             <div className="section-heading">
@@ -355,7 +413,9 @@ function SkillBrowse() {
                     ? `Nothing matches "${query.trim()}". Try a different name or skill.`
                     : showingMatches
                       ? "Add skills you can teach and want to learn on your profile to find people to swap with."
-                      : "Check back later or pick another skill."}
+                      : activeSkillName
+                        ? `No one has added ${activeSkillName} as a skill they teach. Try another skill above.`
+                        : "Open \"Browse all skills\" above to see every skill."}
                 </p>
               </div>
             )}

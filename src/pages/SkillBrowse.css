@@ -219,6 +219,82 @@
   color: var(--sm-primary);
 }
 
+/* "Browse all skills": full-width, collapsible list of every taught skill */
+
+.skills-catalog {
+  margin-bottom: 24px;
+  border: 1px solid var(--sm-line);
+  border-radius: var(--sm-radius-lg);
+  background: var(--sm-surface);
+}
+
+.skills-catalog-toggle {
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  border-radius: var(--sm-radius-lg);
+  background: transparent;
+  color: var(--sm-heading);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.skills-catalog-toggle:hover {
+  background: var(--sm-tint);
+}
+
+.skills-catalog-count {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--sm-tint);
+  color: var(--sm-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.skills-catalog-chevron {
+  color: var(--sm-muted);
+  transition: transform 0.2s ease;
+}
+
+.skills-catalog-toggle[aria-expanded="true"] .skills-catalog-chevron {
+  transform: rotate(180deg);
+}
+
+.skills-wrap.skills-catalog-list {
+  justify-content: flex-start;
+  padding: 4px 16px 16px;
+}
+
+.skill-filter-count {
+  margin-left: 6px;
+  color: var(--sm-muted);
+  font-size: 12px;
+}
+
+.skill-filter.active .skill-filter-count {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Skills you want to learn stand out in the full list */
+.skill-filter.wanted:not(.active) {
+  border-color: var(--sm-primary);
+  color: var(--sm-primary);
+}
+
+.skills-catalog-empty {
+  color: var(--sm-muted);
+  font-size: 13px;
+}
+
 /* List */
 
 .section-heading {
@@ -314,4 +390,22 @@
   .skills-wrap {
     justify-content: flex-start;
   }
+}
+
+.skills-catalog-toggle {
+  font-weight: 500;
+  color: #334155;
+}
+
+.skills-catalog-action {
+  flex-shrink: 0;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Skills nobody teaches yet: still clickable, but quieter */
+.skill-filter.empty:not(.active) {
+  border-style: dashed;
+  color: #94a3b8;
 }

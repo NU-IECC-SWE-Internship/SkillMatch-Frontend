@@ -2,6 +2,22 @@ import React, { useState, useEffect, useRef } from 'react';
 import DailyIframe from '@daily-co/daily-js';
 import './Meetings.css';
 
+// Daily rejects with plain objects like { errorMsg, error: { type, msg } }, not Error instances.
+function describeDailyError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === 'object') {
+    const e = err as { errorMsg?: string; error?: { type?: string; msg?: string } };
+    const parts = [e.errorMsg || e.error?.msg, e.error?.type && `(${e.error.type})`].filter(Boolean);
+    if (parts.length) return parts.join(' ');
+    try {
+      return JSON.stringify(err);
+    } catch {
+      // fall through
+    }
+  }
+  return String(err);
+}
+
 export interface MeetingSessionProps {
   roomUrl: string;
   token: string;
@@ -117,8 +133,8 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
         });
 
         call.join({ url: roomUrl, token }).catch((err: unknown) => {
-          const msg = err instanceof Error ? err.message : String(err);
-          setCallError(`Could not join the video call: ${msg}`);
+          console.error('Daily join error:', err);
+          setCallError(`Could not join the video call: ${describeDailyError(err)}`);
         });
       } catch (err: unknown) {
         console.error('Daily initialization error:', err);
@@ -173,8 +189,9 @@ const MeetingSession: React.FC<MeetingSessionProps> = ({
 
     // Daily refused the join or dropped the call (e.g. token outside its time window).
     // Show the reason instead of ending the meeting, so it stays joinable.
-    const handleCallError = (ev?: { errorMsg?: string }) => {
-      setCallError(`The video call stopped: ${ev?.errorMsg || 'unknown error'}`);
+    const handleCallError = (ev?: unknown) => {
+      console.error('Daily call error:', ev);
+      setCallError(`The video call stopped: ${describeDailyError(ev)}`);
     };
 
     call.on('app-message', handleAppMessage);

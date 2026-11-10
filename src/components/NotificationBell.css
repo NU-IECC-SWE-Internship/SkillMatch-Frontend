@@ -391,3 +391,58 @@
   padding-left: 28px;
 }
 
+
+/* ========================================
+   Line icons instead of emojis
+======================================== */
+
+.notification-item-icon,
+.push-prompt-icon,
+.notification-pref-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0;
+}
+
+.notification-item-icon svg,
+.push-prompt-icon svg,
+.notification-pref-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Unread: blue icon on a light blue tile */
+.notification-item.unread .notification-item-icon {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.notification-empty-icon {
+  display: flex;
+  justify-content: center;
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.notification-empty-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Plain banner instead of the blue-green gradient */
+.push-prompt-banner {
+  background: #f8fafc;
+}
+
+.push-prompt-icon {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}

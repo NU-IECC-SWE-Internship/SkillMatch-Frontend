@@ -1,42 +1,133 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getProfile } from "../api/profileApi";
-import { loadStaffRole, logout } from "../lib/auth";
-import NotificationBell from "../components/NotificationBell";
-import BrandIcon from "../components/BrandIcon";
+import { getIncomingRequests, getMatches, getSentRequests } from "../api/matchingApi";
+import type { MatchRequest } from "../api/matchingApi";
+import { getMeetings } from "../api/meetingsApi";
+import type { Meeting } from "../api/meetingsApi";
+import { loadStaffRole } from "../lib/auth";
 import "./Dashboard.css";
 
-type FeatureIcon = "search" | "calendar" | "profile";
+type FeatureIcon = "search" | "calendar" | "inbox";
 
-const FEATURE_CARDS: Array<{
-  to: string;
+type LiveCard = {
+  key: string;
   icon: FeatureIcon;
   title: string;
+  stat: string;
   description: string;
   action: string;
-}> = [
-  {
-    to: "/skillbrowse",
-    icon: "search",
-    title: "Browse Skills",
-    description: "Find people who can teach the skills you want to learn.",
-    action: "Find partners",
-  },
-  {
-    to: "/meetings",
-    icon: "calendar",
-    title: "Upcoming Sessions",
-    description: "View and manage your scheduled SkillMatch sessions.",
+  to: string;
+  live?: boolean;
+  // Nothing to do right now ("Nothing scheduled", "All caught up"): grey badge, lighter button
+  idle?: boolean;
+};
+
+const FIVE_MINUTES = 5 * 60 * 1000;
+
+function formatWhen(ts: number) {
+  return new Date(ts).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function partnerOf(meeting: Meeting) {
+  return (
+    meeting.partner_name ||
+    (meeting.is_requester ? meeting.participant_b_name : meeting.participant_a_name) ||
+    "your partner"
+  );
+}
+
+function isLive(meeting: Meeting, now: number) {
+  if (meeting.no_time_limit) return true;
+  return now >= meeting.start_time_ts - FIVE_MINUTES && now <= meeting.end_time_ts;
+}
+
+function sessionCard(meetings: Meeting[]): LiveCard {
+  const now = Date.now();
+  const next = meetings
+    .filter((m) => m.status === "SCHEDULED" && m.end_time_ts >= now)
+    .sort((a, b) => a.start_time_ts - b.start_time_ts)[0];
+
+  const base = { key: "session", icon: "calendar" as const, title: "Next Session" };
+
+  if (!next) {
+    return {
+      ...base,
+      stat: "Nothing scheduled",
+      idle: true,
+      description: "Accept a swap request to schedule your next session.",
+      action: "View sessions",
+      to: "/meetings",
+    };
+  }
+
+  const what = `${next.skill_name ? `${next.skill_name} with ` : "With "}${partnerOf(next)}`;
+
+  if (isLive(next, now)) {
+    return {
+      ...base,
+      stat: "Live now",
+      description: what,
+      action: "Join call",
+      to: `/meetings/${next.id}/room`,
+      live: true,
+    };
+  }
+
+  return {
+    ...base,
+    stat: formatWhen(next.start_time_ts),
+    description: what,
     action: "View sessions",
-  },
-  {
-    to: "/profile",
-    icon: "profile",
-    title: "Your Profile",
-    description: "Manage your bio, skills and weekly availability.",
-    action: "Manage profile",
-  },
-];
+    to: "/meetings",
+  };
+}
+
+// Requests where it's this user's turn: receiver on PENDING/SCHEDULING, sender on CONFIRMING.
+function requestsCard(incoming: MatchRequest[], sent: MatchRequest[]): LiveCard {
+  const waiting =
+    incoming.filter((r) => r.status === "PENDING" || r.status === "SCHEDULING").length +
+    sent.filter((r) => r.status === "CONFIRMING").length;
+
+  return {
+    key: "requests",
+    icon: "inbox",
+    title: "Swap Requests",
+    stat: waiting === 0 ? "All caught up" : `${waiting} waiting for you`,
+    description:
+      waiting === 0
+        ? "No requests need your answer right now."
+        : "People are waiting for you to accept, schedule or confirm.",
+    action: waiting === 0 ? "View requests" : "Review requests",
+    to: "/requests",
+    idle: waiting === 0,
+  };
+}
+
+function matchesCard(matchCount: number): LiveCard {
+  return {
+    key: "matches",
+    icon: "search",
+    title: "Your Matches",
+    stat:
+      matchCount === 0
+        ? "No matches yet"
+        : `${matchCount} ${matchCount === 1 ? "person matches" : "people match"} you`,
+    description:
+      matchCount === 0
+        ? "Add skills you can teach and want to learn to find partners."
+        : "They teach what you want to learn, and want to learn what you teach.",
+    action: matchCount === 0 ? "Update your skills" : "Find partners",
+    to: matchCount === 0 ? "/profile" : "/skillbrowse",
+    idle: matchCount === 0,
+  };
+}
 
 function FeatureCardIcon({ type }: { type: FeatureIcon }) {
   if (type === "search") {
@@ -87,20 +178,13 @@ function FeatureCardIcon({ type }: { type: FeatureIcon }) {
 
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle
-        cx="12"
-        cy="8"
-        r="4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
       <path
-        d="M5 20c.7-4 3.3-6 7-6s6.3 2 7 6"
+        d="M4 13h4l1.5 3h5L16 13h4M4 13l2.5-7h11L20 13v6H4z"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.8"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -108,11 +192,12 @@ function FeatureCardIcon({ type }: { type: FeatureIcon }) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [cards, setCards] = useState<LiveCard[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function checkAccount() {
+    async function load() {
       const isStaff = await loadStaffRole().catch(() => false);
 
       if (cancelled) return;
@@ -127,119 +212,51 @@ export default function Dashboard() {
 
         if (!cancelled && !profile.onboarding_completed) {
           navigate("/onboarding", { replace: true });
+          return;
         }
       } catch {
         return;
       }
+
+      // Each card loads on its own, so one failing API doesn't blank the others.
+      const [meetings, incoming, sent, matches] = await Promise.all([
+        getMeetings("all").catch(() => null),
+        getIncomingRequests().catch(() => null),
+        getSentRequests().catch(() => null),
+        getMatches().catch(() => null),
+      ]);
+
+      if (cancelled) return;
+
+      const unavailable = (key: string, icon: FeatureIcon, title: string, to: string): LiveCard => ({
+        key,
+        icon,
+        title,
+        stat: "Couldn't load",
+        description: "Try refreshing the page.",
+        action: "Open",
+        to,
+        idle: true,
+      });
+
+      setCards([
+        meetings ? sessionCard(meetings) : unavailable("session", "calendar", "Next Session", "/meetings"),
+        incoming && sent
+          ? requestsCard(incoming, sent)
+          : unavailable("requests", "inbox", "Swap Requests", "/requests"),
+        matches ? matchesCard(matches.length) : unavailable("matches", "search", "Your Matches", "/skillbrowse"),
+      ]);
     }
 
-    void checkAccount();
+    void load();
 
     return () => {
       cancelled = true;
     };
   }, [navigate]);
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
   return (
     <main className="dashboard-page">
-      <header className="dashboard-navbar">
-        <div className="dashboard-navbar-main">
-          <button
-            type="button"
-            className="dashboard-brand"
-            onClick={() => navigate("/dashboard")}
-          >
-            <BrandIcon className="dashboard-brand-icon" />
-            <span>SkillMatch</span>
-          </button>
-
-          <nav className="dashboard-nav" aria-label="Main navigation">
-            <button
-              type="button"
-              className="dashboard-nav-link active"
-              onClick={() => navigate("/dashboard")}
-            >
-              Dashboard
-            </button>
-
-            <button
-              type="button"
-              className="dashboard-nav-link"
-              onClick={() => navigate("/skillbrowse")}
-            >
-              Browse Skills
-            </button>
-
-            <button
-              type="button"
-              className="dashboard-nav-link"
-              onClick={() => navigate("/requests")}
-            >
-              Requests
-            </button>
-
-            <button
-              type="button"
-              className="dashboard-nav-link"
-              onClick={() => navigate("/meetings")}
-            >
-              Sessions
-            </button>
-
-            <button
-              type="button"
-              className="dashboard-nav-link"
-              onClick={() => navigate("/profile")}
-            >
-              Profile
-            </button>
-          </nav>
-
-          <div className="dashboard-navbar-actions">
-            <NotificationBell />
-
-            <button
-              type="button"
-              className="dashboard-logout"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-
-        <div className="dashboard-mobile-nav">
-          <button
-            type="button"
-            className="active"
-            onClick={() => navigate("/dashboard")}
-          >
-            Dashboard
-          </button>
-
-          <button type="button" onClick={() => navigate("/skillbrowse")}>
-            Browse
-          </button>
-
-          <button type="button" onClick={() => navigate("/requests")}>
-            Requests
-          </button>
-
-          <button type="button" onClick={() => navigate("/meetings")}>
-            Sessions
-          </button>
-
-          <button type="button" onClick={() => navigate("/profile")}>
-            Profile
-          </button>
-        </div>
-      </header>
-
       <div className="dashboard-content">
         <section className="dashboard-hero">
           <div className="dashboard-hero-copy">
@@ -300,34 +317,50 @@ export default function Dashboard() {
         <section className="dashboard-actions-section">
           <div className="dashboard-section-heading">
             <div>
-              <span>SkillMatch</span>
-              <h2>What would you like to do?</h2>
+              <span>Right now</span>
+              <h2>Your skill swaps at a glance</h2>
             </div>
           </div>
 
           <div className="dashboard-cards-grid">
-            {FEATURE_CARDS.map((card) => (
-              <button
-                type="button"
-                key={card.to}
-                className="dashboard-feature-card"
-                onClick={() => navigate(card.to)}
-              >
-                <span className="dashboard-card-icon">
-                  <FeatureCardIcon type={card.icon} />
-                </span>
+            {cards === null
+              ? ["session", "requests", "matches"].map((key) => (
+                  <div key={key} className="dashboard-feature-card dashboard-card-loading" aria-hidden="true">
+                    <span className="dashboard-card-icon" />
+                    <span className="dashboard-skeleton" />
+                    <span className="dashboard-skeleton short" />
+                  </div>
+                ))
+              : cards.map((card) => (
+                  <button
+                    type="button"
+                    key={card.key}
+                    className={`dashboard-feature-card dashboard-card-${card.key}${card.live ? " live" : ""}`}
+                    onClick={() => navigate(card.to)}
+                  >
+                    <div className="dashboard-card-head">
+                      <span className="dashboard-card-icon">
+                        <FeatureCardIcon type={card.icon} />
+                      </span>
+                      <h3>{card.title}</h3>
+                    </div>
 
-                <div className="dashboard-card-content">
-                  <h3>{card.title}</h3>
-                  <p>{card.description}</p>
-                </div>
+                    <div className="dashboard-card-content">
+                      <strong
+                        className={`dashboard-card-stat ${card.live ? "tone-live" : card.idle ? "tone-idle" : "tone-active"}`}
+                      >
+                        {card.live && <span className="dashboard-live-dot" aria-hidden="true" />}
+                        {card.stat}
+                      </strong>
+                      <p>{card.description}</p>
+                    </div>
 
-                <span className="dashboard-card-action">
-                  {card.action}
-                  <span aria-hidden="true">→</span>
-                </span>
-              </button>
-            ))}
+                    <span className={card.idle ? "dashboard-card-action idle" : "dashboard-card-action"}>
+                      {card.action}
+                      <span aria-hidden="true">→</span>
+                    </span>
+                  </button>
+                ))}
           </div>
         </section>
       </div>

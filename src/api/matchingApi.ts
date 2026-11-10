@@ -76,6 +76,8 @@ export interface UserSessionSettings {
   max_session_duration_minutes: number;
   availability: AvailabilitySlot[];
   busy_intervals: BusyInterval[];
+  // Weekly times already taken by open requests (day + "HH:MM" start/end)
+  requested_times?: { day: string; start_time: string; end_time: string }[];
 }
 
 // ---------------- MATCHES ----------------
@@ -229,12 +231,13 @@ export async function getUserSessionSettings(
   );
 }
 
+// No argument: people teaching what you want. A skill id: that skill. "all": everyone.
 export async function getTeachers(
-  skillId?: number
+  skill?: number | "all"
 ): Promise<TeachersResponse> {
   const token = getAccessToken();
-  const url = skillId
-    ? `/api/teachers/?skill=${skillId}`
+  const url = skill
+    ? `/api/teachers/?skill=${skill}`
     : "/api/teachers/";
 
   return apiRequest<TeachersResponse>(url, {

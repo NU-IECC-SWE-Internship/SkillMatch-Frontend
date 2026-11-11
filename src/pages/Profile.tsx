@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 
 
@@ -128,51 +129,6 @@ const sessionDurationOptions = [
 
 
 
-function retryLabel(availableAt: string | null | undefined) {
-
-  if (!availableAt) return "Retry later";
-
-
-
-  const minutes = Math.ceil(
-
-    (new Date(availableAt).getTime() - Date.now()) / 60000
-
-  );
-
-
-
-  if (minutes <= 0) return "Retry now";
-
-
-
-  if (minutes < 60) return `Retry in ${minutes}m`;
-
-
-
-  const hours = Math.floor(minutes / 60);
-
-
-
-  const rest = minutes % 60;
-
-
-
-  if (hours >= 24) {
-
-    const days = Math.floor(hours / 24);
-
-    const restHours = hours % 24;
-
-    return restHours ? `Retry in ${days}d ${restHours}h` : `Retry in ${days}d`;
-
-  }
-
-
-
-  return rest ? `Retry in ${hours}h ${rest}m` : `Retry in ${hours}h`;
-
-}
 
 
 
@@ -206,7 +162,6 @@ function formatTime(value: string) {
 
 function Profile() {
 
-  const navigate = useNavigate();
 
 
 
@@ -214,6 +169,7 @@ function Profile() {
 
 
 
+  const navigate = useNavigate();
   const [userId, setUserId] = useState<number | null>(null);
 
 
@@ -1141,104 +1097,8 @@ function Profile() {
 
 
 
-  const renderTeachActions = (skill: UserSkill) => (
-
-    <>
-
-      {!skill.is_verified && skill.can_take_quiz ? (
-
-        <button
-
-          type="button"
-
-          className="mp-btn mp-btn-quiz"
-
-          onClick={() =>
-
-            navigate(`/skills/${skill.skill}/quiz`)
-
-          }
-
-        >
-
-          Verify with quiz
-
-          {skill.has_quiz_attempt &&
-          typeof skill.quiz_attempts_left === "number"
-            ? ` · ${skill.quiz_attempts_left} ${
-                skill.quiz_attempts_left === 1 ? "try" : "tries"
-              } left`
-            : ""}
-
-        </button>
-
-      ) : null}
-
-
-
-      {!skill.is_verified &&
-
-      !skill.can_take_quiz &&
-
-      skill.has_quiz_attempt ? (
-
-        <span
-
-          className="mp-tag mp-tag-warn"
-
-          title={
-
-            skill.quiz_available_at
-
-              ? `Available ${new Date(
-
-                  skill.quiz_available_at
-
-                ).toLocaleString()}`
-
-              : undefined
-
-          }
-
-        >
-
-          {retryLabel(skill.quiz_available_at)}
-
-
-
-          {typeof skill.quiz_score === "number"
-
-            ? ` · ${skill.quiz_score}/10`
-
-            : ""}
-
-        </span>
-
-      ) : null}
-
-
-
-      {skill.has_quiz_review ? (
-
-        <Link
-
-          to={`/skills/${skill.skill}/quiz/review`}
-
-          className="mp-tag mp-tag-link"
-
-          title="See which questions you got right or wrong"
-
-        >
-
-          Review answers
-
-        </Link>
-
-      ) : null}
-
-    </>
-
-  );
+  // Teach cards open the Quizzes page (take, retry, review answers).
+  const openQuizzes = () => navigate("/quizzes");
 
 
 
@@ -1301,11 +1161,23 @@ function Profile() {
             {selected.map((skill) => (
               <li
                 key={skill.id}
-                className={
-                  skill.is_verified
-                    ? "mp-skill-row verified"
-                    : "mp-skill-row"
-                }
+                className={`mp-skill-row${
+                  skill.is_verified ? " verified" : ""
+                }${type === "teach" ? " mp-skill-row--link" : ""}`}
+                {...(type === "teach"
+                  ? {
+                      role: "link",
+                      tabIndex: 0,
+                      title: "Open quizzes for this skill",
+                      onClick: openQuizzes,
+                      onKeyDown: (e: KeyboardEvent) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openQuizzes();
+                        }
+                      },
+                    }
+                  : {})}
               >
                 <div className="mp-skill-main">
                   <span className="mp-skill-initial" aria-hidden="true">
@@ -1337,20 +1209,25 @@ function Profile() {
                 </div>
 
                 <div className="mp-skill-actions">
-                  {type === "teach" &&
-                    renderTeachActions(skill)}
+                  {type === "teach" && (
+                    <span className="mp-skill-chevron" aria-hidden="true">
+                      ›
+                    </span>
+                  )}
 
                   <button
                     type="button"
                     className="mp-remove"
                     aria-label={`Remove ${skill.skill_name}`}
                     title="Remove"
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.stopPropagation();
                       toggleSkill(
                         skill.skill_name,
                         type
-                      )
-                    }
+                      );
+                    }}
+                    onKeyDown={(e) => e.stopPropagation()}
                   >
                     ×
                   </button>
@@ -1404,8 +1281,7 @@ function Profile() {
             </button>
           </form>
 
-          {type === "teach" && (
-            <>
+          <>
               <span className="mp-label mp-request-label">
                 Can't find your skill? Request a new one
               </span>
@@ -1434,8 +1310,7 @@ function Profile() {
                   Request
                 </button>
               </form>
-            </>
-          )}
+          </>
         </div>
         )}
       </div>

@@ -145,10 +145,6 @@ export default function SkillsStep({ type, onNext }: Props) {
         );
 
         if (!skill) {
-          if (type === "learn") {
-            continue;
-          }
-
           skill = await createSkill(skillName);
         }
 
@@ -253,8 +249,7 @@ export default function SkillsStep({ type, onNext }: Props) {
           </button>
         </div>
 
-        {type === "teach" && (
-          <div className="other-skill-row">
+        <div className="other-skill-row">
             <input
               type="text"
               value={otherSkill}
@@ -275,7 +270,6 @@ export default function SkillsStep({ type, onNext }: Props) {
               Request
             </button>
           </div>
-        )}
 
         {error && (
           <p className="form-error">

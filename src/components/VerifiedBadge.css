@@ -12,23 +12,23 @@
 }
 
 .verified-badge-icon {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   display: block;
+  color: #2563eb;
 }
 
 .verified-badge--compact .verified-badge-icon {
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
 }
 
 .verified-badge-label {
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  color: #15803d;
+  color: #1d4ed8;
 }
 
 .skill-pill.is-verified {

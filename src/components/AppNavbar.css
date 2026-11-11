@@ -361,9 +361,23 @@
   color: #0f172a;
 }
 
+.app-navbar .bell-icon {
+  width: 22px;
+  height: 22px;
+}
+
 .app-navbar .notification-badge {
-  top: 2px;
+  top: 3px;
   right: 2px;
+  box-sizing: border-box;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-width: 1.5px;
+  font-size: 0.62rem;
+  line-height: 1;
+  box-shadow: none;
+  animation: none;
 }
 
 /* Account button: avatar + name + chevron */

@@ -2029,3 +2029,30 @@
 .upp-show-all:hover {
   text-decoration: underline;
 }
+
+/* Teach skill cards open the Quizzes page */
+.mp-skill-row--link {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.mp-skill-row--link:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.mp-skill-row--link:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.mp-skill-chevron {
+  color: #94a3b8;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.mp-skill-row--link:hover .mp-skill-chevron {
+  color: #2563eb;
+}

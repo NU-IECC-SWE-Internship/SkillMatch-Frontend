@@ -163,11 +163,12 @@
   box-shadow: var(--sm-shadow);
 }
 
+/* Skill chips get their own full-width row under the tabs */
 .skills-filter {
-  flex: 1 1 360px;
+  flex: 1 1 100%;
   min-width: 0;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .skills-filter-label {
@@ -182,8 +183,12 @@
 .skills-wrap {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 8px;
+}
+
+.skill-filter {
+  white-space: nowrap;
 }
 
 .skill-filter {

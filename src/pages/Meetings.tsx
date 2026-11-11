@@ -279,7 +279,7 @@ const Meetings: React.FC = () => {
                         >
                           Enter Early &rarr;
                         </Link>
-                        {meeting.can_cancel ?? (Date.now() <= meeting.start_time_ts - (meeting.cancel_notice_hours || 2) * 3600 * 1000) ? (
+                        {(meeting.can_cancel ?? (Date.now() <= meeting.start_time_ts - (meeting.cancel_notice_hours || 2) * 3600 * 1000)) && (
                           <button
                             type="button"
                             onClick={() => setCancelModalMeeting(meeting)}
@@ -287,13 +287,6 @@ const Meetings: React.FC = () => {
                           >
                             Cancel
                           </button>
-                        ) : (
-                          <span
-                            className="badge-locked"
-                            title={`Cancellation locked within ${meeting.cancel_notice_hours || 2} hours of start time.`}
-                          >
-                            🔒 Cancel locked (&lt;{meeting.cancel_notice_hours || 2}h)
-                          </span>
                         )}
                       </>
                     )}
@@ -303,13 +296,9 @@ const Meetings: React.FC = () => {
                       <div className="past-meeting-action-cluster">
                         {meeting.has_user_rated ? (
                           <>
-                            {meeting.is_revealed ? (
+                            {meeting.is_revealed && (
                               <span className="badge badge-revealed">
                                 ★ Reviews Revealed
-                              </span>
-                            ) : (
-                              <span className="badge badge-private">
-                                🔒 Review Private
                               </span>
                             )}
                             <button

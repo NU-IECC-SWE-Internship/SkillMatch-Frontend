@@ -1284,7 +1284,8 @@ a.sender-name:hover {
 
 .choose-skill-section {
   margin-top: 4px;
-  padding: 14px 0 0;
+  margin-bottom: 20px;
+  padding: 16px 0 0;
   border-top: 1px solid #f1f5f9;
   border-radius: 0;
   background: transparent;
@@ -1298,17 +1299,22 @@ a.sender-name:hover {
 }
 
 .choose-skill-hint {
-  margin: 2px 0 12px;
+  margin: 4px 0 14px;
   color: #64748b;
   font-size: 0.84rem;
 }
 
 .skill-selector-list {
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 8px;
 }
 
 .skill-choice-pill {
-  min-height: 38px;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  min-height: 42px;
   padding: 0 14px;
   gap: 8px;
   border: 1px solid #e2e8f0;

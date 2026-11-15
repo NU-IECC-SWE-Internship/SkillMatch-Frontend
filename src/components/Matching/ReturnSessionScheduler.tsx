@@ -5,8 +5,8 @@ import {
 } from "../../api/matchingApi";
 import { getErrorMessage } from "../../lib/api";
 import {
-  formatDayLabel,
   formatDuration,
+  formatSessionDay,
   formatTime,
   minutesToTime,
   timeToMinutes,
@@ -405,8 +405,9 @@ export default function ReturnSessionScheduler({
                       key={slot.id}
                       value={slot.id}
                     >
-                      {formatDayLabel(
-                        slot.day
+                      {formatSessionDay(
+                        slot.day,
+                        slot.end_time
                       )}{" "}
                       ·{" "}
                       {formatTime(
@@ -525,8 +526,9 @@ export default function ReturnSessionScheduler({
                 </span>
 
                 <strong>
-                  {formatDayLabel(
-                    selectedSlotObject.day
+                  {formatSessionDay(
+                    selectedSlotObject.day,
+                    selectedStartTime
                   )}{" "}
                   ·{" "}
                   {formatTime(

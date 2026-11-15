@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+  import { Link } from "react-router-dom";
 import type { MatchRequest } from "../../api/matchingApi";
 import VerifiedBadge from "../VerifiedBadge";
 import { PersonHeader, StatusChip } from "./RequestsLayout";
@@ -12,7 +12,7 @@ export default function PastRequestCard({
   request,
   sentByMe = false,
 }: PastRequestCardProps) {
-  const username = sentByMe
+  const username = sentByMe 
     ? request.receiver_username
     : request.sender_username;
 

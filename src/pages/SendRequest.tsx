@@ -13,6 +13,7 @@ import {
   type UserSessionSettings,
 } from "../api/matchingApi";
 import { getErrorMessage } from "../lib/api";
+import { formatSessionDay } from "../components/Matching/schedulingUtils";
 import StatusModal from "../components/ui/StatusModal";
 import VerifiedBadge from "../components/VerifiedBadge";
 import type {
@@ -56,14 +57,6 @@ function formatDuration(minutes: number) {
     return hours === 1 ? "1 hour" : `${hours} hours`;
   }
   return `${hours}h ${remainingMinutes}m`;
-
-}
-
-
-
-function formatDayLabel(day: string) {
-
-  return day.charAt(0).toUpperCase() + day.slice(1);
 
 }
 
@@ -1186,7 +1179,7 @@ function SendRequest() {
                     </option>
                     {availableSlots.map((slot) => (
                       <option key={slot.id} value={slot.id}>
-                        {formatDayLabel(slot.day)}, {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
+                        {formatSessionDay(slot.day, slot.end_time)}, {formatTime(slot.start_time)} – {formatTime(slot.end_time)}
                       </option>
                     ))}
                   </select>
@@ -1257,7 +1250,7 @@ function SendRequest() {
                   <dt>When</dt>
                   <dd>
                     {selectedSlotObject && selectedStartTime && requestedEndTime
-                      ? `${formatDayLabel(selectedSlotObject.day)}, ${formatTime(selectedStartTime)} – ${formatTime(requestedEndTime)}`
+                      ? `${formatSessionDay(selectedSlotObject.day, selectedStartTime)}, ${formatTime(selectedStartTime)} – ${formatTime(requestedEndTime)}`
                       : "-"}
                   </dd>
                 </div>

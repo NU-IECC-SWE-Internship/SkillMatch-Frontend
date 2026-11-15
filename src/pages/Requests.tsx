@@ -6,6 +6,7 @@ import {
   type IncomingRequestItem,
 } from "../api/matchingApi";
 import { getErrorMessage } from "../lib/api";
+import { formatSessionDay } from "../components/Matching/schedulingUtils";
 import RequestCard from "../components/Matching/RequestCard";
 import PastRequestCard from "../components/Matching/PastRequestCard";
 import {
@@ -194,13 +195,11 @@ export default function Requests() {
       return `Slot #${request.selected_slot}`;
     }
 
-    const day =
-      request.selected_slot_day.charAt(0).toUpperCase() +
-      request.selected_slot_day.slice(1);
-
     // The time the requester picked; older requests only have the whole window.
     const start = request.requested_start_time || request.selected_slot_start_time;
     const end = request.requested_end_time || request.selected_slot_end_time;
+
+    const day = formatSessionDay(request.selected_slot_day, start);
 
     return `${day}, ${formatTime(start)} – ${formatTime(end)}`;
   };
@@ -220,9 +219,7 @@ export default function Requests() {
       return "Return session time proposed";
     }
 
-    const day =
-      dayValue.charAt(0).toUpperCase() +
-      dayValue.slice(1);
+    const day = formatSessionDay(dayValue, startTime);
 
     return `${day}, ${formatTime(startTime)} – ${formatTime(endTime)}`;
   };

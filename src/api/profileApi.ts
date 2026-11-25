@@ -131,6 +131,19 @@ export interface PublicUserProfile {
   learn_skills: PublicUserSkill[]
 }
 
+export interface UserReview {
+  id: number
+  meeting_id: number
+  reviewer_id: number
+  reviewer_username: string
+  reviewed_user_id: number
+  reviewed_username: string
+  score: number
+  feedback: string
+  is_revealed: boolean
+  created_at: string
+}
+
 
 // ---------------- PROFILE ----------------
 
@@ -201,6 +214,15 @@ export async function getUserProfile(
 ): Promise<PublicUserProfile> {
   return apiRequest<PublicUserProfile>(
     `/api/users/${userId}/profile/`,
+  )
+}
+
+export async function getUserReviews(
+  userId: number,
+  direction: 'received' | 'given',
+): Promise<UserReview[]> {
+  return apiRequest<UserReview[]>(
+    `/api/users/${userId}/reviews/?direction=${direction}`,
   )
 }
 // ---------------- SKILLS ----------------

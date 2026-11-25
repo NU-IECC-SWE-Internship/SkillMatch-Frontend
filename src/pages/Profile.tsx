@@ -7,7 +7,7 @@ import type { FormEvent } from "react";
 
 
 
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 
 
@@ -50,6 +50,7 @@ import type {
 
 
 import VerifiedBadge from "../components/VerifiedBadge";
+import ProfileReviewsModal from "../components/ProfileReviewsModal";
 
 
 
@@ -232,6 +233,8 @@ function Profile() {
   const [ratingAverage, setRatingAverage] = useState(0);
 
   const [ratingCount, setRatingCount] = useState(0);
+
+  const [reviewsOpen, setReviewsOpen] = useState(false);
 
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -1395,12 +1398,15 @@ function Profile() {
             </div>
 
             {userId !== null && (
-              <Link
-                to={`/users/${userId}`}
-                className="mp-btn mp-btn-ghost mp-public-profile"
-              >
-                View Public Profile
-              </Link>
+              <>
+                <button
+                  type="button"
+                  className="mp-btn mp-btn-ghost mp-public-profile"
+                  onClick={() => setReviewsOpen(true)}
+                >
+                  View Reviews
+                </button>
+              </>
             )}
           </div>
         </header>
@@ -1712,6 +1718,14 @@ function Profile() {
           </section>
         </div>
       </div>
+      {userId !== null && (
+        <ProfileReviewsModal
+          userId={userId}
+          username={username || "Your"}
+          isOpen={reviewsOpen}
+          onClose={() => setReviewsOpen(false)}
+        />
+      )}
     </main>
   );
 }

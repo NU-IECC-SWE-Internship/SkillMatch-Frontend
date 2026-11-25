@@ -204,6 +204,42 @@ export async function apiRequest<T>(
 }
 
 
+function firstMessage(value: unknown): string | null {
+  if (Array.isArray(value) && typeof value[0] === 'string' && value[0].trim()) {
+    return value[0]
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value
+  }
+  return null
+}
+
+/** Map DRF field errors like `{ password: ["…"] }` onto form fields. */
+export function getFieldErrors(
+  error: unknown,
+  fields: string[],
+): Record<string, string> {
+  const out: Record<string, string> = {}
+
+  if (!(error instanceof ApiError)) {
+    return out
+  }
+
+  if (typeof error.body !== 'object' || error.body === null) {
+    return out
+  }
+
+  const body = error.body as Record<string, unknown>
+  for (const field of fields) {
+    const message = firstMessage(body[field])
+    if (message) {
+      out[field] = message
+    }
+  }
+
+  return out
+}
+
 export function getErrorMessage(
   error: unknown,
 ): string {
@@ -256,11 +292,14 @@ export function getErrorMessage(
 
     // DRF detail responses such as:
     // { "detail": "Authentication credentials were not provided." }
-    if (
-      typeof body.detail === 'string' &&
-      body.detail.trim()
-    ) {
-      return body.detail
+    const detail = firstMessage(body.detail)
+    if (detail) {
+      return detail
+    }
+
+    const nonField = firstMessage(body.non_field_errors)
+    if (nonField) {
+      return nonField
     }
 
     // DRF validation errors such as:
@@ -268,18 +307,9 @@ export function getErrorMessage(
     for (
       const value of Object.values(body)
     ) {
-      if (
-        Array.isArray(value) &&
-        typeof value[0] === 'string'
-      ) {
-        return value[0]
-      }
-
-      if (
-        typeof value === 'string' &&
-        value.trim()
-      ) {
-        return value
+      const message = firstMessage(value)
+      if (message) {
+        return message
       }
     }
   }

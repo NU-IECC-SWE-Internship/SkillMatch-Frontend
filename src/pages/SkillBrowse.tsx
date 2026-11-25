@@ -37,8 +37,8 @@ function SkillBrowse() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
-  // "Browse all skills" panel
   const [catalogOpen, setCatalogOpen] = useState(false);
+  const [catalogQuery, setCatalogQuery] = useState("");
 
   const [statusModal, setStatusModal] = useState<{
     title: string;
@@ -69,6 +69,23 @@ function SkillBrowse() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    if (!catalogOpen) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setCatalogOpen(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [catalogOpen]);
 
   async function loadInitialData() {
     try {
@@ -133,6 +150,8 @@ function SkillBrowse() {
 
   function handleFilterClick(filter: BrowseFilter) {
     setActiveFilter(filter);
+    setCatalogOpen(false);
+    setCatalogQuery("");
 
     if (filter === "matches") {
       loadMatchesData();
@@ -141,6 +160,16 @@ function SkillBrowse() {
     } else {
       loadTeachers(filter);
     }
+  }
+
+  function openCatalog() {
+    setCatalogQuery("");
+    setCatalogOpen(true);
+  }
+
+  function closeCatalog() {
+    setCatalogOpen(false);
+    setCatalogQuery("");
   }
 
   // Converts a teacher into the Match interface expected by MatchCard
@@ -187,16 +216,26 @@ function SkillBrowse() {
       );
     });
 
-  // The search box also narrows the "all skills" list and opens it.
-  const catalogSkills = normalizedQuery
-    ? allSkills.filter((skill) => skill.name.toLowerCase().includes(normalizedQuery))
-    : allSkills;
-  const catalogVisible = catalogOpen || (normalizedQuery !== "" && catalogSkills.length > 0);
+  const normalizedCatalogQuery = catalogQuery.trim().toLowerCase();
+  const catalogSkills = (
+    normalizedCatalogQuery
+      ? allSkills.filter((skill) =>
+          skill.name.toLowerCase().includes(normalizedCatalogQuery)
+        )
+      : allSkills
+  ).slice().sort((a, b) => Number(b.wanted) - Number(a.wanted));
 
   const activeSkillName =
     typeof activeFilter === "number"
       ? (allSkills.find((skill) => skill.id === activeFilter) ??
           learningSkills.find((skill) => skill.id === activeFilter))?.name
+      : undefined;
+
+  // Skill picked from the full catalog that isn't already in the quick filter chips
+  const selectedExtraSkill =
+    typeof activeFilter === "number" &&
+    !learningSkills.some((skill) => skill.id === activeFilter)
+      ? allSkills.find((skill) => skill.id === activeFilter)
       : undefined;
 
   const listTitle = showingMatches
@@ -216,6 +255,95 @@ function SkillBrowse() {
         type={statusModal?.type ?? "success"}
         onClose={() => setStatusModal(null)}
       />
+
+      {catalogOpen && (
+        <div className="skills-catalog-overlay" onClick={closeCatalog}>
+          <div
+            className="skills-catalog-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="skills-catalog-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="skills-catalog-modal-header">
+              <div>
+                <h2 id="skills-catalog-title">Browse all skills</h2>
+                <p>Pick a skill to see who teaches it.</p>
+              </div>
+              <button
+                type="button"
+                className="skills-catalog-modal-close"
+                onClick={closeCatalog}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="skills-catalog-search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-3.5-3.5" />
+              </svg>
+              <input
+                type="search"
+                value={catalogQuery}
+                onChange={(e) => setCatalogQuery(e.target.value)}
+                placeholder="Search skills"
+                aria-label="Search skills"
+                autoFocus
+              />
+            </div>
+
+            <div className="skills-catalog-chips">
+              <button
+                type="button"
+                className={
+                  activeFilter === "all"
+                    ? "skills-catalog-chip active"
+                    : "skills-catalog-chip"
+                }
+                onClick={() => handleFilterClick("all")}
+              >
+                All skills
+              </button>
+
+              {catalogSkills.map((skill) => (
+                <button
+                  type="button"
+                  key={skill.id}
+                  className={[
+                    "skills-catalog-chip",
+                    activeFilter === skill.id ? "active" : "",
+                    skill.wanted ? "wanted" : "",
+                    skill.teacher_count === 0 ? "empty" : "",
+                  ]
+                    .join(" ")
+                    .trim()}
+                  title={
+                    skill.teacher_count === 0
+                      ? `Nobody teaches ${skill.name} yet`
+                      : `${skill.teacher_count} ${skill.teacher_count === 1 ? "person teaches" : "people teach"} ${skill.name}`
+                  }
+                  onClick={() => handleFilterClick(skill.id)}
+                >
+                  <span>{skill.name}</span>
+                  {skill.wanted && (
+                    <span className="skills-catalog-chip-wanted">For you</span>
+                  )}
+                  <span className="skills-catalog-chip-count">{skill.teacher_count}</span>
+                </button>
+              ))}
+
+              {catalogSkills.length === 0 && (
+                <span className="skills-catalog-empty">
+                  No skill matches "{catalogQuery.trim()}".
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="teachers-page fx-backdrop" onPointerMove={handleCursorGlow}>
         <div className="teachers-panel">
@@ -305,6 +433,37 @@ function SkillBrowse() {
                       {skill.name}
                     </button>
                   ))}
+
+                  {activeFilter === "all" && (
+                    <button
+                      type="button"
+                      className="skill-filter active skill-filter-extra"
+                      onClick={() => handleFilterClick("all")}
+                    >
+                      All skills
+                    </button>
+                  )}
+
+                  {selectedExtraSkill && (
+                    <div className="skill-filter-extra-wrap">
+                      <button
+                        type="button"
+                        className="skill-filter active skill-filter-extra"
+                        onClick={() => handleFilterClick(selectedExtraSkill.id)}
+                        title="Selected from Browse all skills"
+                      >
+                        {selectedExtraSkill.name}
+                      </button>
+                      <button
+                        type="button"
+                        className="skill-filter-clear"
+                        aria-label={`Clear ${selectedExtraSkill.name} filter`}
+                        onClick={() => handleFilterClick(null)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -315,58 +474,11 @@ function SkillBrowse() {
               <button
                 type="button"
                 className="skills-catalog-toggle"
-                aria-expanded={catalogVisible}
-                aria-controls="skills-catalog-list"
-                onClick={() => setCatalogOpen(!catalogVisible)}
+                onClick={openCatalog}
               >
-                <span>
-                  {normalizedQuery
-                    ? `Skills matching "${query.trim()}" (${catalogSkills.length})`
-                    : `Not finding what you need? Browse all ${allSkills.length} skills`}
-                </span>
-                <span className="skills-catalog-action">
-                  {catalogVisible ? "Hide skills" : "Show skills"}
-                </span>
+                <span>Not finding what you need? Browse all {allSkills.length} skills</span>
+                <span className="skills-catalog-action">Show skills</span>
               </button>
-
-              {catalogVisible && (
-                <div className="skills-wrap skills-catalog-list" id="skills-catalog-list">
-                  <button
-                    type="button"
-                    className={activeFilter === "all" ? "skill-filter active" : "skill-filter"}
-                    onClick={() => handleFilterClick("all")}
-                  >
-                    All skills
-                  </button>
-
-                  {catalogSkills.map((skill) => (
-                    <button
-                      type="button"
-                      key={skill.id}
-                      className={[
-                        "skill-filter",
-                        activeFilter === skill.id ? "active" : "",
-                        skill.wanted ? "wanted" : "",
-                        // Nobody teaches it yet: shown lighter
-                        skill.teacher_count === 0 ? "empty" : "",
-                      ].join(" ").trim()}
-                      title={
-                        skill.teacher_count === 0
-                          ? `Nobody teaches ${skill.name} yet`
-                          : `${skill.teacher_count} ${skill.teacher_count === 1 ? "person teaches" : "people teach"} ${skill.name}`
-                      }
-                      onClick={() => handleFilterClick(skill.id)}
-                    >
-                      {skill.name}
-                      <span className="skill-filter-count">{skill.teacher_count}</span>
-                    </button>
-                  ))}
-
-                  {catalogSkills.length === 0 && (
-                    <span className="skills-catalog-empty">No skill matches "{query.trim()}".</span>
-                  )}
-                </div>
-              )}
             </section>
           )}
 
@@ -415,7 +527,7 @@ function SkillBrowse() {
                       ? "Add skills you can teach and want to learn on your profile to find people to swap with."
                       : activeSkillName
                         ? `No one has added ${activeSkillName} as a skill they teach. Try another skill above.`
-                        : "Open \"Browse all skills\" above to see every skill."}
+                        : "Open Browse all skills above to see every skill."}
                 </p>
               </div>
             )}

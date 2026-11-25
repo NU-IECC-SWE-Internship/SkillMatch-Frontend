@@ -8,6 +8,7 @@ import {
 } from "../api/profileApi";
 
 import VerifiedBadge from "../components/VerifiedBadge";
+import ProfileReviewsModal from "../components/ProfileReviewsModal";
 
 import "./ProfileRedesign.css";
 
@@ -106,6 +107,7 @@ export default function UserProfile() {
           : "Browse Skills";
 
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   // Your own skills (lower-cased names), to point out overlaps with this person
   const [myLearn, setMyLearn] = useState<Set<string>>(new Set());
   const [myTeach, setMyTeach] = useState<Set<string>>(new Set());
@@ -263,6 +265,14 @@ useEffect(() => {
             <button
               type="button"
               className="upp-btn upp-btn-secondary"
+              onClick={() => setReviewsOpen(true)}
+            >
+              Reviews ({profile.rating_count})
+            </button>
+
+            <button
+              type="button"
+              className="upp-btn upp-btn-secondary"
               onClick={() =>
                 window.dispatchEvent(
                   new CustomEvent("skillmatch-open-chat", {
@@ -343,6 +353,12 @@ useEffect(() => {
           </section>
         </div>
       </div>
+      <ProfileReviewsModal
+        userId={profile.user}
+        username={profile.username}
+        isOpen={reviewsOpen}
+        onClose={() => setReviewsOpen(false)}
+      />
     </main>
   );
 }
